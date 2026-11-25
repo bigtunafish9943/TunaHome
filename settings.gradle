@@ -1,0 +1,2 @@
+rootProject.name = 'TunaHome'
+include ':app'

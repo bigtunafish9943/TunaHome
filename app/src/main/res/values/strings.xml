@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">TunaHome</string>
+    <string name="brand_tuna">Tuna</string>
+    <string name="brand_home">Home</string>
+    <string name="version">Version %1$s</string>
+
+    <!-- Home screen -->
+    <string name="favourites">Favourites</string>
+    <string name="favourites_hint">Hold select on an app to add it here.</string>
+    <string name="all_apps">All apps</string>
+    <string name="loading_apps">Finding your apps…</string>
+    <string name="no_apps">No apps to show. Hidden apps can be shown again in TunaHome settings.</string>
+    <string name="tv_settings">TV settings</string>
+    <string name="tunahome_settings">TunaHome settings</string>
+    <string name="open_failed">Couldn\'t open %1$s. It may have been removed or turned off.</string>
+    <string name="tv_settings_failed">Couldn\'t open the TV\'s settings from here.</string>
+
+    <!-- An app's menu -->
+    <string name="menu_add_favourite">Add to favourites</string>
+    <string name="menu_remove_favourite">Remove from favourites</string>
+    <string name="menu_move_left">Move left</string>
+    <string name="menu_move_right">Move right</string>
+    <string name="menu_hide">Hide from TunaHome</string>
+    <string name="menu_app_info">App info</string>
+    <string name="menu_uninstall">Uninstall</string>
+    <string name="hidden_toast">%1$s is hidden. Show it again in TunaHome settings.</string>
+    <string name="action_failed">This TV didn\'t open that screen.</string>
+
+    <!-- Settings -->
+    <string name="settings">Settings</string>
+    <string name="on">On</string>
+    <string name="off">Off</string>
+    <string name="cancel">Cancel</string>
+    <string name="close">Close</string>
+    <string name="done">Done</string>
+
+    <string name="set_theme">Theme</string>
+    <string name="set_theme_season_showing">%1$s. %2$s is showing now because seasonal themes are on.</string>
+    <string name="set_seasonal">Seasonal themes</string>
+    <string name="set_seasonal_on">On. Halloween in October, Autumn in November, Winter from December to 15 January, Summer from 21 June to the end of August.</string>
+    <string name="set_seasonal_off">Off. Your chosen theme all year.</string>
+
+    <string name="set_phone_apps">Apps not made for TV</string>
+    <string name="set_phone_apps_on">Shown. Some may be awkward to use with a remote.</string>
+    <string name="set_phone_apps_off">Hidden.</string>
+    <string name="set_hidden">Hidden apps</string>
+    <string name="set_hidden_none">None. Hold select on an app to hide it.</string>
+    <plurals name="set_hidden_count">
+        <item quantity="one">%1$d hidden. Choose which to show again.</item>
+        <item quantity="other">%1$d hidden. Choose which to show again.</item>
+    </plurals>
+    <string name="set_hidden_title">Tick the apps to keep hidden</string>
+
+    <string name="set_home_button">Home button</string>
+    <string name="set_home_button_on">On. Pressing Home opens TunaHome.</string>
+    <string name="set_home_button_off">Off. Pressing Home opens the TV\'s usual home screen.</string>
+    <string name="home_button_how_on">To make the Home button open TunaHome:\n\n1. Open accessibility settings.\n2. Choose TunaHome.\n3. Switch it on.\n\nIf another launcher already takes over the Home button, switch that off first.\n\nTo undo this, switch TunaHome off on the same screen.</string>
+    <string name="home_button_how_off">The Home button opens TunaHome.\n\nTo go back to the TV\'s usual home screen, open accessibility settings, choose TunaHome and switch it off.</string>
+    <string name="open_accessibility">Open accessibility settings</string>
+
+    <string name="set_replace_stock">Replace the usual home screen</string>
+    <string name="set_replace_stock_on">On. When the TV\'s own home screen appears, TunaHome opens instead. Needs the Home button setting.</string>
+    <string name="set_replace_stock_off">Off. The TV\'s own home screen can still appear after Back or a restart.</string>
+
+    <string name="set_update">Check for updates</string>
+    <string name="set_update_summary">You have TunaHome %1$s.</string>
+    <string name="set_tv_settings_summary">Network, sound, picture and the rest of the TV\'s own settings.</string>
+
+    <!-- What Android shows on its accessibility screen -->
+    <string name="home_service_summary">Opens TunaHome when you press Home.</string>
+    <string name="home_service_description">Lets TunaHome open when you press the Home button. It only watches for the Home button and for the TV\'s own home screen appearing. It cannot read what is on screen and sends nothing anywhere. Switch it off to return to the TV\'s usual home screen.</string>
+
+    <!-- Themes -->
+    <string name="theme_deepsea">Deep Sea</string>
+    <string name="theme_reef">Reef</string>
+    <string name="theme_kelp">Kelp</string>
+    <string name="theme_midnight">Midnight</string>
+    <string name="theme_gold">Gold</string>
+    <string name="theme_halloween">Halloween</string>
+    <string name="theme_autumn">Autumn</string>
+    <string name="theme_winter">Winter</string>
+    <string name="theme_summer">Summer</string>
+
+    <!-- Updates -->
+    <string name="update_checking">Checking for updates…</string>
+    <string name="update_check_failed">Couldn\'t reach GitHub to check for updates. Check the TV\'s internet connection and try again.</string>
+    <string name="update_up_to_date">TunaHome %1$s is the latest version.</string>
+    <string name="update_available_title">TunaHome %1$s is ready</string>
+    <string name="update_available_body">You have %1$s. Update now? Android will ask you to confirm.</string>
+    <string name="update_now">Update now</string>
+    <string name="update_later">Later</string>
+    <string name="update_permission_title">Allow TunaHome to install its update</string>
+    <string name="update_permission_body">Android needs your permission once. On the next screen, switch on TunaHome, then come back here.</string>
+    <string name="update_permission_open">Open the setting</string>
+    <string name="update_permission_manual">Open the TV\'s settings, find \"Install unknown apps\" and switch on TunaHome.</string>
+    <string name="update_downloading_title">Downloading TunaHome %1$s</string>
+    <string name="update_downloading">%1$d%% downloaded</string>
+    <string name="update_failed_title">The update didn\'t download</string>
+    <string name="update_checksum_mismatch">The download didn\'t match the file GitHub published, so it wasn\'t installed. Try again.</string>
+    <string name="update_no_folder">Couldn\'t make a folder for the download. The TV may be out of storage.</string>
+    <string name="update_install_failed">The update couldn\'t be installed: %1$s</string>
+    <string name="update_signature_mismatch">Android refused the update because it isn\'t signed like the TunaHome you have. Install the latest release from GitHub by hand.</string>
+    <string name="update_install_cancelled">The update wasn\'t installed. You can try again from TunaHome settings.</string>
+</resources>

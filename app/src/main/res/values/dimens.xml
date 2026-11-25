@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- TVs crop their edges: nothing important sits closer than this -->
+    <dimen name="safe_side">48dp</dimen>
+    <dimen name="safe_top">27dp</dimen>
+    <dimen name="tile_width">156dp</dimen>
+    <dimen name="tile_height">88dp</dimen>
+    <dimen name="tile_gap">8dp</dimen>
+</resources>

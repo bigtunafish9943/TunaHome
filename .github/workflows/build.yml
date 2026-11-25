@@ -1,0 +1,107 @@
+name: TunaHome
+
+on:
+  push:
+    # Text-only changes don't need a new APK or release
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+  pull_request:
+
+permissions:
+  contents: write
+
+# One build per branch at a time; a newer push waits rather than racing the release
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      # The runner already has the Android SDK; install only what this app builds against.
+      - name: SDK packages
+        run: |
+          set -euo pipefail
+          SDKMANAGER="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
+          yes | "$SDKMANAGER" --licenses > /dev/null || true
+          "$SDKMANAGER" --install "platforms;android-36" "build-tools;35.0.0" > /dev/null
+          echo "ANDROID_SDK_ROOT=$ANDROID_HOME" >> "$GITHUB_ENV"
+
+      - name: Release secrets present
+        id: ks
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          if [ -n "${KEYSTORE_BASE64}" ] && [ -n "${KEYSTORE_PASSWORD}" ] && [ -n "${KEY_ALIAS}" ] && [ -n "${KEY_PASSWORD}" ]; then
+            echo "present=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "present=false" >> "$GITHUB_OUTPUT"
+            echo "Signing secrets are absent. This APK is a sideload test only. It will not upgrade in place to a real release. No GitHub Release." >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Build
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          if [ -n "${KEYSTORE_BASE64}" ] && [ -n "${KEYSTORE_PASSWORD}" ] && [ -n "${KEY_ALIAS}" ] && [ -n "${KEY_PASSWORD}" ]; then
+            echo "$KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/tunahome.keystore"
+            export KEYSTORE_FILE="$RUNNER_TEMP/tunahome.keystore"
+          else
+            keytool -genkeypair -keystore "$RUNNER_TEMP/tunahome-ci.keystore" \
+              -storepass android -alias tunahome -keypass android \
+              -keyalg RSA -keysize 2048 -validity 10000 \
+              -dname "CN=TunaHome CI, O=TunaHome, C=US"
+            export KEYSTORE_FILE="$RUNNER_TEMP/tunahome-ci.keystore"
+            export KEYSTORE_PASSWORD=android
+            export KEY_ALIAS=tunahome
+            export KEY_PASSWORD=android
+          fi
+          chmod +x ./gradlew
+          ./gradlew :app:assembleRelease --stacktrace \
+            -PtunaVersionName=0.1.${{ github.run_number }} \
+            -PtunaVersionCode=${{ github.run_number }}
+
+      # One APK for every device: TunaHome has no processor-specific code
+      - name: Name the APK
+        run: |
+          set -euo pipefail
+          mkdir -p out
+          cp app/build/outputs/apk/release/app-release.apk "out/TunaHome-0.1.${{ github.run_number }}.apk"
+          ls -l out
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: TunaHome-apk
+          path: out/*.apk
+          if-no-files-found: error
+
+      - name: Publish release
+        if: steps.ks.outputs.present == 'true' && github.event_name == 'push' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v0.1.${{ github.run_number }}
+          name: TunaHome 0.1.${{ github.run_number }}
+          files: out/*.apk
+          generate_release_notes: true
+          draft: false
+          prerelease: false

@@ -1,0 +1,61 @@
+apply plugin: 'com.android.application'
+apply plugin: 'org.jetbrains.kotlin.android'
+
+android {
+    namespace 'com.tunastream.home'
+    compileSdk = 36
+
+    defaultConfig {
+        applicationId "com.tunastream.home"
+        minSdk 23
+        targetSdk 34
+
+        // CI passes -PtunaVersionName and -PtunaVersionCode
+        versionName = (project.findProperty("tunaVersionName") ?: "0.1.0").toString()
+        versionCode = Integer.parseInt((project.findProperty("tunaVersionCode") ?: "1").toString())
+    }
+
+    buildFeatures {
+        buildConfig = true
+    }
+
+    // The key never lives in the repo: CI writes it to a temporary file from the repo's secrets
+    signingConfigs {
+        release {
+            def ks = System.getenv("KEYSTORE_FILE")
+            if (ks) {
+                storeFile file(ks)
+                storePassword System.getenv("KEYSTORE_PASSWORD")
+                keyAlias System.getenv("KEY_ALIAS")
+                keyPassword System.getenv("KEY_PASSWORD")
+            }
+        }
+    }
+
+    buildTypes {
+        release {
+            if (System.getenv("KEYSTORE_FILE")) {
+                signingConfig signingConfigs.release
+            }
+            minifyEnabled false
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+
+    lint {
+        abortOnError false
+        checkReleaseBuilds false
+    }
+}
+
+kotlin {
+    jvmToolchain(17)
+}
+
+dependencies {
+    implementation 'androidx.recyclerview:recyclerview:1.4.0'
+}

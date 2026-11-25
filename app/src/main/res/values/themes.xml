@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Every screen. Starts as Deep Sea; TunaTheme lays the chosen theme over it. -->
+    <style name="TunaHome" parent="@android:style/Theme.Material.NoActionBar">
+        <item name="tsNavy">#041431</item>
+        <item name="tsDeep">#0A2350</item>
+        <item name="tsSurface">#081A3A</item>
+        <item name="tsSurfaceBorder">#142F58</item>
+        <item name="tsAccent">#0CC8F6</item>
+        <item name="tsAccentSoft">#8BE6FC</item>
+        <item name="tsBlue">#0B74D1</item>
+        <item name="tsText">#EEF5FB</item>
+        <item name="tsTextSecondary">#9FB3CC</item>
+        <item name="android:windowBackground">@drawable/home_bg</item>
+        <item name="android:colorAccent">?attr/tsAccent</item>
+        <item name="android:alertDialogTheme">@style/TunaDialog</item>
+    </style>
+
+    <style name="TunaDialog" parent="@android:style/Theme.Material.Dialog.Alert">
+        <item name="android:colorAccent">?attr/tsAccent</item>
+        <item name="android:windowBackground">@drawable/dialog_bg</item>
+    </style>
+
+    <style name="RowTitle">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:textColor">?attr/tsText</item>
+        <item name="android:textSize">16sp</item>
+        <item name="android:fontFamily">sans-serif-medium</item>
+        <item name="android:layout_marginTop">18dp</item>
+        <item name="android:layout_marginBottom">2dp</item>
+    </style>
+
+    <style name="HeaderButton">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:background">@drawable/button_bg</item>
+        <item name="android:textColor">@color/button_text</item>
+        <item name="android:textSize">13sp</item>
+        <item name="android:fontFamily">sans-serif-medium</item>
+        <item name="android:paddingStart">16dp</item>
+        <item name="android:paddingEnd">16dp</item>
+        <item name="android:paddingTop">8dp</item>
+        <item name="android:paddingBottom">8dp</item>
+        <item name="android:layout_marginEnd">10dp</item>
+        <item name="android:focusable">true</item>
+        <item name="android:clickable">true</item>
+    </style>
+</resources>

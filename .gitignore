@@ -1,0 +1,17 @@
+*.apk
+*.ap_
+*.aab
+out/
+*.dex
+*.class
+local.properties
+key/
+*.keystore
+*.jks
+Thumbs.db
+.DS_Store
+.idea
+.gradle
+.kotlin
+build/
+*.iml

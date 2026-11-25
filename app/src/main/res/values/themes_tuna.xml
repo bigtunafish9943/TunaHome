@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Themes, named the same as in TunaStream and TunaReceive. Laid over each screen by TunaTheme. -->
+    <style name="TunaPaletteDeepSea">
+        <item name="tsNavy">#041431</item>
+        <item name="tsDeep">#0A2350</item>
+        <item name="tsSurface">#081A3A</item>
+        <item name="tsSurfaceBorder">#142F58</item>
+        <item name="tsAccent">#0CC8F6</item>
+        <item name="tsAccentSoft">#8BE6FC</item>
+        <item name="tsBlue">#0B74D1</item>
+        <item name="tsText">#EEF5FB</item>
+        <item name="tsTextSecondary">#9FB3CC</item>
+    </style>
+    <style name="TunaPaletteReef">
+        <item name="tsNavy">#1A0A12</item>
+        <item name="tsDeep">#3A1426</item>
+        <item name="tsSurface">#26101C</item>
+        <item name="tsSurfaceBorder">#4A2036</item>
+        <item name="tsAccent">#FF7A59</item>
+        <item name="tsAccentSoft">#FFB8A3</item>
+        <item name="tsBlue">#E0457B</item>
+        <item name="tsText">#FCEFF3</item>
+        <item name="tsTextSecondary">#CDA9B6</item>
+    </style>
+    <style name="TunaPaletteKelp">
+        <item name="tsNavy">#03140E</item>
+        <item name="tsDeep">#0C3324</item>
+        <item name="tsSurface">#082319</item>
+        <item name="tsSurfaceBorder">#17402F</item>
+        <item name="tsAccent">#5EE89A</item>
+        <item name="tsAccentSoft">#B2F6CF</item>
+        <item name="tsBlue">#23A86A</item>
+        <item name="tsText">#EEFAF3</item>
+        <item name="tsTextSecondary">#A2C6B5</item>
+    </style>
+    <style name="TunaPaletteMidnight">
+        <item name="tsNavy">#07060F</item>
+        <item name="tsDeep">#1C1436</item>
+        <item name="tsSurface">#120E24</item>
+        <item name="tsSurfaceBorder">#2A2048</item>
+        <item name="tsAccent">#B08CFF</item>
+        <item name="tsAccentSoft">#DCCBFF</item>
+        <item name="tsBlue">#7651E0</item>
+        <item name="tsText">#F4F1FC</item>
+        <item name="tsTextSecondary">#B2AACB</item>
+    </style>
+    <style name="TunaPaletteGold">
+        <item name="tsNavy">#120D04</item>
+        <item name="tsDeep">#33260A</item>
+        <item name="tsSurface">#211806</item>
+        <item name="tsSurfaceBorder">#43330F</item>
+        <item name="tsAccent">#FFC23D</item>
+        <item name="tsAccentSoft">#FFE2A3</item>
+        <item name="tsBlue">#E3892A</item>
+        <item name="tsText">#FCF7EA</item>
+        <item name="tsTextSecondary">#CABD9E</item>
+    </style>
+    <!-- Seasonal themes -->
+    <style name="TunaPaletteHalloween">
+        <item name="tsNavy">#120818</item>
+        <item name="tsDeep">#2E1238</item>
+        <item name="tsSurface">#1E0D26</item>
+        <item name="tsSurfaceBorder">#3D1A47</item>
+        <item name="tsAccent">#FF8A1F</item>
+        <item name="tsAccentSoft">#FFC48F</item>
+        <item name="tsBlue">#9B5CFF</item>
+        <item name="tsText">#FBF2FF</item>
+        <item name="tsTextSecondary">#C4AFCC</item>
+    </style>
+    <style name="TunaPaletteAutumn">
+        <item name="tsNavy">#140B05</item>
+        <item name="tsDeep">#3A1F0C</item>
+        <item name="tsSurface">#24140A</item>
+        <item name="tsSurfaceBorder">#4A2A14</item>
+        <item name="tsAccent">#FF9F43</item>
+        <item name="tsAccentSoft">#FFD3A6</item>
+        <item name="tsBlue">#C0502B</item>
+        <item name="tsText">#FCF3EA</item>
+        <item name="tsTextSecondary">#CFB49C</item>
+    </style>
+    <style name="TunaPaletteWinter">
+        <item name="tsNavy">#06121F</item>
+        <item name="tsDeep">#15304A</item>
+        <item name="tsSurface">#0C1E31</item>
+        <item name="tsSurfaceBorder">#22405E</item>
+        <item name="tsAccent">#BDE8FF</item>
+        <item name="tsAccentSoft">#E6F6FF</item>
+        <item name="tsBlue">#6FB6E8</item>
+        <item name="tsText">#F3FAFF</item>
+        <item name="tsTextSecondary">#A9C1D6</item>
+    </style>
+    <style name="TunaPaletteSummer">
+        <item name="tsNavy">#03222A</item>
+        <item name="tsDeep">#0B4552</item>
+        <item name="tsSurface">#06323C</item>
+        <item name="tsSurfaceBorder">#145866</item>
+        <item name="tsAccent">#FFD23F</item>
+        <item name="tsAccentSoft">#FFE995</item>
+        <item name="tsBlue">#FF7A59</item>
+        <item name="tsText">#F2FCFF</item>
+        <item name="tsTextSecondary">#A7CCD3</item>
+    </style>
+</resources>

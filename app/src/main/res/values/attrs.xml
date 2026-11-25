@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- The colours every theme sets; see themes_tuna.xml -->
+    <attr name="tsNavy" format="color" />
+    <attr name="tsDeep" format="color" />
+    <attr name="tsSurface" format="color" />
+    <attr name="tsSurfaceBorder" format="color" />
+    <attr name="tsAccent" format="color" />
+    <attr name="tsAccentSoft" format="color" />
+    <attr name="tsBlue" format="color" />
+    <attr name="tsText" format="color" />
+    <attr name="tsTextSecondary" format="color" />
+</resources>
