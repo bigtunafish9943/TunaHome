@@ -20,9 +20,9 @@
     <string name="menu_add_favourite">Add to favourites</string>
     <string name="menu_remove_favourite">Remove from favourites</string>
     <string name="menu_move">Move</string>
-    <string name="move_hint">Press left or right to move it. Press select when it\'s where you want it.</string>
-    <string name="menu_change_picture">Change its picture</string>
-    <string name="menu_own_picture">Use its own picture again</string>
+    <string name="move_hint">Use the D-pad to move it. Press select to put it down.</string>
+    <string name="menu_change_picture">Change icon</string>
+    <string name="menu_own_picture">Use its own icon again</string>
     <string name="menu_hide">Hide from TunaHome</string>
     <string name="menu_app_info">App info</string>
     <string name="menu_uninstall">Uninstall</string>
@@ -76,7 +76,7 @@
     <string name="font_mono">Typewriter</string>
     <string name="font_casual">Handwritten</string>
     <string name="set_text_size">Text size</string>
-    <string name="set_tile_size">App picture size</string>
+    <string name="set_tile_size">Icon size</string>
     <string name="size_small">Small</string>
     <string name="size_medium">Medium</string>
     <string name="size_large">Large</string>
@@ -102,7 +102,7 @@
     <string name="page_colours">Theme and colours</string>
     <string name="page_sections">Sections</string>
     <string name="page_text">Text</string>
-    <string name="page_pictures">App pictures</string>
+    <string name="page_pictures">Icons</string>
     <string name="page_top_bar">Top of the screen</string>
     <string name="page_apps">Apps</string>
     <string name="page_home_button">Home button</string>
@@ -236,6 +236,8 @@
     <string name="section_delete">Delete this section</string>
     <string name="section_delete_confirm">Delete this section? The apps in it stay on the TV and in the other sections.</string>
     <string name="no_sections">Every section is hidden or empty. Show one in TunaHome settings, Sections.</string>
+    <string name="set_double_press">Press select twice to move an app</string>
+    <string name="double_press_on">On. Apps open a third of a second after you press select, in case a second press follows.</string>
     <string name="set_row_titles">Section names</string>
     <string name="titles_normal">Shown</string>
     <string name="titles_bold">Shown in bold</string>
@@ -270,14 +272,14 @@
     <string name="own_font_failed">That file isn\'t a font Android can use. Try a .ttf or .otf file.</string>
 
     <!-- App pictures -->
-    <string name="set_tile_style">Picture for each app</string>
-    <string name="tile_style_banner">Its TV picture (or icon)</string>
-    <string name="tile_style_icon">Its icon</string>
-    <string name="tile_style_icon_name">Its icon and name</string>
+    <string name="set_tile_style">Icon style</string>
+    <string name="tile_style_banner">TV picture (or icon)</string>
+    <string name="tile_style_icon">Icon</string>
+    <string name="tile_style_icon_name">Icon and name</string>
     <string name="set_icon_pack">Icon pack</string>
     <string name="icon_pack_none">The apps\' own icons</string>
     <string name="icon_pack_none_installed">None installed</string>
-    <string name="icon_pack_how">Icon packs are apps that redraw every app\'s icon in one style. Install one made for phone launchers (most work, such as those for Nova Launcher), then choose it here. Choose \"Its icon\" above to see them on every app.</string>
+    <string name="icon_pack_how">Icon packs are apps that redraw every app\'s icon in one style. Install one made for phone launchers (most work, such as those for Nova Launcher), then choose it here. Set Icon style to \"Icon\" to see them on every app.</string>
     <string name="pack_get">Get icon packs</string>
     <string name="pack_get_summary">Free icon packs, downloaded from F-Droid and installed for you.</string>
     <string name="pack_entry">%1$s: %2$s</string>
@@ -313,9 +315,9 @@
     <string name="pack_mbe">playful, chunky icons</string>
     <string name="pack_paper">flat icons in the Paper style</string>
     <string name="pack_materialos">Material Design icons</string>
-    <string name="picture_title">Picture for %1$s</string>
-    <string name="picture_from_tv">Choose a picture on the TV</string>
-    <string name="picture_address">Use a picture from a web address</string>
+    <string name="picture_title">Icon for %1$s</string>
+    <string name="picture_from_tv">Choose an image on the TV</string>
+    <string name="picture_address">Use an image from a web address</string>
     <string name="picture_address_summary">Paste or type the address of a picture on the internet. No file manager needed.</string>
     <string name="picture_fetching">Fetching the picture…</string>
     <string name="picture_address_failed">That address didn\'t give a picture. Check it starts with https:// and ends in a picture, such as .jpg or .png.</string>
@@ -353,8 +355,8 @@
     <string name="outline_white">White</string>
     <string name="outline_none">None</string>
     <string name="set_dim_others">Dim the other apps</string>
-    <string name="set_app_picture">One app\'s picture</string>
-    <string name="set_app_picture_summary">Hold select on an app and choose \"Change its picture\".</string>
+    <string name="set_app_picture">One app\'s icon</string>
+    <string name="set_app_picture_summary">Hold select on an app and choose \"Change icon\".</string>
 
     <!-- Top of the screen -->
     <string name="set_show_brand">Name and logo</string>

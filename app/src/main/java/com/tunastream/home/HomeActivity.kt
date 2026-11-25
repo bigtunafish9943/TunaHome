@@ -150,6 +150,8 @@ class HomeActivity : BaseActivity() {
     }
 
     override fun onPause() {
+        // Leaving mid-move: keep the app where it was put
+        sections.forEach { it.adapter.finishMove() }
         idleHandler.removeCallbacks(goIdle)
         if (idle) {
             leaveIdle(false)
@@ -187,8 +189,17 @@ class HomeActivity : BaseActivity() {
         findViewById<View>(R.id.backdropShade).animate().alpha(shadeAlpha).setDuration(time).start()
     }
 
-    /** Any button wakes the home screen; the press that wakes it does nothing else. */
+    /**
+     * Any button wakes the home screen; the press that wakes it does nothing else. While an app
+     * is picked up, the D-pad, select and Back move it and put it down.
+     */
     override fun dispatchKeyEvent(event: KeyEvent): Boolean {
+        sections.firstOrNull { it.adapter.isMoving }?.let { section ->
+            scheduleIdle()
+            if (section.adapter.moveKey(event)) {
+                return true
+            }
+        }
         if (event.action == KeyEvent.ACTION_DOWN) {
             if (idle) {
                 leaveIdle(true)
@@ -426,8 +437,18 @@ class HomeActivity : BaseActivity() {
                 lines > 1 -> GridLayoutManager(this, lines, GridLayoutManager.HORIZONTAL, false)
                 else -> LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false)
             }
+            adapter.onMoveStart = {
+                Toast.makeText(this, R.string.move_hint, Toast.LENGTH_SHORT).show()
+            }
             list.adapter = adapter
-            list.itemAnimator = null
+            // Short slides when apps swap places while one is being moved
+            list.itemAnimator = androidx.recyclerview.widget.DefaultItemAnimator().apply {
+                moveDuration = 110
+                changeDuration = 0
+                addDuration = 0
+                removeDuration = 0
+                supportsChangeAnimations = false
+            }
             Look.styleText(view)
             holder.addView(view)
             sections.add(Section(row, view, list, adapter))
@@ -570,11 +591,7 @@ class HomeActivity : BaseActivity() {
         // own order, newest first.
         if (section != null && section.adapter.appCount > 1 && row.kind != Rows.RECENT) {
             labels.add(getString(R.string.menu_move))
-            actions.add {
-                if (section.adapter.startMove(app.pkg)) {
-                    Toast.makeText(this, R.string.move_hint, Toast.LENGTH_LONG).show()
-                }
-            }
+            actions.add { section.adapter.startMove(app.pkg) }
         }
 
         if (app.pkg in favourites) {

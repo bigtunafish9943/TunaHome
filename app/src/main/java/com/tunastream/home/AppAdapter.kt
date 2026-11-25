@@ -16,8 +16,10 @@ import androidx.recyclerview.widget.RecyclerView
  * line across before starting the next, like reading. Select opens an app. Holding select, or
  * pressing Menu on a remote or X / Y on a controller, opens the app's menu.
  *
- * An app can be picked up with [startMove]: the D-pad then moves it, and select or Back puts it
- * down, reporting the section's new order through [onMoved].
+ * An app is picked up by pressing select twice quickly, or with Move in its menu. While it is
+ * picked up the home screen hands every D-pad press to [moveKey]: each press swaps it with the
+ * app beside, above or below it, and select or Back puts it down, reporting the section's new
+ * order through [onMoved].
  */
 class AppAdapter(
     private val tiles: TileStyle,
@@ -40,8 +42,17 @@ class AppAdapter(
     /** The app being moved, if any. */
     private var movingPkg: String? = null
 
-    /** True while a moved app's tile is being found again after the section was redrawn. */
-    private var shifting = false
+    val isMoving: Boolean
+        get() = movingPkg != null
+
+    /** Called when an app is picked up, so the home screen can say how to move it. */
+    var onMoveStart: (() -> Unit)? = null
+
+    // Double press: the first press waits a moment in case a second one follows
+    private val handler = android.os.Handler(android.os.Looper.getMainLooper())
+    private var pendingPkg: String? = null
+    private var pendingAt = 0L
+    private var pendingOpen: Runnable? = null
 
     init {
         // Lets the list keep you on the same app when it is rebuilt
@@ -101,49 +112,134 @@ class AppAdapter(
     /** Picks an app up so the D-pad moves it. */
     fun startMove(pkg: String): Boolean {
         val position = positionOf(pkg)
-        val holder = recycler?.findViewHolderForAdapterPosition(position) as? Holder ?: return false
+        if (position < 0 || items.size < 2) {
+            return false
+        }
         movingPkg = pkg
-        holder.itemView.requestFocus()
-        holder.refresh()
+        notifyItemChanged(position)
+        focusMoving()
+        onMoveStart?.invoke()
         return true
     }
 
-    private fun shift(pkg: String, by: Int) {
-        val from = items.indexOfFirst { it.pkg == pkg }
+    /** Puts the app down where it is and saves the order. */
+    fun finishMove() {
+        val was = movingPkg ?: return
+        movingPkg = null
+        val position = positionOf(was)
+        if (position >= 0) {
+            notifyItemChanged(position)
+        }
+        onMoved(items.map { it.pkg })
+        // The tile is redrawn: put the focus back on it
+        recycler?.let { list -> list.post { list.layoutManager?.findViewByPosition(position)?.requestFocus() } }
+    }
+
+    /**
+     * A key while an app is picked up. Returns true when the key was used for moving, which is
+     * every D-pad, select and Back press, so nothing else happens until the app is put down.
+     */
+    fun moveKey(event: KeyEvent): Boolean {
+        if (movingPkg == null) {
+            return false
+        }
+        val down = event.action == KeyEvent.ACTION_DOWN
+        val across = if (lines == Rows.WRAP) wrapColumns else columns
+        val grid = sideways || lines == Rows.WRAP
+        when (event.keyCode) {
+            KeyEvent.KEYCODE_DPAD_LEFT -> if (down) moveBy(-1)
+            KeyEvent.KEYCODE_DPAD_RIGHT -> if (down) moveBy(1)
+            KeyEvent.KEYCODE_DPAD_UP -> if (down && grid) moveBy(-across)
+            KeyEvent.KEYCODE_DPAD_DOWN -> if (down && grid) moveBy(across)
+            KeyEvent.KEYCODE_DPAD_CENTER, KeyEvent.KEYCODE_ENTER, KeyEvent.KEYCODE_NUMPAD_ENTER,
+            KeyEvent.KEYCODE_BUTTON_A, KeyEvent.KEYCODE_BACK, KeyEvent.KEYCODE_BUTTON_B,
+            KeyEvent.KEYCODE_ESCAPE -> if (!down) finishMove()
+            else -> return false
+        }
+        return true
+    }
+
+    /** Swaps the moving app with the one [by] places away, if there is one. */
+    private fun moveBy(by: Int) {
+        val from = items.indexOfFirst { it.pkg == movingPkg }
         val to = from + by
         if (from < 0 || to < 0 || to >= items.size) {
             return
         }
-        items.add(to, items.removeAt(from))
-        if (!sideways) {
-            notifyItemMoved(from, to)
+        java.util.Collections.swap(items, from, to)
+        val fromPosition = positionOfApp(from)
+        val toPosition = positionOfApp(to)
+        if (Math.abs(by) == 1 && !sideways) {
+            // Neighbours in a single line: slide them past each other
+            notifyItemMoved(fromPosition, toPosition)
         } else {
-            notifyDataSetChanged()
+            notifyItemChanged(fromPosition)
+            notifyItemChanged(toPosition)
         }
-        val position = positionOfApp(to)
+        focusMoving()
+    }
+
+    /** Puts the focus on the moving app's tile, wherever it now is, once it has been drawn. */
+    private fun focusMoving() {
         val list = recycler ?: return
-        shifting = true
+        val position = positionOf(movingPkg ?: return)
         list.scrollToPosition(position)
-        // Twice: once for the redraw to happen, once to find the tile in its new place
         list.post {
-            list.post {
-                list.layoutManager?.findViewByPosition(position)?.requestFocus()
-                shifting = false
+            val now = positionOf(movingPkg ?: return@post)
+            val view = list.layoutManager?.findViewByPosition(now)
+            if (view != null) {
+                view.requestFocus()
+                keepInView(view)
+            } else {
+                // Not drawn yet (it scrolled into view): try once more after the next layout
+                list.post { list.layoutManager?.findViewByPosition(now)?.requestFocus() }
             }
         }
     }
 
-    private fun finishMove() {
-        if (movingPkg == null) {
+    /** Slides a sideways list so the app you're on sits where the viewer chose. */
+    private fun keepInView(v: View) {
+        if (lines == Rows.WRAP || tiles.scroll == Look.SCROLL_FREE) {
             return
         }
-        val was = movingPkg
-        movingPkg = null
-        recycler?.let { list ->
-            val position = positionOf(was ?: "")
-            (list.findViewHolderForAdapterPosition(position) as? Holder)?.refresh()
+        val list = v.parent as? RecyclerView ?: return
+        val target = if (tiles.scroll == Look.SCROLL_CENTRE) {
+            (list.width - v.width) / 2
+        } else {
+            list.paddingLeft + tiles.gap
         }
-        onMoved(items.map { it.pkg })
+        list.smoothScrollBy(v.left - target, 0)
+    }
+
+    /** Select on an app: open it, unless a second press quickly follows, which picks it up. */
+    private fun pressed(app: AppEntry) {
+        if (!tiles.doublePress) {
+            onOpen(app)
+            return
+        }
+        val now = android.os.SystemClock.uptimeMillis()
+        if (pendingPkg == app.pkg && now - pendingAt < DOUBLE_PRESS_MS) {
+            pendingOpen?.let { handler.removeCallbacks(it) }
+            pendingOpen = null
+            pendingPkg = null
+            startMove(app.pkg)
+            return
+        }
+        pendingOpen?.let { handler.removeCallbacks(it) }
+        pendingPkg = app.pkg
+        pendingAt = now
+        val open = Runnable {
+            pendingPkg = null
+            pendingOpen = null
+            onOpen(app)
+        }
+        pendingOpen = open
+        handler.postDelayed(open, DOUBLE_PRESS_MS)
+    }
+
+    companion object {
+        /** How quickly the second press has to follow to count as a double press. */
+        const val DOUBLE_PRESS_MS = 320L
     }
 
     override fun onAttachedToRecyclerView(recyclerView: RecyclerView) {
@@ -218,23 +314,24 @@ class AppAdapter(
             card.clipToOutline = true
 
             view.setOnFocusChangeListener { v, focused ->
-                if (!focused && moving && !shifting) {
-                    // Something else took the focus mid-move: put the app down where it is
-                    finishMove()
-                }
                 showFocus(focused, true)
-                if (focused && !moving) {
+                if (focused) {
                     keepInView(v)
                 }
             }
-            view.setOnClickListener { entry?.let(onOpen) }
+            view.setOnClickListener {
+                if (movingPkg == null) {
+                    entry?.let { pressed(it) }
+                }
+            }
             view.setOnLongClickListener {
                 entry?.let(onMenu)
                 true
             }
             view.setOnKeyListener { _, keyCode, event ->
-                if (moving) {
-                    moveKey(keyCode, event)
+                if (movingPkg != null) {
+                    // The home screen sends moving keys to the section; ignore anything else
+                    false
                 } else {
                     val menuKey = keyCode == KeyEvent.KEYCODE_MENU ||
                         keyCode == KeyEvent.KEYCODE_BUTTON_Y ||
@@ -245,20 +342,6 @@ class AppAdapter(
                     menuKey
                 }
             }
-        }
-
-        /** Slides a sideways list so the app you're on sits where the viewer chose. */
-        private fun keepInView(v: View) {
-            if (lines == Rows.WRAP || tiles.scroll == Look.SCROLL_FREE) {
-                return
-            }
-            val list = v.parent as? RecyclerView ?: return
-            val target = if (tiles.scroll == Look.SCROLL_CENTRE) {
-                (list.width - v.width) / 2
-            } else {
-                list.paddingLeft + tiles.gap
-            }
-            list.smoothScrollBy(v.left - target, 0)
         }
 
         fun bind(app: AppEntry?) {
@@ -297,7 +380,7 @@ class AppAdapter(
             val name = entry?.label ?: ""
             // Arrows either side of the name show that the D-pad now moves the app
             label.text = if (moving) "◀  $name  ▶" else name
-            ring.visibility = if (focused) View.VISIBLE else View.INVISIBLE
+            ring.visibility = if (focused || moving) View.VISIBLE else View.INVISIBLE
             val showName = moving || when (tiles.names) {
                 Look.NAMES_ALWAYS -> true
                 Look.NAMES_NEVER -> false
@@ -312,8 +395,8 @@ class AppAdapter(
             if (tiles.style == Look.TILE_ICON_NAME && !moving) {
                 label.visibility = View.GONE
             }
-            itemView.alpha = if (tiles.dimOthers && !focused) 0.55f else 1f
-            val scale = if (!focused) 1f else if (moving) maxOf(tiles.zoom, 1.1f) + 0.08f else tiles.zoom
+            itemView.alpha = if (tiles.dimOthers && !focused && !moving) 0.55f else 1f
+            val scale = if (moving) maxOf(tiles.zoom, 1.1f) + 0.08f else if (focused) tiles.zoom else 1f
             if (animate) {
                 itemView.animate().scaleX(scale).scaleY(scale).setDuration(120).start()
             } else {
@@ -321,26 +404,6 @@ class AppAdapter(
                 itemView.scaleX = scale
                 itemView.scaleY = scale
             }
-        }
-
-        /** While an app is picked up, the D-pad moves it instead of moving around the screen. */
-        private fun moveKey(keyCode: Int, event: KeyEvent): Boolean {
-            val down = event.action == KeyEvent.ACTION_DOWN
-            val pkg = entry?.pkg ?: return false
-            val across = if (lines == Rows.WRAP) wrapColumns else columns
-            val multiLine = sideways || lines == Rows.WRAP
-            when (keyCode) {
-                KeyEvent.KEYCODE_DPAD_LEFT -> if (down) shift(pkg, -1)
-                KeyEvent.KEYCODE_DPAD_RIGHT -> if (down) shift(pkg, 1)
-                KeyEvent.KEYCODE_DPAD_UP -> if (down && multiLine) shift(pkg, -across)
-                KeyEvent.KEYCODE_DPAD_DOWN -> if (down && multiLine) shift(pkg, across)
-                KeyEvent.KEYCODE_DPAD_CENTER, KeyEvent.KEYCODE_ENTER,
-                KeyEvent.KEYCODE_NUMPAD_ENTER, KeyEvent.KEYCODE_BUTTON_A,
-                KeyEvent.KEYCODE_BACK, KeyEvent.KEYCODE_BUTTON_B, KeyEvent.KEYCODE_ESCAPE ->
-                    if (!down) finishMove()
-                else -> return false
-            }
-            return true
         }
     }
 }

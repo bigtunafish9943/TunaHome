@@ -16,6 +16,7 @@ class TileStyle(context: Context) {
     val zoom = Look.focusZoom(context)
     val dimOthers = Look.DIM_OTHERS.get(context)
     val scroll = Look.ROW_SCROLL.get(context)
+    val doublePress = Look.DOUBLE_PRESS.get(context)
     val iconSize: Int
     private val corner: Float
     private val cardColour: Int

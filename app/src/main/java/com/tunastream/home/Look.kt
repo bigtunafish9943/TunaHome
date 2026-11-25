@@ -195,6 +195,9 @@ object Look {
         intArrayOf(R.string.scroll_start, R.string.scroll_centre, R.string.scroll_free)
     )
 
+    /** Select twice quickly picks an app up to move it. Opening then waits a moment for a second press. */
+    val DOUBLE_PRESS = Switch("look_double_press", true)
+
     val ROW_GAP = Choice(
         "look_row_gap", 1,
         intArrayOf(R.string.gap_tight, R.string.gap_normal, R.string.gap_wide, R.string.gap_widest)

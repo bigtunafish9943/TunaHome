@@ -424,6 +424,7 @@ class SettingsActivity : BaseActivity() {
             }
         }
         heading(R.string.heading_all_sections)
+        switch(R.string.set_double_press, Look.DOUBLE_PRESS, R.string.double_press_on, R.string.off)
         choice(R.string.set_row_titles, Look.ROW_TITLES)
         choice(R.string.set_row_gap, Look.ROW_GAP)
         choice(R.string.set_row_scroll, Look.ROW_SCROLL)
