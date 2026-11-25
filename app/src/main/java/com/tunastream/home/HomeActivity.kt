@@ -68,6 +68,53 @@ class HomeActivity : BaseActivity() {
     private val fadeWhenIdle = ArrayList<View>()
 
     private var networkCallback: ConnectivityManager.NetworkCallback? = null
+
+    // Shortcuts pressed on the home screen
+    private var replaying = false
+    private val hotkeys = HotkeyEngine(
+        { Hotkeys.all(this).filter { !it.everywhere } },
+        { HotkeyActions.run(this, it.action, it.arg, this) },
+        { code, taps -> replay(code, taps) },
+    )
+
+    /** A press that wasn't a shortcut after all: let it do its ordinary job. */
+    private fun replay(code: Int, taps: Int) {
+        replaying = true
+        try {
+            repeat(taps) {
+                val now = android.os.SystemClock.uptimeMillis()
+                dispatchKeyEvent(KeyEvent(now, now, KeyEvent.ACTION_DOWN, code, 0))
+                dispatchKeyEvent(KeyEvent(now, now, KeyEvent.ACTION_UP, code, 0))
+            }
+        } finally {
+            replaying = false
+        }
+    }
+
+    /** A shortcut about the home screen itself. */
+    fun hotkey(action: String, arg: String?) {
+        when (action) {
+            HotkeyActions.HOME_TOP -> goToTop()
+            HotkeyActions.SIDE_MENU -> {
+                refreshMenu()
+                sideMenu.open(null)
+            }
+            HotkeyActions.SECTION -> sections.firstOrNull { it.row.id == arg }?.let { goToSection(it) }
+            HotkeyActions.NEXT_BACKGROUND -> backdrop.skip()
+            HotkeyActions.IDLE -> if (!idle) {
+                idleHandler.removeCallbacks(goIdle)
+                enterIdle()
+            }
+        }
+    }
+
+    /** A shortcut pressed elsewhere that needs the home screen: do it once it shows. */
+    private fun hotkeyFromIntent(intent: Intent?) {
+        val action = intent?.getStringExtra(HotkeyActions.EXTRA_ACTION) ?: return
+        val arg = intent.getStringExtra(HotkeyActions.EXTRA_ARG)
+        intent.removeExtra(HotkeyActions.EXTRA_ACTION)
+        scroll.postDelayed({ if (!isDestroyed) hotkey(action, arg) }, 250)
+    }
     private lateinit var sideMenu: SideMenu
 
     /** The app whose picture is being chosen, while the TV's picture chooser is open. */
@@ -126,6 +173,7 @@ class HomeActivity : BaseActivity() {
 
         show()
         reload()
+        hotkeyFromIntent(intent)
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
@@ -240,6 +288,7 @@ class HomeActivity : BaseActivity() {
 
     override fun onPause() {
         weatherHandler.removeCallbacks(weatherTick)
+        hotkeys.reset()
         // Leaving mid-move: keep the app where it was put
         sections.forEach { it.adapter.finishMove() }
         sideMenu.close(false)
@@ -285,6 +334,12 @@ class HomeActivity : BaseActivity() {
      * is picked up, the D-pad, select and Back move it and put it down.
      */
     override fun dispatchKeyEvent(event: KeyEvent): Boolean {
+        if (!replaying && !idle && !sideMenu.isOpen && sections.none { it.adapter.isMoving } &&
+            hasWindowFocus() && hotkeys.onKey(event)
+        ) {
+            scheduleIdle()
+            return true
+        }
         if (sideMenu.isOpen) {
             scheduleIdle()
             if (sideMenu.key(event)) {
@@ -409,6 +464,7 @@ class HomeActivity : BaseActivity() {
     /** Home pressed while already here: back to the top. */
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
+        hotkeyFromIntent(intent)
         if (HomeButtonService.ACTION_HOME_PRESSED == intent.action && hasWindowFocus()) {
             goToTop()
         }

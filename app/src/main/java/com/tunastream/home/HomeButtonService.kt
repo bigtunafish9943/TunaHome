@@ -24,6 +24,16 @@ import android.view.accessibility.AccessibilityEvent
 class HomeButtonService : AccessibilityService() {
     private var lastReplaced = 0L
 
+    /** Shortcuts on Home and Back that work everywhere. */
+    private val hotkeys = HotkeyEngine(
+        { Hotkeys.all(this).filter { it.everywhere } },
+        { HotkeyActions.run(this, it.action, it.arg, null) },
+        { code, _ ->
+            // Not a shortcut after all: do what the button normally does
+            if (code == KeyEvent.KEYCODE_HOME) showHome() else performGlobalAction(AccessibilityService.GLOBAL_ACTION_BACK)
+        },
+    )
+
     /** Opens the app the viewer chose when the TV wakes up. */
     private val wakeReceiver = object : android.content.BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
@@ -36,6 +46,7 @@ class HomeButtonService : AccessibilityService() {
 
     override fun onServiceConnected() {
         super.onServiceConnected()
+        running = this
         registerReceiver(wakeReceiver, android.content.IntentFilter(Intent.ACTION_SCREEN_ON))
         // Switched on by Android just after the TV started: that's a wake-up too
         if (SystemClock.elapsedRealtime() < 3 * 60 * 1000) {
@@ -44,6 +55,10 @@ class HomeButtonService : AccessibilityService() {
     }
 
     override fun onDestroy() {
+        if (running === this) {
+            running = null
+        }
+        hotkeys.reset()
         try {
             unregisterReceiver(wakeReceiver)
         } catch (e: Exception) {
@@ -65,6 +80,11 @@ class HomeButtonService : AccessibilityService() {
     }
 
     override fun onKeyEvent(event: KeyEvent): Boolean {
+        if (event.keyCode == KeyEvent.KEYCODE_HOME || event.keyCode == KeyEvent.KEYCODE_BACK) {
+            if (hotkeys.onKey(event)) {
+                return true
+            }
+        }
         if (event.keyCode != KeyEvent.KEYCODE_HOME) {
             return false
         }
@@ -111,6 +131,10 @@ class HomeButtonService : AccessibilityService() {
     companion object {
         private const val TAG = "TunaHome"
         const val ACTION_HOME_PRESSED = "com.tunastream.home.HOME_PRESSED"
+
+        /** The service while it is switched on, for shortcuts that need it (Recent apps, Sleep...). */
+        @Volatile
+        var running: HomeButtonService? = null
 
         /**
          * Only these are ever replaced. A fixed list on purpose: the TV's Settings app also

@@ -196,6 +196,13 @@ class Backdrop(
         }
     }
 
+    /** Moves on to the next video or picture now (a shortcut). */
+    fun skip() {
+        if (running && items.size > 1) {
+            next()
+        }
+    }
+
     /** Stops everything and lets go of the video player. Call when another app comes in front. */
     fun stop() {
         running = false
