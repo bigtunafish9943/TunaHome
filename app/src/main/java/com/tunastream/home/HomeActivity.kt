@@ -822,16 +822,35 @@ class HomeActivity : BaseActivity() {
     private fun show() {
         val hidden = Prefs.hidden(this)
         val visible = apps.filter { it.pkg !in hidden }
-        val byPackage = visible.associateBy { it.pkg }
+        val everyApp = visible.associateBy { it.pkg }
+        // Apps in a folder show in the folder instead of their section
+        val folders = Folders.load(this)
+        val inFolder = folders.flatMap { it.apps }.toSet()
+        val folderCards = folders.map { Folders.entry(this, it, everyApp) }
+        val byPackage = HashMap<String, AppEntry>()
+        visible.filter { it.pkg !in inFolder }.forEach { byPackage[it.pkg] = it }
+        folderCards.forEach { byPackage[it.pkg] = it }
+        val loose = visible.filter { it.pkg !in inFolder }
         // Custom rows may have been changed from another screen: read them fresh
         val rows = Rows.load(this).associateBy { it.id }
+        // A folder sits in the section that names it; TV apps holds the rest
+        fun foldersFor(row: Rows.Row): List<AppEntry> = folderCards.filter { card ->
+            val key = card.pkg
+            val named = Prefs.favourites(this).contains(key) || rows.values.any { it.custom && key in it.apps } ||
+                Prefs.order(this, Rows.MOBILE).contains(key)
+            when (row.kind) {
+                Rows.TV -> !named || Prefs.order(this, row.id).contains(key)
+                Rows.MOBILE -> Prefs.order(this, row.id).contains(key)
+                else -> false
+            }
+        }
 
         for (section in sections) {
             val list = when (section.row.kind) {
                 Rows.FAVOURITES -> Prefs.favourites(this).mapNotNull { byPackage[it] }
-                Rows.TV -> ordered(visible.filter { it.tv }, Prefs.order(this, section.row.id))
-                Rows.MOBILE -> ordered(visible.filter { !it.tv }, Prefs.order(this, section.row.id))
-                Rows.RECENT -> Prefs.recent(this).mapNotNull { byPackage[it] }
+                Rows.TV -> ordered(loose.filter { it.tv } + foldersFor(section.row), Prefs.order(this, section.row.id))
+                Rows.MOBILE -> ordered(loose.filter { !it.tv } + foldersFor(section.row), Prefs.order(this, section.row.id))
+                Rows.RECENT -> Prefs.recent(this).mapNotNull { everyApp[it] }
                 Rows.WATCH_NEXT -> watchNext
                 else -> (rows[section.row.id]?.apps ?: section.row.apps).mapNotNull { byPackage[it] }
             }
@@ -898,7 +917,111 @@ class HomeActivity : BaseActivity() {
     }
 
     private fun open(app: AppEntry) {
+        if (app.isFolder) {
+            openFolder(app.pkg.removePrefix(Folders.PREFIX))
+            return
+        }
         Launch.open(this, app) { reload() }
+    }
+
+    // ------------------------------------------------------------------ folders
+
+    /** A folder's apps in a small grid over the home screen. */
+    private fun openFolder(id: String) {
+        val folder = Folders.load(this).firstOrNull { it.id == id } ?: return
+        val byPackage = apps.associateBy { it.pkg }
+        val inside = folder.apps.mapNotNull { byPackage[it] }
+        val list = RecyclerView(this)
+        val across = minOf(5, maxOf(2, inside.size))
+        lateinit var dialog: AlertDialog
+        val adapter = AppAdapter(tiles, Rows.WRAP, { app ->
+            dialog.dismiss()
+            Launch.open(this, app) { reload() }
+        }, { app ->
+            AlertDialog.Builder(this)
+                .setTitle(app.label)
+                .setItems(arrayOf(getString(R.string.folder_take_out), getString(R.string.menu_app_info))) { _, which ->
+                    if (which == 0) {
+                        Folders.update(this, id) { it.apps.remove(app.pkg) }
+                        dialog.dismiss()
+                        show()
+                    } else {
+                        startOrExplain(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:" + app.pkg)))
+                    }
+                }
+                .show()
+        }, { order -> Folders.update(this, id) { it.apps.clear(); it.apps.addAll(order) }; show() })
+        adapter.wrapColumns = across
+        list.layoutManager = GridLayoutManager(this, across)
+        list.adapter = adapter
+        list.itemAnimator = null
+        list.clipToPadding = false
+        val pad = Math.round(Look.dp(this, 16f))
+        list.setPadding(pad, pad, pad, pad)
+        adapter.submit(inside)
+        dialog = AlertDialog.Builder(this)
+            .setTitle(folder.name)
+            .setView(list)
+            .setNegativeButton(R.string.close, null)
+            .show()
+        list.post { list.layoutManager?.findViewByPosition(0)?.requestFocus() }
+    }
+
+    /** Puts an app into a folder, or a new one in the same place in its section. */
+    private fun putInFolder(app: AppEntry, row: Rows.Row) {
+        val folders = Folders.load(this)
+        val names = folders.map { it.name } + getString(R.string.folder_new)
+        AlertDialog.Builder(this)
+            .setTitle(getString(R.string.folder_put_title, app.label))
+            .setItems(names.toTypedArray()) { _, which ->
+                if (which < folders.size) {
+                    val list = Folders.load(this)
+                    list.forEach { it.apps.remove(app.pkg) }
+                    list.firstOrNull { it.id == folders[which].id }?.apps?.add(app.pkg)
+                    Folders.save(this, list.filter { it.apps.isNotEmpty() })
+                    show()
+                } else {
+                    askForText(R.string.folder_new, "") { name ->
+                        val folder = Folders.create(this, name, app.pkg)
+                        // The folder takes the app's place in its section
+                        val section = sections.firstOrNull { it.row.id == row.id }
+                        val order = section?.adapter?.order()?.map { if (it == app.pkg) Folders.key(folder.id) else it }
+                        if (order != null) saveOrder(row, order)
+                        show()
+                    }
+                }
+            }
+            .show()
+    }
+
+    private fun folderMenu(card: AppEntry, row: Rows.Row) {
+        val id = card.pkg.removePrefix(Folders.PREFIX)
+        val section = sections.firstOrNull { it.row.id == row.id }
+        val labels = ArrayList<String>()
+        val actions = ArrayList<() -> Unit>()
+        if (section != null && section.adapter.appCount > 1) {
+            labels.add(getString(R.string.menu_move))
+            actions.add { section.adapter.startMove(card.pkg) }
+        }
+        labels.add(getString(R.string.folder_open))
+        actions.add { openFolder(id) }
+        labels.add(getString(R.string.section_rename))
+        actions.add {
+            askForText(R.string.section_rename, card.label) { name ->
+                Folders.update(this, id) { it.name = name }
+                show()
+            }
+        }
+        labels.add(getString(R.string.folder_delete))
+        actions.add {
+            val list = Folders.load(this).filter { it.id != id }
+            Folders.save(this, list)
+            show()
+        }
+        AlertDialog.Builder(this)
+            .setTitle(card.label)
+            .setItems(labels.toTypedArray()) { _, which -> actions[which]() }
+            .show()
     }
 
     // ------------------------------------------------------------------ an app's menu
@@ -906,6 +1029,10 @@ class HomeActivity : BaseActivity() {
     private fun showMenu(app: AppEntry, row: Rows.Row) {
         if (app.isWatchNext) {
             watchNextMenu(app)
+            return
+        }
+        if (app.isFolder) {
+            folderMenu(app, row)
             return
         }
         val section = sections.firstOrNull { it.row.id == row.id }
@@ -938,6 +1065,10 @@ class HomeActivity : BaseActivity() {
 
         labels.add(getString(R.string.menu_add_to_row))
         actions.add { addToRow(app) }
+        if (row.kind != Rows.RECENT && row.kind != Rows.WATCH_NEXT) {
+            labels.add(getString(R.string.folder_put))
+            actions.add { putInFolder(app, row) }
+        }
         if (row.custom) {
             labels.add(getString(R.string.menu_remove_from_row, row.name(this)))
             actions.add {

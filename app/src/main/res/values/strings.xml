@@ -635,6 +635,14 @@
     <string name="layout_auto">Automatic backup</string>
     <string name="layout_auto_summary">If the TV backs up to your Google account, Android also keeps TunaHome\'s settings and puts them back if you reinstall.</string>
 
+    <!-- Folders -->
+    <string name="folder_put">Put in a folder</string>
+    <string name="folder_put_title">Put %1$s in</string>
+    <string name="folder_new">New folder</string>
+    <string name="folder_open">Open the folder</string>
+    <string name="folder_delete">Delete the folder (its apps go back)</string>
+    <string name="folder_take_out">Take out of the folder</string>
+
     <!-- Shortcuts -->
     <string name="page_shortcuts">Shortcuts</string>
     <string name="shortcuts_none_short">None yet</string>

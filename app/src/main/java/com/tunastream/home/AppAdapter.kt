@@ -72,6 +72,9 @@ class AppAdapter(
     val appCount: Int
         get() = items.size
 
+    /** The section's apps (and folders) in order, by name. */
+    fun order(): List<String> = items.map { it.pkg }
+
     // ------------------------------------------------------------------ lines
     //
     // A sideways-scrolling grid lays out down each column first. To read across each line

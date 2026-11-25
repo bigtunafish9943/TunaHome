@@ -26,6 +26,9 @@ class AppEntry(
 ) {
     val isWatchNext: Boolean
         get() = pkg.startsWith("watchnext:")
+
+    val isFolder: Boolean
+        get() = pkg.startsWith(Folders.PREFIX)
 }
 
 object Apps {
