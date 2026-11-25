@@ -47,7 +47,7 @@ object AppLock {
         Prefs.of(context).edit().remove(HASH).remove(SALT).remove(LOCKED).remove(SETTINGS).apply()
     }
 
-    fun locked(context: Context): Set<String> =
+    fun locked(context: Context): MutableSet<String> =
         HashSet(Prefs.of(context).getStringSet(LOCKED, emptySet()) ?: emptySet())
 
     fun isLocked(context: Context, pkg: String): Boolean = hasPin(context) && pkg in locked(context)
