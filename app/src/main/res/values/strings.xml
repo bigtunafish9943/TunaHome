@@ -581,6 +581,22 @@
     <string name="shadow_glow">A glow in the highlight colour</string>
     <string name="shadow_glow_white">A white glow</string>
 
+    <!-- Now playing -->
+    <string name="np_title">Now playing</string>
+    <string name="np_listener_label">TunaHome: Now playing</string>
+    <string name="np_off">Off. Switch on for a card showing what\'s playing in any app, with play, pause and skip.</string>
+    <string name="np_on">On. The card shows while something is playing.</string>
+    <string name="np_needs_access">On, but waiting for notification access. Select below to allow it.</string>
+    <string name="np_allow">Allow TunaHome to see what\'s playing</string>
+    <string name="np_allow_summary">Android only shows other apps\' music and videos to apps with notification access.</string>
+    <string name="np_allow_body">Android only lets an app see what other apps are playing if it has notification access. TunaHome uses it only to show what\'s playing; it doesn\'t read or keep your notifications.\n\nOn the next screen, switch on TunaHome. If the TV has no such screen, run this once from a computer:\n\n%1$s\n\nTo undo it, switch it off on the same screen, or run the same command with disallow_listener.</string>
+    <string name="np_open_access">Open notification access</string>
+    <string name="np_no_screen">This TV has no notification access screen. Use the adb command instead.</string>
+    <string name="np_previous">Previous</string>
+    <string name="np_next">Next</string>
+    <string name="np_play_pause">Play or pause</string>
+    <string name="np_open">Open the app that\'s playing</string>
+
     <!-- Shortcuts -->
     <string name="page_shortcuts">Shortcuts</string>
     <string name="shortcuts_none_short">None yet</string>

@@ -422,6 +422,24 @@ class SettingsActivity : BaseActivity() {
     // ------------------------------------------------------------------ sections
 
     private fun sectionsPage() {
+        // Now playing: off until switched on, and it needs notification access
+        val npOn = NowPlaying.SHOW.get(this)
+        val npAllowed = NowPlaying.allowed(this)
+        row(
+            R.string.np_title,
+            getString(when {
+                !npOn -> R.string.np_off
+                npAllowed -> R.string.np_on
+                else -> R.string.np_needs_access
+            })
+        ) {
+            NowPlaying.SHOW.set(this, !npOn)
+            if (!npOn && !NowPlaying.allowed(this)) explainNowPlaying()
+            changed()
+        }
+        if (npOn && !npAllowed) {
+            row(R.string.np_allow, getString(R.string.np_allow_summary)) { explainNowPlaying() }
+        }
         val all = Rows.load(this)
         all.forEachIndexed { index, section ->
             val lines = linesName(section.lines)
@@ -460,6 +478,22 @@ class SettingsActivity : BaseActivity() {
         return getString(Look.CARD_SIZE.names[i])
     }
 
+    /** How to give TunaHome notification access: the TV's screen if it has one, or one adb command. */
+    private fun explainNowPlaying() {
+        AlertDialog.Builder(this)
+            .setTitle(R.string.np_allow)
+            .setMessage(getString(R.string.np_allow_body, NowPlaying.ADB_COMMAND))
+            .setPositiveButton(R.string.np_open_access) { _, _ ->
+                try {
+                    startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS))
+                } catch (e: Exception) {
+                    Toast.makeText(this, R.string.np_no_screen, Toast.LENGTH_LONG).show()
+                }
+            }
+            .setNegativeButton(R.string.close, null)
+            .show()
+    }
+
     private fun linesName(lines: Int): String =
         if (lines == Rows.WRAP) getString(R.string.lines_wrap)
         else resources.getQuantityString(R.plurals.lines_count, lines, lines)
@@ -472,8 +506,8 @@ class SettingsActivity : BaseActivity() {
         labels.add(getString(if (section.visible) R.string.section_hide else R.string.section_show))
         actions.add { Rows.update(this, id) { it.visible = !it.visible }; changed() }
 
-        labels.add(getString(R.string.section_lines, linesName(section.lines)))
-        actions.add {
+        if (section.kind != Rows.NOW_PLAYING) labels.add(getString(R.string.section_lines, linesName(section.lines)))
+        if (section.kind != Rows.NOW_PLAYING) actions.add {
             val options = (1..Rows.MAX_LINES).toList() + Rows.WRAP
             chooseOne(
                 getString(R.string.section_lines_title, section.name(this)),
@@ -493,8 +527,8 @@ class SettingsActivity : BaseActivity() {
             }
         }
 
-        labels.add(getString(R.string.section_card_size, cardSizeName(section.cardSize)))
-        actions.add {
+        if (section.kind != Rows.NOW_PLAYING) labels.add(getString(R.string.section_card_size, cardSizeName(section.cardSize)))
+        if (section.kind != Rows.NOW_PLAYING) actions.add {
             val names = listOf(getString(R.string.card_size_usual, cardSizeName(-1))) +
                 Look.CARD_SIZE.names.map { getString(it) }
             chooseOne(getString(R.string.section_card_size_title, section.name(this)), names, section.cardSize + 1) { which ->

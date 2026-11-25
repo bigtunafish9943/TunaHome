@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- What's playing in any app: its picture, title, artist and app, how far through, and controls -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/nowPlaying"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:layout_marginStart="@dimen/safe_side"
+    android:background="@drawable/now_playing_bg"
+    android:gravity="center_vertical"
+    android:orientation="horizontal"
+    android:padding="12dp"
+    android:visibility="gone">
+
+    <ImageView
+        android:id="@+id/npArt"
+        android:layout_width="84dp"
+        android:layout_height="84dp"
+        android:background="@drawable/tile_bg"
+        android:contentDescription="@null"
+        android:scaleType="centerCrop" />
+
+    <LinearLayout
+        android:layout_width="320dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/npApp"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:maxLines="1"
+            android:textAllCaps="true"
+            android:letterSpacing="0.06"
+            android:textColor="?attr/tsAccentSoft"
+            android:textSize="11sp" />
+
+        <TextView
+            android:id="@+id/npTitle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:ellipsize="end"
+            android:fontFamily="sans-serif-medium"
+            android:maxLines="1"
+            android:textColor="?attr/tsText"
+            android:textSize="18sp" />
+
+        <TextView
+            android:id="@+id/npSubtitle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:textColor="?attr/tsTextSecondary"
+            android:textSize="13sp" />
+
+        <FrameLayout
+            android:id="@+id/npTrack"
+            android:layout_width="match_parent"
+            android:layout_height="4dp"
+            android:layout_marginTop="10dp"
+            android:background="#33FFFFFF">
+
+            <View
+                android:id="@+id/npProgress"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:background="?attr/tsAccent" />
+        </FrameLayout>
+    </LinearLayout>
+
+    <ImageView
+        android:id="@+id/npPrev"
+        style="@style/IconButton"
+        android:layout_width="44dp"
+        android:layout_height="44dp"
+        android:layout_marginStart="16dp"
+        android:padding="10dp"
+        android:contentDescription="@string/np_previous"
+        android:src="@drawable/ic_prev" />
+
+    <ImageView
+        android:id="@+id/npPlay"
+        style="@style/IconButton"
+        android:layout_width="52dp"
+        android:layout_height="52dp"
+        android:padding="12dp"
+        android:contentDescription="@string/np_play_pause"
+        android:src="@drawable/ic_pause" />
+
+    <ImageView
+        android:id="@+id/npNext"
+        style="@style/IconButton"
+        android:layout_width="44dp"
+        android:layout_height="44dp"
+        android:padding="10dp"
+        android:contentDescription="@string/np_next"
+        android:src="@drawable/ic_next" />
+
+    <ImageView
+        android:id="@+id/npOpen"
+        style="@style/IconButton"
+        android:layout_width="44dp"
+        android:layout_height="44dp"
+        android:padding="10dp"
+        android:contentDescription="@string/np_open"
+        android:src="@drawable/ic_music" />
+</LinearLayout>

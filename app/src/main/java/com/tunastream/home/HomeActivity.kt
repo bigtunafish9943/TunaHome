@@ -116,6 +116,7 @@ class HomeActivity : BaseActivity() {
         scroll.postDelayed({ if (!isDestroyed) hotkey(action, arg) }, 250)
     }
     private lateinit var sideMenu: SideMenu
+    private var nowPlaying: NowPlaying? = null
 
     /** The app whose picture is being chosen, while the TV's picture chooser is open. */
     private var choosingPictureFor: String? = null
@@ -191,6 +192,7 @@ class HomeActivity : BaseActivity() {
         super.onStart()
         backdrop.start()
         watchNetwork()
+        nowPlaying?.start()
         arrive()
     }
 
@@ -217,6 +219,7 @@ class HomeActivity : BaseActivity() {
     /** Another app is in front: let go of the video player so that app can use the decoder. */
     override fun onStop() {
         backdrop.stop()
+        nowPlaying?.stop()
         networkCallback?.let {
             try {
                 getSystemService(ConnectivityManager::class.java).unregisterNetworkCallback(it)
@@ -680,6 +683,17 @@ class HomeActivity : BaseActivity() {
 
         for (row in Rows.load(this)) {
             if (!row.visible) {
+                continue
+            }
+            if (row.kind == Rows.NOW_PLAYING) {
+                // Not a row of apps: the Now playing card, when it's switched on
+                if (NowPlaying.SHOW.get(this)) {
+                    val card = layoutInflater.inflate(R.layout.item_now_playing, holder, false)
+                    (card.layoutParams as LinearLayout.LayoutParams).topMargin = rowGap
+                    Look.styleText(card)
+                    holder.addView(card)
+                    nowPlaying = NowPlaying(this, card)
+                }
                 continue
             }
             val view = layoutInflater.inflate(R.layout.item_section, holder, false)

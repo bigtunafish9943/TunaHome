@@ -14,6 +14,7 @@ object Rows {
     const val MOBILE = "mobile"
     const val RECENT = "recent"
     const val WATCH_NEXT = "watchnext"
+    const val NOW_PLAYING = "nowplaying"
     const val CUSTOM = "custom"
 
     private const val KEY = "rows"
@@ -42,6 +43,7 @@ object Rows {
                 MOBILE -> R.string.mobile_apps
                 RECENT -> R.string.recent
                 WATCH_NEXT -> R.string.watch_next
+                NOW_PLAYING -> R.string.np_title
                 else -> R.string.row_untitled
             }
         )
@@ -81,6 +83,10 @@ object Rows {
             if (rows.none { it.kind == kind }) {
                 rows.add(Row(kind, kind, null, true))
             }
+        }
+        // Now playing came later: at the top (it only shows when switched on and something plays)
+        if (rows.none { it.kind == NOW_PLAYING }) {
+            rows.add(0, Row(NOW_PLAYING, NOW_PLAYING, null, true))
         }
         // Watch Next came later: shown under Favourites (it hides itself while empty)
         if (rows.none { it.kind == WATCH_NEXT }) {

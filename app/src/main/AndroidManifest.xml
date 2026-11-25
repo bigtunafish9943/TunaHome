@@ -158,6 +158,17 @@
                 android:resource="@xml/home_button_service" />
         </service>
 
+        <!-- Now playing: lets Android tell TunaHome what's playing, once the viewer allows it -->
+        <service
+            android:name=".NowPlayingListener"
+            android:exported="true"
+            android:label="@string/np_listener_label"
+            android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE">
+            <intent-filter>
+                <action android:name="android.service.notification.NotificationListenerService" />
+            </intent-filter>
+        </service>
+
         <receiver
             android:name=".Updater$InstallResultReceiver"
             android:exported="false" />
