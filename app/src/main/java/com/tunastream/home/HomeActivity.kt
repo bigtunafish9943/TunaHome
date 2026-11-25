@@ -5,9 +5,15 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.net.ConnectivityManager
+import android.net.Network
+import android.net.NetworkCapabilities
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
+import android.view.KeyEvent
 import android.provider.Settings
 import android.text.format.DateFormat
 import android.util.TypedValue
@@ -50,6 +56,16 @@ class HomeActivity : BaseActivity() {
     private var loadAgain = false
     private var placedFocus = false
 
+    // Idle: after a while with no button pressed, everything but the background fades away
+    private val idleHandler = Handler(Looper.getMainLooper())
+    private val goIdle = Runnable { enterIdle() }
+    private var idle = false
+    private var swallowKeyUp = false
+    private var shadeAlpha = 0f
+    private val fadeWhenIdle = ArrayList<View>()
+
+    private var networkCallback: ConnectivityManager.NetworkCallback? = null
+
     /** The app whose picture is being chosen, while the TV's picture chooser is open. */
     private var choosingPictureFor: String? = null
 
@@ -77,6 +93,12 @@ class HomeActivity : BaseActivity() {
 
         setUpTopBar()
         buildSections()
+        fadeWhenIdle.clear()
+        listOf(R.id.sections, R.id.appsHint, R.id.brand, R.id.networkIcon, R.id.checkUpdate,
+            R.id.openTvSettings, R.id.openSettings).forEach { fadeWhenIdle.add(findViewById(it)) }
+        if (!Look.IDLE_CLOCK.get(this)) {
+            fadeWhenIdle.add(findViewById(R.id.clockBox))
+        }
 
         // Apps installed, removed or updated while TunaHome is open
         val filter = IntentFilter().apply {
@@ -110,12 +132,118 @@ class HomeActivity : BaseActivity() {
     override fun onStart() {
         super.onStart()
         backdrop.start()
+        watchNetwork()
     }
 
     /** Another app is in front: let go of the video player so that app can use the decoder. */
     override fun onStop() {
         backdrop.stop()
+        networkCallback?.let {
+            try {
+                getSystemService(ConnectivityManager::class.java).unregisterNetworkCallback(it)
+            } catch (e: Exception) {
+                // Already gone
+            }
+        }
+        networkCallback = null
         super.onStop()
+    }
+
+    override fun onPause() {
+        idleHandler.removeCallbacks(goIdle)
+        if (idle) {
+            leaveIdle(false)
+        }
+        super.onPause()
+    }
+
+    // ------------------------------------------------------------------ idle
+
+    private fun scheduleIdle() {
+        idleHandler.removeCallbacks(goIdle)
+        val after = Look.idleMs(this)
+        if (after > 0) {
+            idleHandler.postDelayed(goIdle, after)
+        }
+    }
+
+    private fun enterIdle() {
+        // Not while a menu or another window is in front
+        if (!hasWindowFocus() || idle) {
+            scheduleIdle()
+            return
+        }
+        idle = true
+        fadeWhenIdle.forEach { it.animate().alpha(0f).setDuration(1200).start() }
+        val shade = findViewById<View>(R.id.backdropShade)
+        shadeAlpha = shade.alpha
+        shade.animate().alpha(0f).setDuration(1200).start()
+    }
+
+    private fun leaveIdle(animate: Boolean) {
+        idle = false
+        val time = if (animate) 300L else 0L
+        fadeWhenIdle.forEach { it.animate().alpha(1f).setDuration(time).start() }
+        findViewById<View>(R.id.backdropShade).animate().alpha(shadeAlpha).setDuration(time).start()
+    }
+
+    /** Any button wakes the home screen; the press that wakes it does nothing else. */
+    override fun dispatchKeyEvent(event: KeyEvent): Boolean {
+        if (event.action == KeyEvent.ACTION_DOWN) {
+            if (idle) {
+                leaveIdle(true)
+                swallowKeyUp = true
+                scheduleIdle()
+                return true
+            }
+            scheduleIdle()
+        } else if (event.action == KeyEvent.ACTION_UP && swallowKeyUp) {
+            swallowKeyUp = false
+            return true
+        }
+        return super.dispatchKeyEvent(event)
+    }
+
+    // ------------------------------------------------------------------ network icon
+
+    private fun watchNetwork() {
+        val icon = findViewById<ImageView>(R.id.networkIcon)
+        if (!Look.SHOW_NETWORK.get(this)) {
+            icon.visibility = View.GONE
+            return
+        }
+        val manager = getSystemService(ConnectivityManager::class.java) ?: return
+        fun update() {
+            val caps = manager.activeNetwork?.let { manager.getNetworkCapabilities(it) }
+            val picture = when {
+                caps == null -> R.drawable.ic_net_none
+                caps.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET) -> R.drawable.ic_net_wired
+                caps.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) -> R.drawable.ic_net_wifi
+                else -> R.drawable.ic_net_wired
+            }
+            icon.setImageResource(picture)
+            icon.visibility = View.VISIBLE
+        }
+        update()
+        val callback = object : ConnectivityManager.NetworkCallback() {
+            override fun onAvailable(network: Network) {
+                runOnUiThread { update() }
+            }
+
+            override fun onLost(network: Network) {
+                runOnUiThread { update() }
+            }
+
+            override fun onCapabilitiesChanged(network: Network, caps: NetworkCapabilities) {
+                runOnUiThread { update() }
+            }
+        }
+        try {
+            manager.registerDefaultNetworkCallback(callback)
+            networkCallback = callback
+        } catch (e: Exception) {
+            // The icon just won't change until the home screen is shown again
+        }
     }
 
     override fun onResume() {
@@ -123,7 +251,16 @@ class HomeActivity : BaseActivity() {
         if (Prefs.appsChanged) {
             Prefs.appsChanged = false
             reload()
+        } else if (loaded) {
+            // Back from an app: it is now the most recent. Only that section changes, so the
+            // rest of the screen keeps your place.
+            val hidden = Prefs.hidden(this)
+            val byPackage = apps.filter { it.pkg !in hidden }.associateBy { it.pkg }
+            sections.filter { it.row.kind == Rows.RECENT }.forEach { section ->
+                section.show(Prefs.recent(this).mapNotNull { byPackage[it] })
+            }
         }
+        scheduleIdle()
         Updater.resumeIfWaiting(this)
         if (Prefs.autoUpdateCheck(this)) {
             Updater.check(this, false)
@@ -177,7 +314,13 @@ class HomeActivity : BaseActivity() {
         tvSettings.setOnClickListener { openTvSettings(this) }
         // Always shown: it is the way back to every other setting
         findViewById<View>(R.id.openSettings).setOnClickListener {
-            startActivity(Intent(this, SettingsActivity::class.java))
+            if (AppLock.settingsLocked(this)) {
+                AppLock.ask(this, getString(R.string.tunahome_settings)) {
+                    startActivity(Intent(this, SettingsActivity::class.java))
+                }
+            } else {
+                startActivity(Intent(this, SettingsActivity::class.java))
+            }
         }
 
         val clock = findViewById<TextClock>(R.id.clock)
@@ -330,6 +473,7 @@ class HomeActivity : BaseActivity() {
                 Rows.FAVOURITES -> Prefs.favourites(this).mapNotNull { byPackage[it] }
                 Rows.TV -> ordered(visible.filter { it.tv }, Prefs.order(this, section.row.id))
                 Rows.MOBILE -> ordered(visible.filter { !it.tv }, Prefs.order(this, section.row.id))
+                Rows.RECENT -> Prefs.recent(this).mapNotNull { byPackage[it] }
                 else -> (rows[section.row.id]?.apps ?: section.row.apps).mapNotNull { byPackage[it] }
             }
             section.show(list)
@@ -370,9 +514,18 @@ class HomeActivity : BaseActivity() {
     }
 
     private fun open(app: AppEntry) {
+        if (AppLock.isLocked(this, app.pkg)) {
+            AppLock.ask(this, app.label) { launch(app) }
+        } else {
+            launch(app)
+        }
+    }
+
+    private fun launch(app: AppEntry) {
         try {
             startActivity(app.launch)
             Prefs.setLastOpened(this, app.pkg)
+            Prefs.addRecent(this, app.pkg)
         } catch (e: Exception) {
             Toast.makeText(this, getString(R.string.open_failed, app.label), Toast.LENGTH_LONG).show()
             reload()
@@ -387,8 +540,9 @@ class HomeActivity : BaseActivity() {
         val labels = ArrayList<String>()
         val actions = ArrayList<() -> Unit>()
 
-        // First, so that hold select then select picks the app up
-        if (section != null && section.adapter.appCount > 1) {
+        // First, so that hold select then select picks the app up. Recently opened keeps its
+        // own order, newest first.
+        if (section != null && section.adapter.appCount > 1 && row.kind != Rows.RECENT) {
             labels.add(getString(R.string.menu_move))
             actions.add {
                 if (section.adapter.startMove(app.pkg)) {
@@ -425,6 +579,26 @@ class HomeActivity : BaseActivity() {
 
         labels.add(getString(R.string.menu_change_picture))
         actions.add { pictureMenu(app) }
+
+        if (AppLock.isLocked(this, app.pkg)) {
+            labels.add(getString(R.string.menu_unlock))
+            actions.add {
+                AppLock.ask(this, app.label) {
+                    AppLock.setLocked(this, app.pkg, false)
+                    show()
+                }
+            }
+        } else {
+            labels.add(getString(R.string.menu_lock))
+            actions.add {
+                val lock = {
+                    AppLock.setLocked(this, app.pkg, true)
+                    show()
+                    Toast.makeText(this, getString(R.string.lock_locked, app.label), Toast.LENGTH_LONG).show()
+                }
+                if (AppLock.hasPin(this)) lock() else AppLock.choosePin(this, lock)
+            }
+        }
 
         labels.add(getString(R.string.menu_hide))
         actions.add {

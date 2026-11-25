@@ -12,6 +12,7 @@ object Rows {
     const val FAVOURITES = "favourites"
     const val TV = "tv"
     const val MOBILE = "mobile"
+    const val RECENT = "recent"
     const val CUSTOM = "custom"
 
     private const val KEY = "rows"
@@ -36,6 +37,7 @@ object Rows {
                 FAVOURITES -> R.string.favourites
                 TV -> R.string.tv_apps
                 MOBILE -> R.string.mobile_apps
+                RECENT -> R.string.recent
                 else -> R.string.row_untitled
             }
         )
@@ -74,6 +76,11 @@ object Rows {
             if (rows.none { it.kind == kind }) {
                 rows.add(Row(kind, kind, null, true))
             }
+        }
+        // Recently opened came later: it starts hidden, under Favourites
+        if (rows.none { it.kind == RECENT }) {
+            val at = rows.indexOfFirst { it.kind == FAVOURITES }
+            rows.add(if (at >= 0) at + 1 else 0, Row(RECENT, RECENT, null, false))
         }
         return rows
     }

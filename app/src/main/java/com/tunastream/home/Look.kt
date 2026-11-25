@@ -234,7 +234,20 @@ object Look {
         intArrayOf(R.string.date_hidden, R.string.date_short, R.string.date_long)
     )
 
+    val SHOW_NETWORK = Switch("look_show_network", true)
     val SHOW_UPDATE_BUTTON = Switch("look_show_update", true)
+
+    // ------------------------------------------------------------------ idle
+
+    val IDLE = Choice(
+        "look_idle", 0, intArrayOf(
+            R.string.idle_off, R.string.idle_1m, R.string.idle_2m, R.string.idle_5m,
+            R.string.idle_10m, R.string.idle_15m,
+        )
+    )
+    private val IDLE_MS = longArrayOf(0, 60_000, 120_000, 300_000, 600_000, 900_000)
+    fun idleMs(context: Context): Long = IDLE_MS[IDLE.get(context)]
+    val IDLE_CLOCK = Switch("look_idle_clock", true)
     val SHOW_TV_SETTINGS_BUTTON = Switch("look_show_tv_settings", true)
 
     // ------------------------------------------------------------------ working out the numbers

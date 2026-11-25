@@ -383,6 +383,67 @@
     <string name="set_about_summary">Version, licence and credits.</string>
     <string name="about_body">TunaHome is free software under the GNU GPL version 3.\n\nIt includes fonts under the SIL Open Font License, icons from Google\'s Material Symbols, AndroidX and Media3 (Apache License 2.0), and Projectivy Launcher\'s wallpaper plugin interface (Apache License 2.0), which lets wallpaper apps such as Aerial Views show behind your apps.\n\ngithub.com/bigtunafish9943/TunaHome</string>
 
+    <!-- Idle -->
+    <string name="heading_idle">When nothing is pressed</string>
+    <string name="set_idle">Fade to the background after</string>
+    <string name="idle_off">Never</string>
+    <string name="idle_1m">1 minute</string>
+    <string name="idle_2m">2 minutes</string>
+    <string name="idle_5m">5 minutes</string>
+    <string name="idle_10m">10 minutes</string>
+    <string name="idle_15m">15 minutes</string>
+    <string name="set_idle_clock">Clock while faded</string>
+    <string name="idle_clock_on">Stays on screen</string>
+    <string name="idle_clock_off">Fades too</string>
+
+    <!-- Recently opened -->
+    <string name="recent">Recently opened</string>
+    <string name="recent_clear">Clear the list</string>
+    <string name="recent_cleared">Recently opened is empty now.</string>
+
+    <!-- Network -->
+    <string name="set_show_network">Network icon</string>
+
+    <!-- App lock -->
+    <string name="heading_lock">App lock</string>
+    <string name="heading_order">Order</string>
+    <string name="lock_badge">Needs the PIN</string>
+    <string name="lock_set_pin">Set a PIN</string>
+    <string name="lock_set_pin_summary">Then lock apps from their menu (hold select on an app), or lock TunaHome settings.</string>
+    <string name="lock_apps">Locked apps</string>
+    <string name="lock_apps_none">None. Hold select on an app and choose \"Lock with the PIN\".</string>
+    <plurals name="lock_apps_count">
+        <item quantity="one">%1$d app needs the PIN. Choose which to unlock.</item>
+        <item quantity="other">%1$d apps need the PIN. Choose which to unlock.</item>
+    </plurals>
+    <string name="lock_apps_title">Tick the apps to keep locked</string>
+    <string name="lock_settings">Lock TunaHome settings</string>
+    <string name="lock_settings_on">On. The settings button asks for the PIN.</string>
+    <string name="lock_settings_off">Off</string>
+    <string name="lock_change_pin">Change the PIN</string>
+    <string name="lock_change_pin_summary">Enter the PIN you have, then a new one.</string>
+    <string name="lock_remove_pin">Remove the PIN</string>
+    <string name="lock_remove_pin_summary">Unlocks every app and the settings.</string>
+    <string name="lock_enter">Enter the PIN.</string>
+    <string name="lock_unlock">Unlock</string>
+    <string name="lock_wrong">That PIN isn\'t right.</string>
+    <string name="lock_new_pin">Choose a PIN</string>
+    <string name="lock_new_pin_body">At least 4 numbers. If you forget it, clearing TunaHome\'s storage in the TV\'s app settings removes it, along with all TunaHome settings.</string>
+    <string name="lock_next">Next</string>
+    <string name="lock_repeat_pin">Enter the same PIN again</string>
+    <string name="lock_pin_set">PIN set.</string>
+    <string name="lock_mismatch">The two PINs didn\'t match. Try again.</string>
+    <string name="lock_too_short">Use at least 4 numbers.</string>
+    <string name="lock_locked">%1$s now needs the PIN.</string>
+    <string name="menu_lock">Lock with the PIN</string>
+    <string name="menu_unlock">Remove the lock</string>
+
+    <!-- Open an app on wake -->
+    <string name="set_wake_app">When the TV wakes up, open</string>
+    <string name="wake_nothing">Nothing: stay on the home screen</string>
+    <string name="wake_opens">%1$s</string>
+    <string name="wake_needs_home">%1$s, once the Home button setting is on</string>
+
     <!-- What Android shows on its accessibility screen -->
     <string name="home_service_summary">Opens TunaHome when you press Home.</string>
     <string name="home_service_description">Lets TunaHome open when you press the Home button. It only watches for the Home button and for the TV\'s own home screen appearing. It cannot read what is on screen and sends nothing anywhere. Switch it off to return to the TV\'s usual home screen.</string>

@@ -24,6 +24,46 @@ import android.view.accessibility.AccessibilityEvent
 class HomeButtonService : AccessibilityService() {
     private var lastReplaced = 0L
 
+    /** Opens the app the viewer chose when the TV wakes up. */
+    private val wakeReceiver = object : android.content.BroadcastReceiver() {
+        override fun onReceive(context: Context, intent: Intent) {
+            if (intent.action == Intent.ACTION_SCREEN_ON) {
+                // Give the TV a moment to finish waking, so its own home screen doesn't land on top
+                android.os.Handler(mainLooper).postDelayed({ openWakeApp() }, 1500)
+            }
+        }
+    }
+
+    override fun onServiceConnected() {
+        super.onServiceConnected()
+        registerReceiver(wakeReceiver, android.content.IntentFilter(Intent.ACTION_SCREEN_ON))
+        // Switched on by Android just after the TV started: that's a wake-up too
+        if (SystemClock.elapsedRealtime() < 3 * 60 * 1000) {
+            android.os.Handler(mainLooper).postDelayed({ openWakeApp() }, 4000)
+        }
+    }
+
+    override fun onDestroy() {
+        try {
+            unregisterReceiver(wakeReceiver)
+        } catch (e: Exception) {
+            // It was never registered
+        }
+        super.onDestroy()
+    }
+
+    private fun openWakeApp() {
+        val pkg = Prefs.wakeApp(this) ?: return
+        val launch = packageManager.getLeanbackLaunchIntentForPackage(pkg)
+            ?: packageManager.getLaunchIntentForPackage(pkg)
+            ?: return
+        try {
+            startActivity(launch.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+        } catch (e: Exception) {
+            Log.w(TAG, "Couldn't open $pkg on wake", e)
+        }
+    }
+
     override fun onKeyEvent(event: KeyEvent): Boolean {
         if (event.keyCode != KeyEvent.KEYCODE_HOME) {
             return false

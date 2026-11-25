@@ -45,6 +45,17 @@
             android:textSize="12sp"
             android:visibility="gone" />
 
+        <!-- Shown on apps that need the PIN -->
+        <ImageView
+            android:id="@+id/lockBadge"
+            android:layout_width="18dp"
+            android:layout_height="18dp"
+            android:layout_gravity="top|end"
+            android:layout_margin="6dp"
+            android:contentDescription="@string/lock_badge"
+            android:src="@drawable/ic_lock"
+            android:visibility="gone" />
+
         <View
             android:id="@+id/ring"
             android:layout_width="match_parent"

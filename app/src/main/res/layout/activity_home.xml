@@ -85,6 +85,17 @@
                     android:layout_weight="1" />
 
                 <ImageView
+                    android:id="@+id/networkIcon"
+                    android:layout_width="22dp"
+                    android:layout_height="22dp"
+                    android:layout_marginEnd="14dp"
+                    android:alpha="0.85"
+                    android:contentDescription="@null"
+                    android:focusable="false"
+                    android:tint="?attr/tsText"
+                    android:visibility="gone" />
+
+                <ImageView
                     android:id="@+id/checkUpdate"
                     style="@style/IconButton"
                     android:contentDescription="@string/set_update"
@@ -103,6 +114,7 @@
                     android:src="@drawable/ic_settings" />
 
                 <LinearLayout
+                    android:id="@+id/clockBox"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginStart="6dp"

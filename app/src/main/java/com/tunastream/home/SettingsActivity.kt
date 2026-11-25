@@ -281,6 +281,12 @@ class SettingsActivity : BaseActivity() {
                 switch(R.string.bg_caption, Backdrop.SHOW_CAPTION, R.string.shown, R.string.hidden)
             }
         }
+
+        heading(R.string.heading_idle)
+        choice(R.string.set_idle, Look.IDLE)
+        if (Look.IDLE.get(this) != 0) {
+            switch(R.string.set_idle_clock, Look.IDLE_CLOCK, R.string.idle_clock_on, R.string.idle_clock_off)
+        }
     }
 
     private fun chooseBackground() {
@@ -445,6 +451,15 @@ class SettingsActivity : BaseActivity() {
             ) { which ->
                 Rows.update(this, id) { it.lines = options[which] }
                 changed()
+            }
+        }
+
+        if (section.kind == Rows.RECENT) {
+            labels.add(getString(R.string.recent_clear))
+            actions.add {
+                Prefs.clearRecent(this)
+                Look.touch(this)
+                Toast.makeText(this, R.string.recent_cleared, Toast.LENGTH_LONG).show()
             }
         }
 
@@ -661,6 +676,7 @@ class SettingsActivity : BaseActivity() {
         choice(R.string.set_clock, Look.CLOCK)
         choice(R.string.set_clock_size, Look.CLOCK_SIZE)
         choice(R.string.set_date, Look.DATE)
+        switch(R.string.set_show_network, Look.SHOW_NETWORK, R.string.shown, R.string.hidden)
         switch(R.string.set_show_update, Look.SHOW_UPDATE_BUTTON, R.string.shown, R.string.hidden)
         switch(R.string.set_show_tv_settings, Look.SHOW_TV_SETTINGS_BUTTON, R.string.shown, R.string.hidden)
         row(R.string.set_settings_button, getString(R.string.set_settings_button_summary)) {
@@ -678,6 +694,41 @@ class SettingsActivity : BaseActivity() {
             else resources.getQuantityString(R.plurals.set_hidden_count, hiddenCount, hiddenCount)
         ) { chooseHidden() }
 
+        heading(R.string.heading_lock)
+        if (!AppLock.hasPin(this)) {
+            row(R.string.lock_set_pin, getString(R.string.lock_set_pin_summary)) {
+                AppLock.choosePin(this) { build() }
+            }
+        } else {
+            val locked = AppLock.locked(this).size
+            row(
+                R.string.lock_apps,
+                if (locked == 0) getString(R.string.lock_apps_none)
+                else resources.getQuantityString(R.plurals.lock_apps_count, locked, locked)
+            ) { AppLock.ask(this, getString(R.string.lock_apps)) { chooseLocked() } }
+            val settingsLocked = AppLock.settingsLocked(this)
+            row(
+                R.string.lock_settings,
+                getString(if (settingsLocked) R.string.lock_settings_on else R.string.lock_settings_off)
+            ) {
+                AppLock.ask(this, getString(R.string.lock_settings)) {
+                    AppLock.setSettingsLocked(this, !settingsLocked)
+                    build()
+                }
+            }
+            row(R.string.lock_change_pin, getString(R.string.lock_change_pin_summary)) {
+                AppLock.ask(this, getString(R.string.lock_change_pin)) { AppLock.choosePin(this) { build() } }
+            }
+            row(R.string.lock_remove_pin, getString(R.string.lock_remove_pin_summary)) {
+                AppLock.ask(this, getString(R.string.lock_remove_pin)) {
+                    AppLock.removePin(this)
+                    Look.touch(this)
+                    changed()
+                }
+            }
+        }
+
+        heading(R.string.heading_order)
         val ownOrder = Prefs.hasOwnOrder(this)
         row(
             R.string.set_order,
@@ -697,6 +748,34 @@ class SettingsActivity : BaseActivity() {
                 Toast.makeText(this, R.string.set_order_az, Toast.LENGTH_LONG).show()
             }
         }
+    }
+
+    private fun chooseLocked() {
+        val locked = AppLock.locked(this).toList()
+        if (locked.isEmpty()) {
+            Toast.makeText(this, R.string.lock_apps_none, Toast.LENGTH_LONG).show()
+            return
+        }
+        val named = locked.map { it to appName(it) }.sortedBy { it.second.lowercase() }
+        val keep = BooleanArray(named.size) { true }
+        AlertDialog.Builder(this)
+            .setTitle(R.string.lock_apps_title)
+            .setMultiChoiceItems(named.map { it.second }.toTypedArray(), keep) { _, which, ticked ->
+                keep[which] = ticked
+            }
+            .setPositiveButton(R.string.done) { _, _ ->
+                AppLock.setLockedSet(this, named.filterIndexed { i, _ -> keep[i] }.map { it.first }.toSet())
+                Look.touch(this)
+                changed()
+            }
+            .setNegativeButton(R.string.cancel, null)
+            .show()
+    }
+
+    private fun appName(pkg: String): String = try {
+        packageManager.getApplicationInfo(pkg, 0).loadLabel(packageManager).toString()
+    } catch (e: Exception) {
+        pkg
     }
 
     private fun chooseHidden() {
@@ -737,12 +816,46 @@ class SettingsActivity : BaseActivity() {
             getString(if (homeOn) R.string.set_home_button_on else R.string.set_home_button_off)
         ) { explainHomeButton(homeOn) }
 
+        val wake = Prefs.wakeApp(this)
+        row(
+            R.string.set_wake_app,
+            when {
+                wake == null -> getString(R.string.wake_nothing)
+                homeOn -> getString(R.string.wake_opens, appName(wake))
+                else -> getString(R.string.wake_needs_home, appName(wake))
+            }
+        ) { chooseWakeApp() }
+
         val replace = Prefs.replaceStock(this)
         row(
             R.string.set_replace_stock,
             getString(if (replace) R.string.set_replace_stock_on else R.string.set_replace_stock_off)
         ) {
             Prefs.setReplaceStock(this, !replace)
+            build()
+        }
+    }
+
+    /** Picks the app to open when the TV wakes up, from every app that can be opened. */
+    private fun chooseWakeApp() {
+        val pm = packageManager
+        val found = LinkedHashMap<String, String>()
+        for (category in arrayOf(Intent.CATEGORY_LEANBACK_LAUNCHER, Intent.CATEGORY_LAUNCHER)) {
+            for (info in pm.queryIntentActivities(Intent(Intent.ACTION_MAIN).addCategory(category), 0)) {
+                val pkg = info.activityInfo?.packageName ?: continue
+                if (pkg != packageName && !found.containsKey(pkg)) {
+                    found[pkg] = info.loadLabel(pm).toString()
+                }
+            }
+        }
+        val apps = found.entries.sortedBy { it.value.lowercase() }
+        val names = listOf(getString(R.string.wake_nothing)) + apps.map { it.value }
+        val current = apps.indexOfFirst { it.key == Prefs.wakeApp(this) } + 1
+        chooseOne(getString(R.string.set_wake_app), names, current) {
+            Prefs.setWakeApp(this, if (it == 0) null else apps[it - 1].key)
+            if (it != 0 && !HomeButtonService.isOn(this)) {
+                explainHomeButton(false)
+            }
             build()
         }
     }

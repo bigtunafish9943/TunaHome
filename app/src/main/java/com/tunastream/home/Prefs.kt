@@ -75,6 +75,26 @@ object Prefs {
         appsChanged = true
     }
 
+    /** Apps opened from TunaHome, newest first, for the Recently opened section. */
+    fun recent(context: Context): List<String> =
+        (of(context).getString("recent", "") ?: "").split('\n').filter { it.isNotEmpty() }
+
+    fun addRecent(context: Context, pkg: String) {
+        val list = (listOf(pkg) + recent(context).filter { it != pkg }).take(20)
+        of(context).edit().putString("recent", list.joinToString("\n")).apply()
+    }
+
+    fun clearRecent(context: Context) {
+        of(context).edit().remove("recent").apply()
+    }
+
+    /** The app to open when the TV wakes up, or null. */
+    fun wakeApp(context: Context): String? = of(context).getString("wake_app", null)
+
+    fun setWakeApp(context: Context, pkg: String?) {
+        of(context).edit().putString("wake_app", pkg).apply()
+    }
+
     /** The app opened last, for "When TunaHome opens, go to the app you used last". */
     fun lastOpened(context: Context): String? = of(context).getString("last_opened", null)
 

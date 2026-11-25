@@ -3,6 +3,8 @@
 
     <!-- Checking for and downloading updates from GitHub -->
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- The network icon beside the clock: Wi-Fi, wired or not connected -->
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <!-- Installing an update after you agree to it -->
     <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
     <!-- Offering "Uninstall" in an app's menu; Android still asks you to confirm -->

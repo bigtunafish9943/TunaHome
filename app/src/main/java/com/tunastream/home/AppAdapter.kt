@@ -207,6 +207,7 @@ class AppAdapter(
         private val ring: View = view.findViewById(R.id.ring)
         private val label: TextView = view.findViewById(R.id.label)
         private val cardLabel: TextView = view.findViewById(R.id.cardLabel)
+        private val lockBadge: View = view.findViewById(R.id.lockBadge)
         private var entry: AppEntry? = null
 
         private val moving: Boolean
@@ -283,6 +284,7 @@ class AppAdapter(
             icon.setImageDrawable(if (showBanner) null else app.own ?: app.icon)
             icon.visibility = if (showBanner) View.GONE else View.VISIBLE
             cardLabel.visibility = if (tiles.style == Look.TILE_ICON_NAME) View.VISIBLE else View.GONE
+            lockBadge.visibility = if (AppLock.isLocked(itemView.context, app.pkg)) View.VISIBLE else View.GONE
             showFocus(itemView.isFocused, false)
         }
 

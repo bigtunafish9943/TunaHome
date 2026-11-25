@@ -16,6 +16,12 @@ The app id is `com.tunastream.home`.
 - **Update, TV settings and TunaHome settings** are small buttons beside the clock.
 - **Updates itself** from this repo's releases. An update is installed only if it matches the checksum GitHub publishes and is signed with the same key as the TunaHome you have.
 
+- **Idle mode.** After a few minutes with no button pressed, everything but the background (and the clock, if you like) fades away. Any button brings it back.
+- **Recently opened** section, newest first (switch it on in Sections), and a **network icon** beside the clock.
+- **App lock.** A PIN on chosen apps and, if you like, on TunaHome settings. It's a child lock, not security: it only stops apps being opened from TunaHome.
+- **Open an app when the TV wakes up**, such as TunaReceive. Needs the Home button setting (below), because Android only lets that kind of app open things by itself.
+- **Free icon packs** from F-Droid, downloaded and installed from inside TunaHome (Android asks you to confirm).
+
 ## Make it yours
 
 Everything is in TunaHome settings, most used first. Each setting is a short list to pick from.
