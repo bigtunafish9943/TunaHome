@@ -25,12 +25,16 @@ class SettingsActivity : BaseActivity() {
     private lateinit var list: LinearLayout
     private var page = MAIN
     private var focusIndex = 0
+
+    /** A section to open the menu of straight away (from an app's menu on the home screen). */
+    private var openSection: String? = null
     private val rows = ArrayList<View>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_settings)
         page = intent.getStringExtra(EXTRA_PAGE) ?: MAIN
+        openSection = intent.getStringExtra(EXTRA_SECTION)
         list = findViewById(R.id.list)
         findViewById<TextView>(R.id.brandVersion).text =
             getString(R.string.version, BuildConfig.VERSION_NAME)
@@ -84,6 +88,14 @@ class SettingsActivity : BaseActivity() {
             else -> mainPage()
         }
         (rows.getOrNull(focusIndex) ?: rows.firstOrNull())?.requestFocus()
+        openSection?.let { id ->
+            openSection = null
+            val all = Rows.load(this)
+            val at = all.indexOfFirst { it.id == id }
+            if (at >= 0) {
+                list.post { sectionMenu(id, at, all.size) }
+            }
+        }
     }
 
     private fun row(title: CharSequence, summary: CharSequence, action: () -> Unit) {
@@ -262,6 +274,14 @@ class SettingsActivity : BaseActivity() {
                     row(R.string.bg_remove_own, getString(R.string.bg_remove_own_summary)) { removeOwn() }
                 }
             }
+            Backdrop.SOURCE_DAILY -> {
+                choice(R.string.daily_from, Daily.PROVIDER)
+                row(R.string.daily_again, getString(R.string.daily_again_summary)) {
+                    work(R.string.daily_failed, { Daily.picture(it, force = true) }) {
+                        Look.touch(this)
+                    }
+                }
+            }
             Backdrop.SOURCE_APP -> {
                 val app = WallpaperApps.find(this, Backdrop.app(this))
                 row(R.string.bg_which_app, app?.name ?: getString(R.string.bg_no_app)) { chooseWallpaperApp() }
@@ -289,12 +309,12 @@ class SettingsActivity : BaseActivity() {
             heading(R.string.heading_how_it_shows)
             choice(R.string.bg_dim, Backdrop.DIM)
             choice(R.string.bg_fit, Backdrop.FIT)
-            if (source != Backdrop.SOURCE_PICTURE) {
+            if (source != Backdrop.SOURCE_PICTURE && source != Backdrop.SOURCE_DAILY) {
                 choice(R.string.bg_change_every, Backdrop.CHANGE_EVERY)
                 switch(R.string.bg_shuffle, Backdrop.SHUFFLE, R.string.bg_shuffle_on, R.string.bg_shuffle_off)
                 switch(R.string.bg_play_videos, Backdrop.PLAY_VIDEOS, R.string.bg_play_videos_on, R.string.bg_play_videos_off)
             }
-            if (source == Backdrop.SOURCE_APP) {
+            if (source == Backdrop.SOURCE_APP || source == Backdrop.SOURCE_DAILY) {
                 switch(R.string.bg_caption, Backdrop.SHOW_CAPTION, R.string.shown, R.string.hidden)
             }
         }
@@ -1523,6 +1543,7 @@ class SettingsActivity : BaseActivity() {
 
     companion object {
         const val EXTRA_PAGE = "page"
+        const val EXTRA_SECTION = "section"
         private const val STATE_FOCUS = "focus"
 
         const val MAIN = "main"

@@ -129,6 +129,15 @@
     <string name="bg_picture">Your picture</string>
     <string name="bg_videos">Your videos and pictures</string>
     <string name="bg_app">A wallpaper app, such as Aerial Views</string>
+    <string name="bg_daily">A new picture every day</string>
+    <string name="daily_from">Picture of the day from</string>
+    <string name="daily_bing">Bing: a landscape or wildlife photo</string>
+    <string name="daily_wikipedia">Wikipedia: the featured picture</string>
+    <string name="daily_nasa">NASA: the astronomy picture (Bing on video days)</string>
+    <string name="daily_again">Get today\'s picture again</string>
+    <string name="daily_again_summary">Fetches it now instead of using the one kept on the TV.</string>
+    <string name="daily_failed">Couldn\'t get the picture. Check the TV\'s internet connection.</string>
+    <string name="menu_edit_section">Edit the %1$s section</string>
     <string name="bg_add_from_tv">Add one from the TV</string>
     <string name="bg_videos_none">None yet. Choose a video or picture stored on the TV.</string>
     <plurals name="bg_videos_count">

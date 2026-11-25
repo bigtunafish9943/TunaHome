@@ -969,6 +969,13 @@ class HomeActivity : BaseActivity() {
             }
         }
 
+        labels.add(getString(R.string.menu_edit_section, row.name(this)))
+        actions.add {
+            startActivity(Intent(this, SettingsActivity::class.java)
+                .putExtra(SettingsActivity.EXTRA_PAGE, SettingsActivity.SECTIONS)
+                .putExtra(SettingsActivity.EXTRA_SECTION, row.id))
+        }
+
         labels.add(getString(R.string.menu_hide))
         actions.add {
             val hidden = Prefs.hidden(this)

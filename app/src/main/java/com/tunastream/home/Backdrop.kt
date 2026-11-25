@@ -47,9 +47,10 @@ class Backdrop(
         const val SOURCE_PICTURE = 1
         const val SOURCE_VIDEOS = 2
         const val SOURCE_APP = 3
+        const val SOURCE_DAILY = 4
         val SOURCE = Look.Choice(
             "bg_source", SOURCE_THEME, intArrayOf(
-                R.string.bg_theme, R.string.bg_picture, R.string.bg_videos, R.string.bg_app,
+                R.string.bg_theme, R.string.bg_picture, R.string.bg_videos, R.string.bg_app, R.string.bg_daily,
             )
         )
 
@@ -165,6 +166,25 @@ class Backdrop(
                 }
             }
             SOURCE_VIDEOS -> play(videos(context).map { Item(it.uri, it.isVideo, null) })
+            SOURCE_DAILY -> thread(name = "TunaHome picture of the day") {
+                val (picture, caption) = try {
+                    Daily.picture(context)
+                } catch (e: Throwable) {
+                    null to null
+                }
+                main.post {
+                    if (showing != generation) return@post
+                    if (picture == null) {
+                        clear()
+                        return@post
+                    }
+                    showDrawable(BitmapDrawable(context.resources, picture))
+                    if (SHOW_CAPTION.get(context) && !caption.isNullOrBlank()) {
+                        caption.let { this.caption.text = it }
+                        this.caption.visibility = View.VISIBLE
+                    }
+                }
+            }
             SOURCE_APP -> {
                 val app = WallpaperApps.find(context, app(context))
                 if (app == null) {
