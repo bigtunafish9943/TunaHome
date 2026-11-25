@@ -13,6 +13,7 @@ abstract class BaseActivity : Activity() {
     private var lookStamp = 0
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        CrashLog.install(this)
         themeId = TunaTheme.current(this)
         lookStamp = Look.stamp(this)
         theme.applyStyle(TunaTheme.styleOf(themeId), true)

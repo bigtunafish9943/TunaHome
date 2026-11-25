@@ -932,6 +932,29 @@ class SettingsActivity : BaseActivity() {
             Prefs.setAutoUpdateCheck(this, !auto)
             build()
         }
+        val problem = CrashLog.read(this)
+        if (problem != null) {
+            row(R.string.set_last_problem, problem.lineSequence().drop(1).firstOrNull() ?: "") {
+                val view = android.widget.ScrollView(this)
+                val text = TextView(this)
+                text.text = problem
+                text.textSize = 11f
+                text.setTextIsSelectable(true)
+                text.setTextColor(themeColor(R.attr.tsText))
+                val pad = Math.round(Look.dp(this, 16f))
+                text.setPadding(pad, pad, pad, pad)
+                view.addView(text)
+                AlertDialog.Builder(this)
+                    .setTitle(R.string.set_last_problem)
+                    .setView(view)
+                    .setPositiveButton(R.string.close, null)
+                    .setNegativeButton(R.string.problem_clear) { _, _ ->
+                        CrashLog.clear(this)
+                        build()
+                    }
+                    .show()
+            }
+        }
         row(R.string.set_about, getString(R.string.set_about_summary)) {
             AlertDialog.Builder(this)
                 .setTitle(getString(R.string.version, BuildConfig.VERSION_NAME))

@@ -181,8 +181,10 @@ class AppAdapter(
             // Neighbours in a single line: slide them past each other
             notifyItemMoved(fromPosition, toPosition)
         } else {
-            notifyItemChanged(fromPosition)
-            notifyItemChanged(toPosition)
+            // Apps that swap places across lines. Telling the list "these two changed" makes it
+            // see two tiles with the same identity mid-animation, and it stops the app (the
+            // crash this replaces). Redrawing the section is safe; each tile keeps its identity.
+            notifyDataSetChanged()
         }
         focusMoving()
     }

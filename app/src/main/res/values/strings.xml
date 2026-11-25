@@ -438,6 +438,8 @@
     <string name="set_auto_update">Check by itself</string>
     <string name="set_auto_update_on">On. TunaHome looks for an update every few hours and asks before installing it.</string>
     <string name="set_auto_update_off">Off. Use Check for updates, or the Update button.</string>
+    <string name="set_last_problem">Last problem</string>
+    <string name="problem_clear">Clear it</string>
     <string name="set_about">About TunaHome</string>
     <string name="set_about_summary">Version, licence and credits.</string>
     <string name="about_body">TunaHome is free software under the GNU GPL version 3.\n\nIt includes fonts under the SIL Open Font License, icons from Google\'s Material Symbols, AndroidX and Media3 (Apache License 2.0), and Projectivy Launcher\'s wallpaper plugin interface (Apache License 2.0), which lets wallpaper apps such as Aerial Views show behind your apps.\n\ngithub.com/bigtunafish9943/TunaHome</string>
