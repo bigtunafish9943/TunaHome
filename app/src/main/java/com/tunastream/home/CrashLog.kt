@@ -16,6 +16,7 @@ import java.util.Locale
  */
 object CrashLog {
     private const val FILE = "last_problem.txt"
+    private const val TIMES = "problem_times.txt"
     private var installed = false
 
     fun install(context: Context) {
@@ -29,6 +30,11 @@ object CrashLog {
             try {
                 val trace = StringWriter().also { error.printStackTrace(PrintWriter(it)) }.toString()
                 val time = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US).format(Date())
+                // When, for the safety net below (the last three times)
+                val times = File(app.filesDir, TIMES)
+                val kept = (if (times.exists()) times.readLines() else emptyList()).takeLast(2) +
+                    System.currentTimeMillis().toString()
+                times.writeText(kept.joinToString("\n"))
                 File(app.filesDir, FILE).writeText(
                     "TunaHome ${BuildConfig.VERSION_NAME} on ${Build.MODEL}, Android ${Build.VERSION.RELEASE}\n" +
                         "$time, thread ${thread.name}\n\n$trace"
@@ -38,6 +44,19 @@ object CrashLog {
             }
             previous?.uncaughtException(thread, error)
         }
+    }
+
+    /**
+     * Whether TunaHome stopped with an error twice in the last three minutes. The Home button
+     * service then lets the TV's own home screen open instead, so a TunaHome that keeps failing
+     * can never leave the TV without a home screen.
+     */
+    fun failingLately(context: Context): Boolean = try {
+        val file = File(context.filesDir, TIMES)
+        val now = System.currentTimeMillis()
+        file.exists() && file.readLines().mapNotNull { it.trim().toLongOrNull() }.count { now - it in 0..180_000 } >= 2
+    } catch (e: Exception) {
+        false
     }
 
     fun read(context: Context): String? {

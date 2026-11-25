@@ -153,6 +153,11 @@
             android:configChanges="keyboard|keyboardHidden|navigation|orientation|screenSize|screenLayout|uiMode"
             android:exported="false"
             android:screenOrientation="landscape" />
+        <activity
+            android:name=".WelcomeActivity"
+            android:configChanges="keyboard|keyboardHidden|navigation|orientation|screenSize|screenLayout|uiMode"
+            android:exported="false"
+            android:screenOrientation="landscape" />
 
         <!-- Opens TunaHome when Home is pressed. Off until you switch it on in the TV's
              accessibility settings; switching it off there undoes it. -->

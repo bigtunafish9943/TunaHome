@@ -215,6 +215,7 @@ class HomeActivity : BaseActivity() {
             reload()
         }
         hotkeyFromIntent(intent)
+        WelcomeActivity.showIfNew(this)
     }
 
     /** The TV is short of memory: let go of what can be loaded again. */

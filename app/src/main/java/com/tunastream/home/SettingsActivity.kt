@@ -39,7 +39,7 @@ class SettingsActivity : BaseActivity() {
         findViewById<TextView>(R.id.brandVersion).text =
             getString(R.string.version, BuildConfig.VERSION_NAME)
         findViewById<TextView>(R.id.pageTitle).setText(pageTitle(page))
-        focusIndex = savedInstanceState?.getInt(STATE_FOCUS) ?: 0
+        focusIndex = savedInstanceState?.getInt(STATE_FOCUS) ?: intent.getIntExtra(EXTRA_FOCUS, 0)
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
@@ -71,6 +71,75 @@ class SettingsActivity : BaseActivity() {
     private fun build() {
         list.removeAllViews()
         rows.clear()
+        buildPage(page)
+        (rows.getOrNull(focusIndex) ?: rows.firstOrNull())?.requestFocus()
+        openSection?.let { id ->
+            openSection = null
+            val all = Rows.load(this)
+            val at = all.indexOfFirst { it.id == id }
+            if (at >= 0) {
+                list.post { sectionMenu(id, at, all.size) }
+            }
+        }
+    }
+
+    // ------------------------------------------------------------------ searching settings
+
+    private class Found(val title: String, val summary: String, val page: String, val index: Int)
+
+    /** While searching: rows are noted here instead of shown. */
+    private var collecting: MutableList<Found>? = null
+    private var collectingPage = MAIN
+    private var collectedOnPage = 0
+
+    /** Every setting whose name or current choice has [query] in it, on every page. */
+    private fun findSettings(query: String): List<Found> {
+        val found = ArrayList<Found>()
+        collecting = found
+        try {
+            for (p in SEARCHABLE) {
+                collectingPage = p
+                collectedOnPage = 0
+                try {
+                    buildPage(p)
+                } catch (e: Exception) {
+                    // A page that can't be read is left out
+                }
+            }
+        } finally {
+            collecting = null
+        }
+        val wanted = query.trim().lowercase()
+        return found.filter { it.title.lowercase().contains(wanted) || it.summary.lowercase().contains(wanted) }
+            .sortedBy { if (it.title.lowercase().contains(wanted)) 0 else 1 }
+    }
+
+    private fun searchPage() {
+        val query = intent.getStringExtra(EXTRA_QUERY) ?: ""
+        findViewById<TextView>(R.id.pageTitle).text = getString(R.string.settings_search_title, query)
+        val found = findSettings(query)
+        if (found.isEmpty()) {
+            row(getString(R.string.settings_search_none, query), getString(R.string.settings_search_again)) { askSearch() }
+            return
+        }
+        for (f in found) {
+            row(f.title, getString(pageTitle(f.page)) + (if (f.summary.isNotEmpty()) " · " + f.summary else "")) {
+                startActivity(Intent(this, SettingsActivity::class.java)
+                    .putExtra(EXTRA_PAGE, f.page).putExtra(EXTRA_FOCUS, f.index))
+            }
+        }
+    }
+
+    private fun askSearch() {
+        askForText(R.string.settings_search, "") { text ->
+            if (text.isNotBlank()) {
+                startActivity(Intent(this, SettingsActivity::class.java)
+                    .putExtra(EXTRA_PAGE, SEARCH).putExtra(EXTRA_QUERY, text.trim()))
+            }
+        }
+    }
+
+    private fun buildPage(page: String) {
         when (page) {
             BACKGROUND -> backgroundPage()
             COLOURS -> coloursPage()
@@ -85,20 +154,16 @@ class SettingsActivity : BaseActivity() {
             APPS -> appsPage()
             HOME_BUTTON -> homeButtonPage()
             UPDATES -> updatesPage()
+            SEARCH -> searchPage()
             else -> mainPage()
-        }
-        (rows.getOrNull(focusIndex) ?: rows.firstOrNull())?.requestFocus()
-        openSection?.let { id ->
-            openSection = null
-            val all = Rows.load(this)
-            val at = all.indexOfFirst { it.id == id }
-            if (at >= 0) {
-                list.post { sectionMenu(id, at, all.size) }
-            }
         }
     }
 
     private fun row(title: CharSequence, summary: CharSequence, action: () -> Unit) {
+        collecting?.let {
+            it.add(Found(title.toString(), summary.toString(), collectingPage, collectedOnPage++))
+            return
+        }
         val view = layoutInflater.inflate(R.layout.item_setting, list, false)
         view.findViewById<TextView>(R.id.title).text = title
         view.findViewById<TextView>(R.id.summary).text = summary
@@ -122,6 +187,7 @@ class SettingsActivity : BaseActivity() {
 
     /** A small heading between groups of rows. */
     private fun heading(text: Int) {
+        if (collecting != null) return
         val view = layoutInflater.inflate(R.layout.item_heading, list, false) as TextView
         view.setText(text)
         Look.styleText(view)
@@ -166,6 +232,7 @@ class SettingsActivity : BaseActivity() {
     // ------------------------------------------------------------------ the first page
 
     private fun mainPage() {
+        row(R.string.settings_search, getString(R.string.settings_search_summary)) { askSearch() }
         pageRow(BACKGROUND, backgroundSummary())
         pageRow(SECTIONS, sectionsSummary())
         pageRow(
@@ -203,6 +270,7 @@ class SettingsActivity : BaseActivity() {
         row(R.string.tv_settings, getString(R.string.set_tv_settings_summary)) {
             HomeActivity.openTvSettings(this)
         }
+        row(R.string.welcome_again, getString(R.string.welcome_again_summary)) { WelcomeActivity.start(this) }
     }
 
     private fun backgroundSummary(): String {
@@ -1654,6 +1722,15 @@ class SettingsActivity : BaseActivity() {
     companion object {
         const val EXTRA_PAGE = "page"
         const val EXTRA_SECTION = "section"
+        const val EXTRA_FOCUS = "focus"
+        private const val EXTRA_QUERY = "query"
+        const val SEARCH = "search"
+
+        /** The pages a settings search looks through. */
+        private val SEARCHABLE = listOf(
+            "background", "sections", "colours", "text", "pictures", "top_bar", "sounds", "shortcuts",
+            "weather", "apps", "home_button", "layouts", "updates",
+        )
         private const val STATE_FOCUS = "focus"
 
         const val MAIN = "main"

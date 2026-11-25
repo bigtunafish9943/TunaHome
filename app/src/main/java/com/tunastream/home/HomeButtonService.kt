@@ -88,6 +88,13 @@ class HomeButtonService : AccessibilityService() {
         if (event.keyCode != KeyEvent.KEYCODE_HOME) {
             return false
         }
+        if (CrashLog.failingLately(this)) {
+            // TunaHome keeps stopping: let the TV's own home screen open for a few minutes
+            if (event.action == KeyEvent.ACTION_UP) {
+                android.widget.Toast.makeText(this, R.string.safety_stock_home, android.widget.Toast.LENGTH_LONG).show()
+            }
+            return false
+        }
         if (event.action == KeyEvent.ACTION_UP) {
             showHome()
         }
@@ -100,7 +107,7 @@ class HomeButtonService : AccessibilityService() {
             return
         }
         val pkg = event.packageName?.toString() ?: return
-        if (pkg !in STOCK_HOME_SCREENS || !Prefs.replaceStock(this)) {
+        if (pkg !in STOCK_HOME_SCREENS || !Prefs.replaceStock(this) || CrashLog.failingLately(this)) {
             return
         }
         // At most once every couple of seconds, so a home screen that won't stay hidden can't
