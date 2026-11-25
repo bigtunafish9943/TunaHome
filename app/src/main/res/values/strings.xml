@@ -597,6 +597,35 @@
     <string name="np_play_pause">Play or pause</string>
     <string name="np_open">Open the app that\'s playing</string>
 
+    <!-- Layouts and backup -->
+    <string name="page_layouts">Layouts and backup</string>
+    <string name="layouts_none_short">Save your setup, switch layouts, back up</string>
+    <plurals name="layouts_count">
+        <item quantity="one">%1$d saved layout</item>
+        <item quantity="other">%1$d saved layouts</item>
+    </plurals>
+    <string name="layout_save">Save this layout</string>
+    <string name="layout_save_summary">Keeps everything about how TunaHome looks and is arranged under a name: sections, favourites, icons, background, text, shortcuts, your pictures and font.</string>
+    <string name="layout_saved">Saved as %1$s.</string>
+    <string name="layout_entry_summary">Use it, update it with how things are now, export or delete it.</string>
+    <string name="layout_use">Use this layout</string>
+    <string name="layout_use_title">Use %1$s?</string>
+    <string name="layout_use_body">This replaces how TunaHome is set up now. Save the current layout first if you want to come back to it. TunaHome restarts to show it.</string>
+    <string name="layout_update">Update it with how things are now</string>
+    <string name="layout_export_one">Export to the TV\'s Downloads folder</string>
+    <string name="layout_delete">Delete it</string>
+    <string name="heading_backup">Backup</string>
+    <string name="layout_export">Back up to Downloads</string>
+    <string name="layout_export_summary">Saves everything to a file in the TV\'s Downloads folder, to keep or copy to another TV.</string>
+    <string name="layout_exported">Saved to Downloads as %1$s.</string>
+    <string name="layout_import">Restore a backup</string>
+    <string name="layout_import_summary">From a TunaHome backup in Downloads, or any file through a file manager.</string>
+    <string name="layout_import_other">Choose a file…</string>
+    <string name="layout_import_failed">That file isn\'t a TunaHome backup, or couldn\'t be read.</string>
+    <string name="layout_failed">That didn\'t work. The TV may be out of storage.</string>
+    <string name="layout_auto">Automatic backup</string>
+    <string name="layout_auto_summary">If the TV backs up to your Google account, Android also keeps TunaHome\'s settings and puts them back if you reinstall.</string>
+
     <!-- Shortcuts -->
     <string name="page_shortcuts">Shortcuts</string>
     <string name="shortcuts_none_short">None yet</string>
