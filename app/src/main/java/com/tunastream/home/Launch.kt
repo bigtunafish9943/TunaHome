@@ -21,6 +21,7 @@ object Launch {
                 Prefs.setLastOpened(activity, app.pkg)
                 Prefs.addRecent(activity, app.pkg)
                 Prefs.addUse(activity, app.pkg)
+                Prefs.addHourUse(activity, app.pkg)
             }
         } catch (e: Exception) {
             Toast.makeText(activity, activity.getString(R.string.open_failed, app.label), Toast.LENGTH_LONG).show()

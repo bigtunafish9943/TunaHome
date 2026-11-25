@@ -962,4 +962,8 @@
     <string name="settings_search_none">Nothing called \"%1$s\"</string>
     <string name="settings_search_again">Search again</string>
     <string name="safety_stock_home">TunaHome stopped with a problem, so the TV\'s own home screen opens for a few minutes. Details are in TunaHome settings, Updates, Last problem.</string>
+    <string name="for_you">For you</string>
+    <string name="quick_title">Quick changes</string>
+    <string name="quick_everything">Everything else…</string>
+    <string name="quick_more_backgrounds">More: your own pictures, videos…</string>
 </resources>

@@ -32,6 +32,7 @@ object HotkeyActions {
     const val MUTE = "mute"
     const val UPDATES = "check_updates"
     const val SLEEP_TIMER = "sleep_timer"
+    const val QUICK = "quick_changes"
 
     /** Every action in the order the list shows them, with its name. */
     val ALL = listOf(
@@ -53,6 +54,7 @@ object HotkeyActions {
         SLEEP to R.string.act_sleep,
         SLEEP_TIMER to R.string.act_sleep_timer,
         BACK to R.string.act_back,
+        QUICK to R.string.quick_title,
         SETTINGS to R.string.act_settings,
         TV_SETTINGS to R.string.act_tv_settings,
         UPDATES to R.string.act_updates,
@@ -62,7 +64,7 @@ object HotkeyActions {
     private val NEEDS_SERVICE = setOf(RECENTS, NOTIFICATIONS, SLEEP, SCREENSHOT, BACK)
 
     /** Actions about the home screen itself: from elsewhere, TunaHome opens first. */
-    private val ON_HOME_SCREEN = setOf(HOME_TOP, SIDE_MENU, SECTION, NEXT_BACKGROUND, IDLE, SLEEP_TIMER)
+    private val ON_HOME_SCREEN = setOf(HOME_TOP, SIDE_MENU, SECTION, NEXT_BACKGROUND, IDLE, SLEEP_TIMER, QUICK)
 
     const val EXTRA_ACTION = "hotkey_action"
     const val EXTRA_ARG = "hotkey_arg"
@@ -116,7 +118,7 @@ object HotkeyActions {
             return
         }
         when (action) {
-            HOME_TOP, SIDE_MENU, SECTION, NEXT_BACKGROUND, IDLE, SLEEP_TIMER -> home?.hotkey(action, arg)
+            HOME_TOP, SIDE_MENU, SECTION, NEXT_BACKGROUND, IDLE, SLEEP_TIMER, QUICK -> home?.hotkey(action, arg)
             SEARCH, VOICE -> context.startActivity(Intent(context, SearchActivity::class.java)
                 .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                 .putExtra(SearchActivity.EXTRA_VOICE, action == VOICE))

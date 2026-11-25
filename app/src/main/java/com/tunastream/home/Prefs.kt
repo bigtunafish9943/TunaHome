@@ -134,6 +134,23 @@ object Prefs {
     fun uses(context: Context): Map<String, Int> =
         pairs(context, "app_uses").mapValues { it.value.toIntOrNull() ?: 0 }
 
+    /** How often each app was opened in each hour of the day, for "For you". */
+    fun hourUses(context: Context): Map<String, IntArray> =
+        pairs(context, "app_hours").mapValues { (_, v) ->
+            val parts = v.split(',')
+            IntArray(24) { parts.getOrNull(it)?.toIntOrNull() ?: 0 }
+        }
+
+    fun addHourUse(context: Context, pkg: String) {
+        val hour = java.util.Calendar.getInstance().get(java.util.Calendar.HOUR_OF_DAY)
+        val map = pairs(context, "app_hours")
+        val counts = map[pkg]?.split(',')?.map { it.toIntOrNull() ?: 0 }?.toMutableList() ?: MutableList(24) { 0 }
+        while (counts.size < 24) counts.add(0)
+        counts[hour] = counts[hour] + 1
+        map[pkg] = counts.joinToString(",")
+        savePairs(context, "app_hours", map)
+    }
+
     @Volatile
     private var openedCache: Set<String>? = null
 

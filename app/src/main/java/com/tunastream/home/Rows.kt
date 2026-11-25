@@ -18,6 +18,7 @@ object Rows {
     const val SIDELOADED = "sideloaded"
     const val GAMES = "games"
     const val PC_GAMES = "pcgames"
+    const val FOR_YOU = "foryou"
     const val VIDEO = "video"
     const val MUSIC = "music"
     const val CUSTOM = "custom"
@@ -68,6 +69,7 @@ object Rows {
                 SIDELOADED -> R.string.sideloaded
                 GAMES -> R.string.games
                 PC_GAMES -> R.string.pc_games
+                FOR_YOU -> R.string.for_you
                 VIDEO -> R.string.video_apps
                 MUSIC -> R.string.music_apps
                 else -> R.string.row_untitled
@@ -79,7 +81,7 @@ object Rows {
 
         /** Sections in an order of their own (newest first, or what the TV says) can't be sorted or moved in. */
         val ownOrder: Boolean
-            get() = kind == RECENT || kind == WATCH_NEXT || kind == NOW_PLAYING || kind == PC_GAMES
+            get() = kind == RECENT || kind == WATCH_NEXT || kind == NOW_PLAYING || kind == PC_GAMES || kind == FOR_YOU
     }
 
     fun load(context: Context): MutableList<Row> {
@@ -121,6 +123,11 @@ object Rows {
         if (rows.none { it.kind == SIDELOADED }) {
             val at = rows.indexOfFirst { it.kind == MOBILE }
             rows.add(if (at >= 0) at + 1 else rows.size, Row(SIDELOADED, SIDELOADED, null, false))
+        }
+        // For you came later: after Favourites (it shows once it has learnt something)
+        if (rows.none { it.kind == FOR_YOU }) {
+            val at = rows.indexOfFirst { it.kind == FAVOURITES }
+            rows.add(if (at >= 0) at + 1 else 0, Row(FOR_YOU, FOR_YOU, null, true))
         }
         // PC games came later: under Watch Next (it hides itself without TunaReceive)
         if (rows.none { it.kind == PC_GAMES }) {

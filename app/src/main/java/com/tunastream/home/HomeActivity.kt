@@ -108,6 +108,7 @@ class HomeActivity : BaseActivity() {
                 enterIdle()
             }
             HotkeyActions.SLEEP_TIMER -> chooseSleep()
+            HotkeyActions.QUICK -> quickCustomise()
         }
     }
 
@@ -141,6 +142,10 @@ class HomeActivity : BaseActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_home)
         choosingPictureFor = savedInstanceState?.getString(STATE_PICTURE_FOR)
+        if (savedInstanceState?.getBoolean(STATE_QUICK) == true) {
+            // Rebuilt after a quick change: offer the list again once the screen is up
+            window.decorView.postDelayed({ if (!isDestroyed) quickCustomise() }, 350)
+        }
 
         scroll = findViewById(R.id.scroll)
         appsHint = findViewById(R.id.appsHint)
@@ -232,6 +237,100 @@ class HomeActivity : BaseActivity() {
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
         outState.putString(STATE_PICTURE_FOR, choosingPictureFor)
+        outState.putBoolean(STATE_QUICK, reopenQuick)
+    }
+
+    // ------------------------------------------------------------------ quick changes
+
+    /** Set when a quick change rebuilds the screen, so the list comes back to try another. */
+    private var reopenQuick = false
+
+    /**
+     * The most changed settings, over the home screen itself: each change shows behind the list
+     * straight away, and the list comes back so the next can be tried.
+     */
+    fun quickCustomise() {
+        if (AppLock.settingsLocked(this) && !quickUnlocked) {
+            AppLock.ask(this, getString(R.string.quick_title)) {
+                quickUnlocked = true
+                quickCustomise()
+            }
+            return
+        }
+        val labels = ArrayList<String>()
+        val actions = ArrayList<() -> Unit>()
+        fun item(title: Int, value: String, action: () -> Unit) {
+            labels.add(getString(title) + ":  " + value)
+            actions.add(action)
+        }
+        fun choice(title: Int, setting: Look.Choice) = item(title, setting.name(this)) {
+            chooseOne(getString(title), setting.names.map { getString(it) }, setting.get(this)) {
+                setting.set(this, it)
+                quickApplied()
+            }
+        }
+        item(R.string.set_theme, getString(TunaTheme.nameOf(TunaTheme.chosen(this)))) {
+            val ids = TunaTheme.IDS
+            chooseOne(getString(R.string.set_theme), ids.map { getString(TunaTheme.nameOf(it)) }, ids.indexOf(TunaTheme.chosen(this))) {
+                TunaTheme.setChosen(this, ids[it])
+                Look.touch(this)
+                quickApplied()
+            }
+        }
+        choice(R.string.set_accent, Look.ACCENT)
+        item(R.string.set_background, Backdrop.SOURCE.name(this)) { quickBackground() }
+        choice(R.string.bg_dim, Backdrop.DIM)
+        choice(R.string.set_tile_style, Look.TILE_STYLE)
+        choice(R.string.set_card_size, Look.CARD_SIZE)
+        choice(R.string.set_focus_zoom, Look.FOCUS_ZOOM)
+        choice(R.string.set_focus_shadow, Look.FOCUS_SHADOW)
+        choice(R.string.set_text_size, Look.TEXT_SIZE)
+        choice(R.string.set_section_position, Look.SECTION_POSITION)
+        labels.add(getString(R.string.quick_everything))
+        actions.add {
+            startActivity(Intent(this, SettingsActivity::class.java))
+        }
+        AlertDialog.Builder(this)
+            .setTitle(R.string.quick_title)
+            .setItems(labels.toTypedArray()) { _, which -> actions[which]() }
+            .show()
+    }
+
+    private var quickUnlocked = false
+
+    /** Backgrounds that need nothing more chosen; the rest are in settings. */
+    private fun quickBackground() {
+        val names = ArrayList<String>()
+        val picks = ArrayList<() -> Unit>()
+        names.add(getString(R.string.bg_theme)); picks.add { Backdrop.SOURCE.set(this, Backdrop.SOURCE_THEME) }
+        names.add(getString(R.string.bg_daily)); picks.add { Backdrop.SOURCE.set(this, Backdrop.SOURCE_DAILY) }
+        WallpaperApps.installed(this).forEach { app ->
+            names.add(app.name)
+            picks.add {
+                Backdrop.setApp(this, app.component)
+                Backdrop.SOURCE.set(this, Backdrop.SOURCE_APP)
+            }
+        }
+        names.add(getString(R.string.quick_more_backgrounds))
+        picks.add {
+            startActivity(Intent(this, SettingsActivity::class.java)
+                .putExtra(SettingsActivity.EXTRA_PAGE, SettingsActivity.BACKGROUND))
+        }
+        chooseOne(getString(R.string.set_background), names, -1) { which ->
+            picks[which]()
+            if (which < names.size - 1) quickApplied()
+        }
+    }
+
+    /** Rebuilds the home screen in the new look, then shows the quick list again. */
+    private fun quickApplied() {
+        reopenQuick = true
+        if (outOfDate()) {
+            recreate()
+        } else {
+            reopenQuick = false
+            quickCustomise()
+        }
     }
 
     override fun onDestroy() {
@@ -617,7 +716,7 @@ class HomeActivity : BaseActivity() {
         } else if (loaded) {
             // Back from an app: it is now the most recent, and used once more. Only those
             // sections change, so the rest of the screen keeps your place.
-            show(sections.filter { it.row.kind == Rows.RECENT || it.row.sort == Rows.SORT_USED }
+            show(sections.filter { it.row.kind == Rows.RECENT || it.row.kind == Rows.FOR_YOU || it.row.sort == Rows.SORT_USED }
                 .map { it.row.id }.toSet())
         }
         scheduleIdle()
@@ -658,6 +757,7 @@ class HomeActivity : BaseActivity() {
                 Rows.TV -> R.drawable.ic_tv
                 Rows.MOBILE -> R.drawable.ic_phone
                 Rows.RECENT -> R.drawable.ic_history
+                Rows.FOR_YOU -> R.drawable.ic_star
                 Rows.WATCH_NEXT -> R.drawable.ic_play
                 Rows.SIDELOADED -> R.drawable.ic_apps
                 Rows.GAMES, Rows.PC_GAMES -> R.drawable.ic_games
@@ -670,6 +770,9 @@ class HomeActivity : BaseActivity() {
         if (Look.SIDE_MENU_SHORTCUTS.get(this)) {
             entries.add(SideMenu.Entry(0, "", null) {})
             entries.add(SideMenu.Entry(R.drawable.ic_search, getString(R.string.search), null) { openSearch(false) })
+            entries.add(SideMenu.Entry(R.drawable.ic_display, getString(R.string.quick_title), null) {
+                quickCustomise()
+            })
             entries.add(SideMenu.Entry(R.drawable.ic_settings, getString(R.string.tunahome_settings), null) {
                 openTunaHomeSettings()
             })
@@ -1045,6 +1148,20 @@ class HomeActivity : BaseActivity() {
         return apps.sortedBy { place[it.pkg] ?: Int.MAX_VALUE }
     }
 
+    /**
+     * The apps you usually open around this time of day, most likely first: each app's opens in
+     * this hour count fully, the hours either side half, two hours away a quarter.
+     */
+    private fun forYou(everyApp: Map<String, AppEntry>): List<AppEntry> {
+        val hour = java.util.Calendar.getInstance().get(java.util.Calendar.HOUR_OF_DAY)
+        val weights = mapOf(0 to 1f, 1 to 0.5f, -1 to 0.5f, 2 to 0.25f, -2 to 0.25f)
+        return Prefs.hourUses(this).mapNotNull { (pkg, counts) ->
+            val app = everyApp[pkg] ?: return@mapNotNull null
+            val score = weights.entries.sumOf { (k, w) -> (counts[(hour + k + 24) % 24] * w).toDouble() }
+            if (score >= 1.0) app to score else null
+        }.sortedByDescending { it.second }.take(FOR_YOU_MAX).map { it.first }
+    }
+
     /** A section sorted the way the viewer chose for it. */
     private fun sorted(list: List<AppEntry>, sort: Int): List<AppEntry> = when (sort) {
         Rows.SORT_AZ -> list.sortedBy { it.label.lowercase(Locale.getDefault()) }
@@ -1180,6 +1297,7 @@ class HomeActivity : BaseActivity() {
                 Rows.VIDEO -> ordered(loose.filter { it.group == Apps.VIDEO }, Prefs.order(this, section.row.id))
                 Rows.MUSIC -> ordered(loose.filter { it.group == Apps.MUSIC }, Prefs.order(this, section.row.id))
                 Rows.RECENT -> Prefs.recent(this).mapNotNull { everyApp[it] }
+                Rows.FOR_YOU -> forYou(everyApp)
                 Rows.WATCH_NEXT -> watchNext
                 Rows.PC_GAMES -> pcGames
                 else -> (rows[section.row.id]?.apps ?: section.row.apps).mapNotNull { byPackage[it] }
@@ -1447,6 +1565,9 @@ class HomeActivity : BaseActivity() {
             }
         }
 
+        labels.add(getString(R.string.quick_title))
+        actions.add { quickCustomise() }
+
         labels.add(getString(R.string.menu_edit_section, row.name(this)))
         actions.add {
             startActivity(Intent(this, SettingsActivity::class.java)
@@ -1669,6 +1790,8 @@ class HomeActivity : BaseActivity() {
 
     companion object {
         private const val STATE_PICTURE_FOR = "picture_for"
+        private const val STATE_QUICK = "quick"
+        private const val FOR_YOU_MAX = 12
         private const val REQUEST_TILE_PICTURE = 1
 
         /** The TV's own settings, which a home screen has to offer a way into. */

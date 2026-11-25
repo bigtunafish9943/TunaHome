@@ -31,6 +31,8 @@ The app id is `com.tunastream.home`.
 - **Screen saver.** TunaHome can be the TV's screen saver: your background (Aerial Views too) with the time, moving corner to corner every few minutes. It also shows the weather and what's playing, if those are switched on. Choose it in the TV's screen saver settings.
 - **Web links as cards.** Add a website, a YouTube channel or any app link to Favourites or a section of your own; it shows the picture of the app that opens it, or one you choose.
 - **Sleep timer** from the side menu or a shortcut: the TV goes to sleep after 15 minutes to 3 hours, with a warning a minute before. Needs the Home button setting.
+- **For you:** the apps you usually open at this time of day, learnt as you use TunaHome (nothing leaves the TV).
+- **Quick changes** from the side menu, an app's menu or a shortcut: theme, highlight colour, background, cards, text size and more, changed over the home screen itself so you see each one straight away.
 - **Each section its own card style:** TV pictures in one, icons in another.
 - **Starts instantly after a restart:** a copy of your apps and their pictures is kept on the TV, shown at once while the full list loads.
 - **Automatic backup** of your setup to Downloads once a day, the last three kept, ready to bring back from Layouts.
