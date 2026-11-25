@@ -55,4 +55,23 @@ object Prefs {
     fun setWallpaperStamp(context: Context, stamp: Long) {
         of(context).edit().putLong(WALLPAPER_STAMP, stamp).apply()
     }
+
+    /**
+     * The viewer's own order for a row ("tv" or "mobile"), as package names. Empty means A to Z.
+     * Apps that are not in the list, such as ones installed later, follow it in A to Z order.
+     */
+    fun order(context: Context, row: String): List<String> =
+        (of(context).getString("order_$row", "") ?: "").split('\n').filter { it.isNotEmpty() }
+
+    fun setOrder(context: Context, row: String, packages: List<String>) {
+        of(context).edit().putString("order_$row", packages.joinToString("\n")).apply()
+    }
+
+    fun hasOwnOrder(context: Context): Boolean =
+        order(context, "tv").isNotEmpty() || order(context, "mobile").isNotEmpty()
+
+    fun clearOrder(context: Context) {
+        of(context).edit().remove("order_tv").remove("order_mobile").apply()
+        appsChanged = true
+    }
 }

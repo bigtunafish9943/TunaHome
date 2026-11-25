@@ -69,9 +69,9 @@ class HomeActivity : BaseActivity() {
         findViewById<TextView>(R.id.brandVersion).text =
             getString(R.string.version, BuildConfig.VERSION_NAME)
 
-        favourites = row(R.id.favouritesTitle, R.id.favourites)
-        tvApps = row(R.id.tvAppsTitle, R.id.tvApps)
-        mobileApps = row(R.id.mobileAppsTitle, R.id.mobileApps)
+        favourites = row(R.id.favouritesTitle, R.id.favourites) { Prefs.setFavourites(this, it) }
+        tvApps = row(R.id.tvAppsTitle, R.id.tvApps) { Prefs.setOrder(this, "tv", it) }
+        mobileApps = row(R.id.mobileAppsTitle, R.id.mobileApps) { Prefs.setOrder(this, "mobile", it) }
 
         findViewById<View>(R.id.checkUpdate).setOnClickListener { Updater.check(this, true) }
         findViewById<View>(R.id.openTvSettings).setOnClickListener { openTvSettings(this) }
@@ -97,13 +97,26 @@ class HomeActivity : BaseActivity() {
         reload()
     }
 
-    private fun row(titleId: Int, listId: Int): Row {
+    /** Sets up one row. [saveOrder] is given the row's packages after an app was moved in it. */
+    private fun row(titleId: Int, listId: Int, saveOrder: (List<String>) -> Unit): Row {
         val list = findViewById<RecyclerView>(listId)
-        val adapter = AppAdapter(::open, ::showMenu)
+        lateinit var made: Row
+        val adapter = AppAdapter(::open, { app -> showMenu(app, made) }, saveOrder)
         list.layoutManager = LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false)
         list.adapter = adapter
         list.itemAnimator = null
-        return Row(findViewById(titleId), list, adapter)
+        made = Row(findViewById(titleId), list, adapter)
+        return made
+    }
+
+    /** A row in the viewer's own order; apps they haven't placed follow in A to Z order. */
+    private fun ordered(apps: List<AppEntry>, order: List<String>): List<AppEntry> {
+        if (order.isEmpty()) {
+            return apps
+        }
+        val place = HashMap<String, Int>()
+        order.forEachIndexed { index, pkg -> place[pkg] = index }
+        return apps.sortedBy { place[it.pkg] ?: Int.MAX_VALUE }
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
@@ -224,15 +237,13 @@ class HomeActivity : BaseActivity() {
         val byPackage = visible.associateBy { it.pkg }
 
         favourites.show(Prefs.favourites(this).mapNotNull { byPackage[it] })
-        tvApps.show(visible.filter { it.tv })
-        mobileApps.show(visible.filter { !it.tv })
+        tvApps.show(ordered(visible.filter { it.tv }, Prefs.order(this, "tv")))
+        mobileApps.show(ordered(visible.filter { !it.tv }, Prefs.order(this, "mobile")))
 
-        // One line of help: while loading, when there is nothing to show, and until the first
-        // favourite is added
+        // One line of text only while loading or when there is nothing to show
         val hint = when {
             !loaded -> R.string.loading_apps
             visible.isEmpty() -> R.string.no_apps
-            favourites.adapter.itemCount == 0 -> R.string.favourites_hint
             else -> 0
         }
         appsHint.visibility = if (hint == 0) View.GONE else View.VISIBLE
@@ -257,11 +268,21 @@ class HomeActivity : BaseActivity() {
 
     // ------------------------------------------------------------------ an app's menu
 
-    private fun showMenu(app: AppEntry) {
+    private fun showMenu(app: AppEntry, row: Row) {
         val list = Prefs.favourites(this)
         val at = list.indexOf(app.pkg)
         val labels = ArrayList<String>()
         val actions = ArrayList<() -> Unit>()
+
+        // First, so that hold select then select picks the app up
+        if (row.adapter.itemCount > 1) {
+            labels.add(getString(R.string.menu_move))
+            actions.add {
+                if (row.adapter.startMove(app.pkg)) {
+                    Toast.makeText(this, R.string.move_hint, Toast.LENGTH_LONG).show()
+                }
+            }
+        }
 
         if (at < 0) {
             labels.add(getString(R.string.menu_add_favourite))
@@ -270,22 +291,6 @@ class HomeActivity : BaseActivity() {
                 saveFavourites(list, app.pkg)
             }
         } else {
-            if (at > 0) {
-                labels.add(getString(R.string.menu_move_left))
-                actions.add {
-                    list.removeAt(at)
-                    list.add(at - 1, app.pkg)
-                    saveFavourites(list, app.pkg)
-                }
-            }
-            if (at < list.size - 1) {
-                labels.add(getString(R.string.menu_move_right))
-                actions.add {
-                    list.removeAt(at)
-                    list.add(at + 1, app.pkg)
-                    saveFavourites(list, app.pkg)
-                }
-            }
             labels.add(getString(R.string.menu_remove_favourite))
             actions.add {
                 list.remove(app.pkg)

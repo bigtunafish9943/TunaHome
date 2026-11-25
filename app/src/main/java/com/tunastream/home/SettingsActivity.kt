@@ -118,6 +118,26 @@ class SettingsActivity : BaseActivity() {
             else resources.getQuantityString(R.plurals.set_hidden_count, hiddenCount, hiddenCount)
         ) { chooseHidden() }
 
+        val ownOrder = Prefs.hasOwnOrder(this)
+        row(
+            getString(R.string.set_order),
+            getString(if (ownOrder) R.string.set_order_own else R.string.set_order_az)
+        ) {
+            if (ownOrder) {
+                AlertDialog.Builder(this)
+                    .setTitle(R.string.set_order)
+                    .setMessage(R.string.set_order_confirm)
+                    .setPositiveButton(R.string.set_order_reset) { _, _ ->
+                        Prefs.clearOrder(this)
+                        build()
+                    }
+                    .setNegativeButton(R.string.cancel, null)
+                    .show()
+            } else {
+                Toast.makeText(this, R.string.set_order_az, Toast.LENGTH_LONG).show()
+            }
+        }
+
         // Home button
         val homeOn = HomeButtonService.isOn(this)
         row(

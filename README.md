@@ -11,7 +11,8 @@ The app id is `com.tunastream.home`.
 ## What it does
 
 - **Rows of apps that run the width of the screen.** Favourites first, in the order you choose, then apps made for TV, then mobile apps. The app you are on is enlarged and its name appears under it.
-- **An app's menu.** Hold select on an app (or press Menu on a remote, or X or Y on a controller) to add it to favourites, move it, change its picture, hide it, open its app info, or uninstall it.
+- **Put apps where you want them.** Hold select on an app and choose Move, press left or right to slide it along its row, then press select. Every row can be reordered; TunaHome settings can put them back in A to Z order.
+- **An app's menu.** Hold select on an app (or press Menu on a remote, or X or Y on a controller) to move it, add it to favourites, change its picture, hide it, open its app info, or uninstall it.
 - **Update, TV settings and TunaHome settings** are small buttons beside the clock.
 - **Make it yours**, in TunaHome settings:
   - **Wallpaper:** any picture on the TV, behind the home screen. Without one, the theme's colours show.

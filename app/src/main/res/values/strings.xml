@@ -9,7 +9,6 @@
     <string name="favourites">Favourites</string>
     <string name="tv_apps">TV apps</string>
     <string name="mobile_apps">Mobile apps</string>
-    <string name="favourites_hint">Hold select on an app to add it to favourites, hide it or uninstall it.</string>
     <string name="loading_apps">Finding your apps…</string>
     <string name="no_apps">No apps to show. Hidden apps can be shown again in TunaHome settings.</string>
     <string name="tv_settings">TV settings</string>
@@ -20,8 +19,8 @@
     <!-- An app's menu -->
     <string name="menu_add_favourite">Add to favourites</string>
     <string name="menu_remove_favourite">Remove from favourites</string>
-    <string name="menu_move_left">Move left</string>
-    <string name="menu_move_right">Move right</string>
+    <string name="menu_move">Move</string>
+    <string name="move_hint">Press left or right to move it. Press select when it\'s where you want it.</string>
     <string name="menu_change_picture">Change its picture</string>
     <string name="menu_own_picture">Use its own picture again</string>
     <string name="menu_hide">Hide from TunaHome</string>
@@ -54,6 +53,12 @@
         <item quantity="other">%1$d hidden. Choose which to show again.</item>
     </plurals>
     <string name="set_hidden_title">Tick the apps to keep hidden</string>
+
+    <string name="set_order">App order</string>
+    <string name="set_order_az">A to Z. To move an app, hold select on it and choose Move.</string>
+    <string name="set_order_own">Your own order. Select to put TV apps and mobile apps back in A to Z order.</string>
+    <string name="set_order_confirm">Put TV apps and mobile apps back in A to Z order? Your favourites keep their order.</string>
+    <string name="set_order_reset">Put back in A to Z order</string>
 
     <string name="set_wallpaper">Wallpaper</string>
     <string name="set_wallpaper_none">None. The theme\'s colours are showing.</string>
