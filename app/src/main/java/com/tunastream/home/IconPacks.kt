@@ -53,6 +53,13 @@ object IconPacks {
         "com.nvidia.tegrazone3" to "com.nvidia.geforcenow",
     )
 
+    /** Words too common to stand for one app on their own. */
+    private val GENERIC = setOf(
+        "video", "videos", "music", "player", "plus", "live", "home", "settings", "games", "game",
+        "tvapp", "app", "apps", "android", "google", "amazon", "files", "store", "media", "stream",
+        "streaming", "remote", "launcher", "browser", "kids", "news", "sports", "movies", "photos",
+    )
+
     /** Endings TV apps add to their names, which pack drawings don't have. */
     private val TV_WORDS = listOf("androidtv", "fortv", "fortvs", "tv", "livingroom", "leanback")
 
@@ -145,15 +152,49 @@ object IconPacks {
     }
 
     /** One pack, read once: which picture goes with which app. */
+    private val loadedPacks = HashMap<String, Pair<Long, Loaded>>()
+
+    /**
+     * The pack, read once and kept: reading a big pack's list again on every reload was slow,
+     * and a reload could come back with fewer icons than the first time.
+     */
+    fun load(context: Context, pkg: String): Loaded {
+        val updated = try {
+            context.packageManager.getPackageInfo(pkg, 0).lastUpdateTime
+        } catch (e: Exception) {
+            0L
+        }
+        synchronized(loadedPacks) {
+            loadedPacks[pkg]?.let { if (it.first == updated && it.second.size > 0) return it.second }
+            val fresh = Loaded(context.applicationContext, pkg)
+            loadedPacks[pkg] = updated to fresh
+            return fresh
+        }
+    }
+
     class Loaded(private val context: Context, private val pkg: String) {
         private val byComponent = HashMap<String, String>()
         private val byPackage = HashMap<String, String>()
         /** Every drawable the pack names, by its plain name, for matching on an app's name. */
         private val byName = HashMap<String, String>()
 
+        /** The pack's own frame for icons it doesn't have, if it has one. */
+        private val backs = ArrayList<String>()
+        private var mask: String? = null
+        private var upon: String? = null
+        private var scale = 1f
+
+        val hasFrame: Boolean
+            get() = backs.isNotEmpty() || mask != null || upon != null
+
+        /** How many apps the pack lists. */
+        val size: Int
+            get() = byComponent.size
+
         /** Every drawing in the pack, by name, for choosing by hand. */
         val names: List<String>
             get() = byName.values.distinct().sorted()
+
         private val res = try {
             context.packageManager.getResourcesForApplication(pkg)
         } catch (e: PackageManager.NameNotFoundException) {
@@ -161,46 +202,109 @@ object IconPacks {
         }
 
         init {
+            // Many packs carry their list twice (res/xml and assets), and one copy is often
+            // shorter or older: read both and keep everything from either
+            val res = res
+            if (res != null) {
+                val id = res.getIdentifier("appfilter", "xml", pkg)
+                if (id != 0) {
+                    try {
+                        read(res.getXml(id))
+                    } catch (e: Exception) {
+                        // Keep what was read
+                    }
+                }
+            }
             try {
-                read()
+                context.createPackageContext(pkg, 0).assets.open("appfilter.xml").use { stream ->
+                    read(XmlPullParserFactory.newInstance().newPullParser().apply { setInput(stream, null) })
+                }
             } catch (e: Exception) {
-                // A pack we can't read just gives no icons
+                // No copy in assets, or it stopped part way: keep what was read
             }
         }
 
-        private fun read() {
-            val res = res ?: return
-            val id = res.getIdentifier("appfilter", "xml", pkg)
-            val parser: XmlPullParser = if (id != 0) {
-                res.getXml(id)
-            } else {
-                val stream = context.createPackageContext(pkg, 0).assets.open("appfilter.xml")
-                XmlPullParserFactory.newInstance().newPullParser().apply { setInput(stream, null) }
-            }
+        private fun read(parser: XmlPullParser) {
             var event = parser.eventType
             while (event != XmlPullParser.END_DOCUMENT) {
-                if (event == XmlPullParser.START_TAG && parser.name == "item") {
-                    val component = parser.getAttributeValue(null, "component")
-                    val drawable = parser.getAttributeValue(null, "drawable")
-                    if (component != null && drawable != null) {
-                        // "ComponentInfo{com.example/com.example.MainActivity}"
-                        val inside = component.substringAfter('{', "").substringBefore('}', "")
-                        if (inside.contains('/')) {
-                            val app = inside.substringBefore('/')
-                            var cls = inside.substringAfter('/')
-                            if (cls.startsWith(".")) {
-                                cls = app + cls
-                            }
-                            byComponent["$app/$cls"] = drawable
-                            byName[plain(drawable)] = drawable
-                            if (!byPackage.containsKey(app)) {
-                                byPackage[app] = drawable
-                            }
+                if (event == XmlPullParser.START_TAG) {
+                    when (parser.name) {
+                        "item" -> item(parser)
+                        "iconback" -> for (i in 0 until parser.attributeCount) {
+                            if (parser.getAttributeName(i).startsWith("img")) backs.add(parser.getAttributeValue(i))
                         }
+                        "iconmask" -> mask = parser.getAttributeValue(null, "img1") ?: mask
+                        "iconupon" -> upon = parser.getAttributeValue(null, "img1") ?: upon
+                        "scale" -> scale = parser.getAttributeValue(null, "factor")?.toFloatOrNull() ?: scale
                     }
                 }
                 event = parser.next()
             }
+        }
+
+        private fun item(parser: XmlPullParser) {
+            val component = parser.getAttributeValue(null, "component") ?: return
+            val drawable = parser.getAttributeValue(null, "drawable") ?: return
+            // "ComponentInfo{com.example/com.example.MainActivity}"
+            val inside = component.substringAfter('{', "").substringBefore('}', "")
+            if (!inside.contains('/')) {
+                return
+            }
+            val app = inside.substringBefore('/')
+            var cls = inside.substringAfter('/')
+            if (cls.startsWith(".")) {
+                cls = app + cls
+            }
+            if (!byComponent.containsKey("$app/$cls")) {
+                byComponent["$app/$cls"] = drawable
+            }
+            if (!byName.containsKey(plain(drawable))) {
+                byName[plain(drawable)] = drawable
+            }
+            if (!byPackage.containsKey(app)) {
+                byPackage[app] = drawable
+            }
+        }
+
+        /**
+         * An app the pack has no drawing for, in the pack's own frame: its background, the
+         * app's icon shrunk onto it, cut by its mask, with its overlay on top.
+         */
+        fun framed(appPkg: String, icon: Drawable?): Drawable? {
+            if (!hasFrame || icon == null || res == null) {
+                return null
+            }
+            val size = 192
+            val bitmap = android.graphics.Bitmap.createBitmap(size, size, android.graphics.Bitmap.Config.ARGB_8888)
+            val canvas = android.graphics.Canvas(bitmap)
+            if (backs.isNotEmpty()) {
+                drawable(backs[Math.abs(appPkg.hashCode()) % backs.size])?.let {
+                    it.setBounds(0, 0, size, size)
+                    it.draw(canvas)
+                }
+            }
+            val inner = Math.round(size * scale)
+            val offset = (size - inner) / 2
+            val copy = icon.constantState?.newDrawable()?.mutate() ?: icon
+            copy.setBounds(offset, offset, offset + inner, offset + inner)
+            copy.draw(canvas)
+            mask?.let { name ->
+                drawable(name)?.let { m ->
+                    val maskBitmap = android.graphics.Bitmap.createBitmap(size, size, android.graphics.Bitmap.Config.ARGB_8888)
+                    m.setBounds(0, 0, size, size)
+                    m.draw(android.graphics.Canvas(maskBitmap))
+                    val paint = android.graphics.Paint()
+                    paint.xfermode = android.graphics.PorterDuffXfermode(android.graphics.PorterDuff.Mode.DST_OUT)
+                    canvas.drawBitmap(maskBitmap, 0f, 0f, paint)
+                }
+            }
+            upon?.let { name ->
+                drawable(name)?.let {
+                    it.setBounds(0, 0, size, size)
+                    it.draw(canvas)
+                }
+            }
+            return android.graphics.drawable.BitmapDrawable(context.resources, bitmap)
         }
 
         /**
@@ -227,6 +331,16 @@ object IconPacks {
             // "Netflix" and a drawing "netflix_tv"; "YouTube for Android TV" and "youtube"
             val bare = withoutTvWords(plainLabel)
             byName[bare]?.let { return it }
+            // Any run of the name's words: "Amazon Prime Video" finds "prime_video"
+            val words = label.lowercase().split(' ', '-', ':', '.', '&', '+').map { plain(it) }.filter { it.isNotEmpty() }
+            for (length in words.size - 1 downTo 1) {
+                for (start in 0..words.size - length) {
+                    val run = words.subList(start, start + length).joinToString("")
+                    if (run.length >= 4 && run !in GENERIC) {
+                        byName[run]?.let { return it }
+                    }
+                }
+            }
             if (bare.length >= 4) {
                 val starts = byName.keys.filter { withoutTvWords(it) == bare || it.startsWith(bare) }
                 if (starts.size == 1) {

@@ -340,6 +340,12 @@
     <string name="menu_network">Network</string>
     <string name="menu_installed_apps">Installed apps</string>
     <string name="menu_about_tv">About this TV</string>
+    <string name="set_pack_missing">Apps the pack doesn\'t have</string>
+    <string name="missing_own">Keep their own icon</string>
+    <string name="missing_frame">In the pack\'s own frame</string>
+    <string name="missing_white">As white line drawings</string>
+    <string name="missing_accent">As line drawings in the highlight colour</string>
+    <string name="missing_no_frame">\u0020(this pack has no frame, so they keep their own)</string>
     <string name="pick_from_pack">Choose from the icon pack</string>
     <string name="pick_title">Icon for %1$s</string>
     <string name="pick_search">Search the pack</string>

@@ -707,7 +707,7 @@ class HomeActivity : BaseActivity() {
         loading = true
         thread(name = "TunaHome apps") {
             val found = try {
-                Apps.load(applicationContext)
+                Apps.load(applicationContext, themeColor(R.attr.tsAccent))
             } catch (e: Exception) {
                 emptyList()
             }

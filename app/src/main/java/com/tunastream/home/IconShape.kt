@@ -31,6 +31,76 @@ object IconShape {
         }
     }
 
+    /**
+     * An icon as single-colour line art, to sit with line-style packs such as Arcticons. A modern
+     * icon's foreground layer is its logo on nothing, so that shape is used as it is; an older
+     * icon is a picture on a background, so its edges are traced instead.
+     * Slow: call from a background thread.
+     */
+    fun outline(res: Resources, icon: Drawable?, colour: Int): Drawable? {
+        icon ?: return null
+        return try {
+            val size = 192
+            val bitmap = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
+            val canvas = Canvas(bitmap)
+            if (Build.VERSION.SDK_INT >= 26 && icon is AdaptiveIconDrawable && icon.foreground != null) {
+                val extra = size / 4
+                val fg = icon.foreground.constantState?.newDrawable()?.mutate() ?: icon.foreground
+                fg.setBounds(-extra, -extra, size + extra, size + extra)
+                fg.draw(canvas)
+                tint(bitmap, colour)
+            } else {
+                val source = trimmed(icon) ?: return icon
+                canvas.drawBitmap(Bitmap.createScaledBitmap(source, size, size, true), 0f, 0f, null)
+                edges(bitmap, colour)
+            }
+            BitmapDrawable(res, bitmap)
+        } catch (e: Exception) {
+            icon
+        }
+    }
+
+    /** Every pixel the colour given, keeping how see-through it was. */
+    private fun tint(bitmap: Bitmap, colour: Int) {
+        val w = bitmap.width
+        val h = bitmap.height
+        val px = IntArray(w * h)
+        bitmap.getPixels(px, 0, w, 0, 0, w, h)
+        val rgb = colour and 0xFFFFFF
+        for (i in px.indices) {
+            px[i] = (px[i] and 0xFF000000.toInt()) or rgb
+        }
+        bitmap.setPixels(px, 0, w, 0, 0, w, h)
+    }
+
+    /** Lines where brightness changes sharply (a Sobel filter), in the colour given. */
+    private fun edges(bitmap: Bitmap, colour: Int) {
+        val w = bitmap.width
+        val h = bitmap.height
+        val px = IntArray(w * h)
+        bitmap.getPixels(px, 0, w, 0, 0, w, h)
+        val grey = IntArray(w * h)
+        for (i in px.indices) {
+            val p = px[i]
+            val a = p ushr 24
+            val lum = ((p shr 16 and 0xFF) * 3 + (p shr 8 and 0xFF) * 6 + (p and 0xFF)) / 10
+            // Transparent counts as black, so a shape's own outline shows too
+            grey[i] = lum * a / 255
+        }
+        val out = IntArray(w * h)
+        val rgb = colour and 0xFFFFFF
+        for (y in 1 until h - 1) {
+            for (x in 1 until w - 1) {
+                val i = y * w + x
+                val gx = -grey[i - w - 1] - 2 * grey[i - 1] - grey[i + w - 1] + grey[i - w + 1] + 2 * grey[i + 1] + grey[i + w + 1]
+                val gy = -grey[i - w - 1] - 2 * grey[i - w] - grey[i - w + 1] + grey[i + w - 1] + 2 * grey[i + w] + grey[i + w + 1]
+                val strength = Math.min(255, (Math.abs(gx) + Math.abs(gy)) / 2)
+                out[i] = if (strength < 40) 0 else ((Math.min(255, strength * 2) shl 24) or rgb)
+            }
+        }
+        bitmap.setPixels(out, 0, w, 0, 0, w, h)
+    }
+
     /** The visible middle of an adaptive icon's two layers, without the TV's mask shape. */
     private fun layers(icon: AdaptiveIconDrawable): Bitmap {
         val bitmap = Bitmap.createBitmap(SIZE, SIZE, Bitmap.Config.ARGB_8888)

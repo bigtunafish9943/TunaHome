@@ -38,9 +38,10 @@ object Apps {
      * first so that an app with both a TV and a phone entry opens its TV one.
      * Slow (it loads pictures): call from a background thread.
      */
-    fun load(context: Context): List<AppEntry> {
+    fun load(context: Context, accent: Int = android.graphics.Color.WHITE): List<AppEntry> {
         val pm = context.packageManager
-        val pack = IconPacks.chosen(context)?.let { IconPacks.Loaded(context, it) }
+        val pack = IconPacks.chosen(context)?.let { IconPacks.load(context, it) }
+        val missing = Look.PACK_MISSING.get(context)
         val found = LinkedHashMap<String, AppEntry>()
         var packHits = 0
         val fullBleed = Look.fullBleed(context)
@@ -83,7 +84,16 @@ object Apps {
                 } catch (e: Exception) {
                     null
                 }
-                if (fullBleed) {
+                if (pack != null && fromPack == null) {
+                    // An app the pack doesn't have: dressed to match it, as the viewer chose
+                    icon = when (missing) {
+                        Look.MISSING_FRAME -> pack.framed(pkg, icon) ?: icon
+                        Look.MISSING_WHITE -> IconShape.outline(context.resources, icon, android.graphics.Color.WHITE)
+                        Look.MISSING_ACCENT -> IconShape.outline(context.resources, icon, accent)
+                        else -> icon
+                    }
+                }
+                if (fullBleed && (fromPack != null || pack == null || missing == Look.MISSING_OWN)) {
                     icon = IconShape.fullBleed(context.resources, icon)
                 }
                 found[pkg] = AppEntry(

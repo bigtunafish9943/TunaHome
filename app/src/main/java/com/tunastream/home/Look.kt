@@ -154,6 +154,17 @@ object Look {
         )
     )
     val ICON_FILLS = floatArrayOf(0.4f, 0.58f, 0.72f, 0.88f, 1f)
+
+    /** What apps the icon pack has no drawing for look like. */
+    const val MISSING_OWN = 0
+    const val MISSING_FRAME = 1
+    const val MISSING_WHITE = 2
+    const val MISSING_ACCENT = 3
+    val PACK_MISSING = Choice(
+        "look_pack_missing", MISSING_FRAME, intArrayOf(
+            R.string.missing_own, R.string.missing_frame, R.string.missing_white, R.string.missing_accent,
+        )
+    )
     const val FILL_EDGE = 4
 
     fun fullBleed(context: Context): Boolean =

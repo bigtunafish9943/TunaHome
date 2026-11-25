@@ -30,7 +30,7 @@ object PackPicker {
         }
         Toast.makeText(activity, R.string.pick_loading, Toast.LENGTH_SHORT).show()
         thread(name = "TunaHome pack picker") {
-            val loaded = IconPacks.Loaded(activity.applicationContext, pack)
+            val loaded = IconPacks.load(activity.applicationContext, pack)
             activity.runOnUiThread {
                 if (!activity.isDestroyed) {
                     open(activity, app, pack, loaded, done)

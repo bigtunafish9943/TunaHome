@@ -647,6 +647,25 @@ class SettingsActivity : BaseActivity() {
                 changed()
             }
         }
+        if (!usingPictures && chosenPack != null) {
+            val loadedHasFrame = try {
+                IconPacks.load(this, chosenPack).hasFrame
+            } catch (e: Exception) {
+                false
+            }
+            row(
+                R.string.set_pack_missing,
+                Look.PACK_MISSING.name(this) +
+                    if (Look.PACK_MISSING.get(this) == Look.MISSING_FRAME && !loadedHasFrame) getString(R.string.missing_no_frame) else ""
+            ) {
+                chooseOne(getString(R.string.set_pack_missing), Look.PACK_MISSING.names.map { getString(it) },
+                    Look.PACK_MISSING.get(this)) {
+                    Look.PACK_MISSING.set(this, it)
+                    Prefs.appsChanged = true
+                    changed()
+                }
+            }
+        }
         if (!usingPictures) {
             val inCard = Look.TILE_STYLE.get(this) == Look.TILE_ICON_NAME
             row(R.string.set_name_in_card, getString(if (inCard) R.string.on else R.string.off)) {
