@@ -121,11 +121,18 @@ class HomeActivity : BaseActivity() {
     /** The app whose picture is being chosen, while the TV's picture chooser is open. */
     private var choosingPictureFor: String? = null
 
+    /** Installing or updating an app sends a burst of changes: load once, after the burst. */
+    private val reloadSoon = Runnable { reload() }
+
     private val packageReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
-            reload()
+            idleHandler.removeCallbacks(reloadSoon)
+            idleHandler.postDelayed(reloadSoon, 1200)
         }
     }
+
+    /** Sections with the same card style share their spare cards, so scrolling builds fewer. */
+    private val pools = HashMap<String, RecyclerView.RecycledViewPool>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -172,9 +179,29 @@ class HomeActivity : BaseActivity() {
             registerReceiver(packageReceiver, filter)
         }
 
+        // Show the apps already loaded straight away; load again only if the look or the
+        // apps may have changed since
+        if (Apps.cached.isNotEmpty()) {
+            apps = Apps.cached
+            loaded = true
+        }
         show()
-        reload()
+        if (!Apps.cacheFresh(this) || Prefs.appsChanged) {
+            Prefs.appsChanged = false
+            reload()
+        }
         hotkeyFromIntent(intent)
+    }
+
+    /** The TV is short of memory: let go of what can be loaded again. */
+    override fun onTrimMemory(level: Int) {
+        super.onTrimMemory(level)
+        if (level >= TRIM_MEMORY_UI_HIDDEN) {
+            WatchNext.forgetPictures()
+        }
+        if (level >= TRIM_MEMORY_MODERATE) {
+            Apps.forget()
+        }
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
@@ -724,6 +751,12 @@ class HomeActivity : BaseActivity() {
                 lines > 1 -> GridLayoutManager(this, lines, GridLayoutManager.HORIZONTAL, false)
                 else -> LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false)
             }
+            (list.layoutManager as? LinearLayoutManager)?.initialPrefetchItemCount = 6
+            list.setItemViewCacheSize(6)
+            val poolKey = "${System.identityHashCode(sectionTiles)}/${lines == Rows.WRAP}"
+            list.setRecycledViewPool(pools.getOrPut(poolKey) {
+                RecyclerView.RecycledViewPool().apply { setMaxRecycledViews(0, 24) }
+            })
             adapter.canMove = row.kind != Rows.RECENT && row.kind != Rows.WATCH_NEXT
             adapter.onMoveStart = {
                 Toast.makeText(this, R.string.move_hint, Toast.LENGTH_SHORT).show()

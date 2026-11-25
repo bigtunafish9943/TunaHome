@@ -470,8 +470,9 @@ class AppAdapter(
                     Look.MOTION_SNAPPY -> 90L to android.view.animation.DecelerateInterpolator()
                     else -> 200L to android.view.animation.DecelerateInterpolator(1.5f)
                 }
+                // Drawn by the graphics chip as one layer while it moves
                 itemView.animate().scaleX(scale).scaleY(scale).alpha(alpha).translationY(rise)
-                    .setDuration(time).setInterpolator(ease).start()
+                    .setDuration(time).setInterpolator(ease).withLayer().start()
                 card.animate().translationZ(depth).setDuration(time).start()
                 if (focused && !moving) {
                     Sounds.play(itemView.context, Sounds.MOVE)

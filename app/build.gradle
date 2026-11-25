@@ -42,7 +42,10 @@ android {
             if (System.getenv("KEYSTORE_FILE")) {
                 signingConfig signingConfigs.release
             }
-            minifyEnabled false
+            // Leave out unused code and pictures: a smaller download that starts faster
+            minifyEnabled true
+            shrinkResources true
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
 

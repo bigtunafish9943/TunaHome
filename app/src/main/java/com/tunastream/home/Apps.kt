@@ -32,9 +32,26 @@ class AppEntry(
 }
 
 object Apps {
-    /** The last list loaded, for screens that want it straight away (search). */
+    /** The last list loaded, for screens that want it straight away (home, search). */
     @Volatile
     var cached: List<AppEntry> = emptyList()
+
+    /** The look the cached list was loaded with, and when: a different look or an old list loads again. */
+    @Volatile
+    var cachedStamp = -1
+    @Volatile
+    var cachedAt = 0L
+
+    /** Whether the kept list can be shown as it is, without loading everything again. */
+    fun cacheFresh(context: Context): Boolean =
+        cached.isNotEmpty() && cachedStamp == Look.stamp(context) &&
+            android.os.SystemClock.elapsedRealtime() - cachedAt < 10 * 60 * 1000L
+
+    /** Lets go of the kept list (the TV is short of memory). */
+    fun forget() {
+        cached = emptyList()
+        cachedStamp = -1
+    }
 
     /**
      * Every app that can be opened, one entry per app, sorted by name. Apps made for TV come
@@ -42,6 +59,7 @@ object Apps {
      * Slow (it loads pictures): call from a background thread.
      */
     fun load(context: Context, accent: Int = android.graphics.Color.WHITE): List<AppEntry> {
+        val stampAtStart = Look.stamp(context)
         val pm = context.packageManager
         val pack = IconPacks.chosen(context)?.let { IconPacks.load(context, it) }
         val missing = Look.PACK_MISSING.get(context)
@@ -107,6 +125,10 @@ object Apps {
             }
         }
         IconPacks.covered = if (pack != null) packHits to found.size else null
-        return found.values.sortedBy { it.label.lowercase() }.also { cached = it }
+        return found.values.sortedBy { it.label.lowercase() }.also {
+            cached = it
+            cachedStamp = stampAtStart
+            cachedAt = android.os.SystemClock.elapsedRealtime()
+        }
     }
 }

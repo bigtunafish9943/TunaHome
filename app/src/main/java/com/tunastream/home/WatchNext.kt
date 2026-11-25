@@ -18,6 +18,13 @@ object WatchNext {
     private const val TAG = "TunaHome"
     private const val MAX = 24
 
+    /** Pictures already fetched, so coming back to the home screen doesn't fetch them all again. */
+    private val posters = object : android.util.LruCache<String, android.graphics.Bitmap>(24 * 1024 * 1024) {
+        override fun sizeOf(key: String, value: android.graphics.Bitmap) = value.byteCount
+    }
+
+    fun forgetPictures() = posters.evictAll()
+
     /** Why the list came back empty, when it wasn't simply empty. */
     @Volatile
     var problem: String? = null
@@ -74,7 +81,8 @@ object WatchNext {
                 val progress = if (duration > 0 && position > 0) (position.toFloat() / duration).coerceIn(0f, 1f) else -1f
                 val poster = picture?.let {
                     try {
-                        Pictures.decode(context, Uri.parse(it), 640, 360)?.let { b -> BitmapDrawable(context.resources, b) }
+                        val bitmap = posters.get(it) ?: Pictures.decode(context, Uri.parse(it), 640, 360)?.also { b -> posters.put(it, b) }
+                        bitmap?.let { b -> BitmapDrawable(context.resources, b) }
                     } catch (e: Throwable) {
                         null
                     }
