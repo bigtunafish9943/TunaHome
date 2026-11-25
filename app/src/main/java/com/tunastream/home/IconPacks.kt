@@ -75,6 +75,36 @@ object IconPacks {
         return found.values.sortedBy { it.name.lowercase() }
     }
 
+    /**
+     * The one Icons choice: TV pictures, the apps' own icons, or an icon pack. TV pictures are
+     * just another option in the same list, not a separate setting.
+     */
+    fun useTvPictures(context: Context) {
+        choose(context, null)
+        Look.TILE_STYLE.set(context, Look.TILE_BANNER)
+        Prefs.appsChanged = true
+    }
+
+    /** The apps' own icons ([pkg] null) or an icon pack's, keeping the name-in-card choice. */
+    fun useIcons(context: Context, pkg: String?) {
+        choose(context, pkg)
+        if (Look.TILE_STYLE.get(context) == Look.TILE_BANNER) {
+            Look.TILE_STYLE.set(context, Look.TILE_ICON)
+        } else {
+            Look.touch(context)
+        }
+        Prefs.appsChanged = true
+    }
+
+    /** What the Icons setting is now, by name. */
+    fun currentName(context: Context): String {
+        if (Look.TILE_STYLE.get(context) == Look.TILE_BANNER) {
+            return context.getString(R.string.icons_tv_pictures)
+        }
+        val pkg = chosen(context) ?: return context.getString(R.string.icons_app_icons)
+        return installed(context).firstOrNull { it.pkg == pkg }?.name ?: context.getString(R.string.icons_app_icons)
+    }
+
     /** The chosen pack's package name, or null for the apps' own icons. */
     fun chosen(context: Context): String? = Prefs.of(context).getString(KEY, null)
 

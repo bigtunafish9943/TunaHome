@@ -255,9 +255,7 @@ object IconPackStore {
                     val pkg = intent.getStringExtra(EXTRA_PACK)
                     if (pkg != null && pkg == waitingFor) {
                         waitingFor = null
-                        IconPacks.choose(context, pkg)
-                        Look.TILE_STYLE.set(context, Look.TILE_ICON)
-                        Prefs.appsChanged = true
+                        IconPacks.useIcons(context, pkg)
                     }
                     IconPackStore.status = context.getString(R.string.pack_status_installed)
                     Toast.makeText(context, R.string.pack_now_using, Toast.LENGTH_LONG).show()

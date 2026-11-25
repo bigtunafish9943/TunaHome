@@ -50,9 +50,7 @@ class SettingsActivity : BaseActivity() {
         if (waiting != null && IconPackStore.isInstalled(this, waiting)) {
             // Just installed through TunaHome: use it, as the viewer asked
             IconPackStore.waitingFor = null
-            IconPacks.choose(this, waiting)
-            Look.TILE_STYLE.set(this, Look.TILE_ICON)
-            Prefs.appsChanged = true
+            IconPacks.useIcons(this, waiting)
             Toast.makeText(this, R.string.pack_now_using, Toast.LENGTH_LONG).show()
             if (outOfDate()) {
                 recreate()
@@ -158,7 +156,7 @@ class SettingsActivity : BaseActivity() {
             getString(TunaTheme.nameOf(TunaTheme.current(this))) + " · " + Look.ACCENT.name(this)
         )
         pageRow(TEXT, Fonts.name(this, Look.font(this)) + " · " + Look.TEXT_SIZE.name(this))
-        pageRow(PICTURES, Look.TILE_STYLE.name(this) + " · " + cardSizeName(-1))
+        pageRow(PICTURES, IconPacks.currentName(this) + " · " + cardSizeName(-1))
         pageRow(TOP_BAR, Look.CLOCK.name(this))
         val hidden = Prefs.hidden(this).size
         pageRow(
@@ -605,7 +603,44 @@ class SettingsActivity : BaseActivity() {
     // ------------------------------------------------------------------ app pictures
 
     private fun picturesPage() {
-        choice(R.string.set_tile_style, Look.TILE_STYLE)
+        // One list: TV pictures, the apps' own icons, or any icon pack on the TV
+        val packs = IconPacks.installed(this)
+        val usingPictures = Look.TILE_STYLE.get(this) == Look.TILE_BANNER
+        val coverage = IconPacks.covered
+        val chosenPack = IconPacks.chosen(this)
+        row(
+            R.string.set_icons,
+            if (!usingPictures && chosenPack != null && coverage != null)
+                getString(R.string.icon_pack_coverage, IconPacks.currentName(this), coverage.first, coverage.second)
+            else IconPacks.currentName(this)
+        ) {
+            val names = listOf(getString(R.string.icons_tv_pictures), getString(R.string.icons_app_icons)) +
+                packs.map { it.name } + getString(R.string.icons_get_more)
+            val current = when {
+                usingPictures -> 0
+                chosenPack == null -> 1
+                else -> 2 + packs.indexOfFirst { it.pkg == chosenPack }
+            }
+            chooseOne(getString(R.string.set_icons), names, current) { which ->
+                when {
+                    which == 0 -> IconPacks.useTvPictures(this)
+                    which == 1 -> IconPacks.useIcons(this, null)
+                    which < 2 + packs.size -> IconPacks.useIcons(this, packs[which - 2].pkg)
+                    else -> {
+                        openPackStore()
+                        return@chooseOne
+                    }
+                }
+                changed()
+            }
+        }
+        if (!usingPictures) {
+            val inCard = Look.TILE_STYLE.get(this) == Look.TILE_ICON_NAME
+            row(R.string.set_name_in_card, getString(if (inCard) R.string.on else R.string.off)) {
+                Look.TILE_STYLE.set(this, if (inCard) Look.TILE_ICON else Look.TILE_ICON_NAME)
+                changed()
+            }
+        }
         row(R.string.set_card_size, cardSizeName(-1)) {
             chooseOne(getString(R.string.set_card_size), Look.CARD_SIZE.names.map { getString(it) },
                 Look.CARD_SCALES.indexOfFirst { it == Look.tileScale(this) }) {
@@ -614,35 +649,8 @@ class SettingsActivity : BaseActivity() {
             }
         }
         choice(R.string.set_card_shape, Look.CARD_SHAPE)
-        choice(R.string.set_icon_fill, Look.ICON_FILL)
-        val packs = IconPacks.installed(this)
-        val chosenPack = IconPacks.chosen(this)
-        val packName = packs.firstOrNull { it.pkg == chosenPack }?.name
-        val coverage = IconPacks.covered
-        row(
-            R.string.set_icon_pack,
-            when {
-                packName != null && coverage != null ->
-                    getString(R.string.icon_pack_coverage, packName, coverage.first, coverage.second)
-                packName != null -> packName
-                else -> getString(if (packs.isEmpty()) R.string.icon_pack_none_installed else R.string.icon_pack_none)
-            }
-        ) {
-            if (packs.isEmpty()) {
-                openPackStore()
-            } else {
-                val names = listOf(getString(R.string.icon_pack_none)) + packs.map { it.name }
-                val current = packs.indexOfFirst { it.pkg == chosenPack } + 1
-                chooseOne(getString(R.string.set_icon_pack), names, current) {
-                    IconPacks.choose(this, if (it == 0) null else packs[it - 1].pkg)
-                    Prefs.appsChanged = true
-                    if (it != 0 && Look.TILE_STYLE.get(this) == Look.TILE_BANNER) {
-                        offerIcons()
-                    } else {
-                        changed()
-                    }
-                }
-            }
+        if (!usingPictures) {
+            choice(R.string.set_icon_fill, Look.ICON_FILL)
         }
         row(R.string.pack_get, IconPackStore.status.ifEmpty { getString(R.string.pack_get_summary) }) { openPackStore() }
         heading(R.string.heading_cards)
@@ -660,20 +668,6 @@ class SettingsActivity : BaseActivity() {
         }
     }
 
-    /** Icon packs change icons, but TV pictures hide most of them: offer to show icons. */
-    private fun offerIcons() {
-        AlertDialog.Builder(this)
-            .setTitle(R.string.pack_show_icons_title)
-            .setMessage(R.string.pack_show_icons_body)
-            .setPositiveButton(R.string.pack_show_icons) { _, _ ->
-                Look.TILE_STYLE.set(this, Look.TILE_ICON)
-                changed()
-            }
-            .setNegativeButton(R.string.pack_keep_pictures) { _, _ -> changed() }
-            .setOnCancelListener { changed() }
-            .show()
-    }
-
     /** Free icon packs from F-Droid, each marked if it's already on the TV. */
     private fun openPackStore() {
         val offers = IconPackStore.CATALOGUE
@@ -687,9 +681,8 @@ class SettingsActivity : BaseActivity() {
             .setItems(names.toTypedArray()) { _, which ->
                 val offer = offers[which]
                 if (IconPackStore.isInstalled(this, offer.pkg)) {
-                    IconPacks.choose(this, offer.pkg)
-                    Prefs.appsChanged = true
-                    if (Look.TILE_STYLE.get(this) == Look.TILE_BANNER) offerIcons() else changed()
+                    IconPacks.useIcons(this, offer.pkg)
+                    changed()
                     return@setItems
                 }
                 AlertDialog.Builder(this)

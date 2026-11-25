@@ -30,7 +30,7 @@ Everything is in TunaHome settings, most used first. Each setting is a short lis
 - **Sections:** show, hide, rename, reorder and delete sections, add your own, set how many lines of apps each one has, section name style, space between sections, how a section scrolls, and which app you start on.
 - **Theme and colours:** nine themes named as in TunaStream (Deep Sea, Reef, Kelp, Midnight, Gold, Halloween, Autumn, Winter, Summer) with seasonal themes, a highlight colour and a text colour.
 - **Text:** over 40 fonts (each shown in its own style when you choose), your own .ttf or .otf font file, a separate clock font, six text sizes and a text shadow.
-- **Icons:** TV picture, icon, or icon and name; five sizes; icon packs made for phone launchers; corners from square to fully rounded; card colour; edges; spacing; when names show; and how the app you're on stands out (enlarged, outline colour, dim the rest). Any app can have an icon of your own (from the TV or a web address).
+- **Icons:** one list to pick from: TV pictures, the apps' own icons, or any icon pack on the TV (plus more to download); the name inside the card if you like; five sizes; icon packs made for phone launchers; corners from square to fully rounded; card colour; edges; spacing; when names show; and how the app you're on stands out (enlarged, outline colour, dim the rest). Any app can have an icon of your own (from the TV or a web address).
 - **Top of the screen:** name and logo, version, clock style and size, date, and which buttons show.
 
 Choosing a file needs an app on the TV that can browse files, such as a file manager.
