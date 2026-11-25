@@ -500,6 +500,7 @@ class SettingsActivity : BaseActivity() {
         heading(R.string.heading_section_look)
         choice(R.string.set_row_titles, Look.ROW_TITLES)
         choice(R.string.set_row_gap, Look.ROW_GAP)
+        choice(R.string.set_section_position, Look.SECTION_POSITION)
         choice(R.string.set_row_scroll, Look.ROW_SCROLL)
         choice(R.string.set_start_on, Look.START_ON)
     }
@@ -788,6 +789,7 @@ class SettingsActivity : BaseActivity() {
         switch(R.string.set_tile_edge, Look.TILE_EDGE, R.string.shown, R.string.hidden)
         choice(R.string.set_tile_gap, Look.TILE_GAP)
         choice(R.string.set_tile_names, Look.TILE_NAMES)
+        switch(R.string.set_new_badge, Look.NEW_BADGE, R.string.new_badge_on, R.string.off)
         heading(R.string.heading_selected)
         choice(R.string.set_focus_zoom, Look.FOCUS_ZOOM)
         choice(R.string.set_focus_motion, Look.FOCUS_MOTION)

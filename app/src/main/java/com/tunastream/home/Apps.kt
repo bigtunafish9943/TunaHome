@@ -28,6 +28,10 @@ class AppEntry(
     val updated: Long = 0,
     /** Installed from a file or another app rather than from the Play Store. */
     val sideloaded: Boolean = false,
+    /** What sort of app it is: one of [Apps.GAME], [Apps.VIDEO], [Apps.MUSIC], or [Apps.OTHER]. */
+    val group: Int = Apps.OTHER,
+    /** The main colour of its picture, for a glow in its own colour; 0 for none. */
+    val colour: Int = 0,
 ) {
     val isWatchNext: Boolean
         get() = pkg.startsWith("watchnext:")
@@ -37,6 +41,53 @@ class AppEntry(
 }
 
 object Apps {
+    const val OTHER = 0
+    const val GAME = 1
+    const val VIDEO = 2
+    const val MUSIC = 3
+
+    // For apps that don't say what they are: well-known names
+    private val GAME_WORDS = listOf(
+        "game", "geforcenow", "tegrazone", "steamlink", "limelight", "moonlight", "retroarch", "dolphinemu",
+        "ppsspp", "xcloud", "gamepass", "emulator", "parsec", "rainway", "chiaki", "lemuroid",
+    )
+    private val VIDEO_WORDS = listOf(
+        "netflix", "youtube.tv", "youtube.tvkids", "tvunplugged", "plex", "kodi", "xbmc", "disney", "hulu",
+        "amazonvideo", "primevideo", "wbd", "hbo", "paramount", "cbs", "peacock", "twitch", "jellyfin", "emby",
+        "stremio", "videolan", "smarttube", "tivimate", "crunchyroll", "pluto", "tubitv", "apple.atve",
+        "espn", "sling", "mxtech", "fubo", "philo", "vudu", "starz", "showtime", "britbox", "curiosity",
+        "dazn", "mubi", "criterion", "vimeo", "dailymotion", "nebula", "dropout", "iplayer", "channel4",
+    )
+    private val MUSIC_WORDS = listOf(
+        "spotify", "pandora", "tidal", "tvmusic", "amazonmp3", "amazon.music", "plexamp", "soundcloud",
+        "deezer", "iheart", "sirius", "apple.android.music", "audible", "qobuz", "tunein", "napster", "shazam",
+        "musicolet", "poweramp", "radio", "podcast",
+    )
+
+    /** What sort of app [pkg] is, from what it says about itself or else its name. */
+    private fun groupOf(info: android.content.pm.ApplicationInfo?, pkg: String): Int {
+        if (info != null) {
+            @Suppress("DEPRECATION")
+            if (info.flags and android.content.pm.ApplicationInfo.FLAG_IS_GAME != 0) {
+                return GAME
+            }
+            if (android.os.Build.VERSION.SDK_INT >= 26) {
+                when (info.category) {
+                    android.content.pm.ApplicationInfo.CATEGORY_GAME -> return GAME
+                    android.content.pm.ApplicationInfo.CATEGORY_VIDEO -> return VIDEO
+                    android.content.pm.ApplicationInfo.CATEGORY_AUDIO -> return MUSIC
+                }
+            }
+        }
+        val name = pkg.lowercase()
+        return when {
+            MUSIC_WORDS.any { it in name } -> MUSIC
+            GAME_WORDS.any { it in name } -> GAME
+            VIDEO_WORDS.any { it in name } -> VIDEO
+            else -> OTHER
+        }
+    }
+
     /** App stores: an app installed by anything else was sideloaded. */
     private val STORES = setOf("com.android.vending", "com.amazon.venezia", "com.google.android.feedback")
 
@@ -87,6 +138,7 @@ object Apps {
         val fullBleed = Look.fullBleed(context)
         val tint = Look.iconTint(context, accent)
         val names = Prefs.appNames(context)
+        val wide = Look.TILE_STYLE.get(context) == Look.TILE_BANNER
         for (category in arrayOf(Intent.CATEGORY_LEANBACK_LAUNCHER, Intent.CATEGORY_LAUNCHER)) {
             val query = Intent(Intent.ACTION_MAIN).addCategory(category)
             for (info in pm.queryIntentActivities(query, 0)) {
@@ -160,6 +212,9 @@ object Apps {
                     installed = times.first,
                     updated = times.second,
                     sideloaded = !system && (installer(pm, pkg) ?: "") !in STORES,
+                    group = groupOf(app, pkg),
+                    colour = IconShape.mainColour(own?.let { BitmapDrawable(context.resources, it) }
+                        ?: if (wide) banner ?: icon else icon),
                 )
             }
         }

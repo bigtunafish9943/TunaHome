@@ -860,4 +860,16 @@
     <string name="remember_place_off">Goes to the nearest app</string>
     <string name="menu_rename">Rename</string>
     <string name="menu_own_name">Use its own name</string>
+    <string name="outline_app">The app\'s own colour</string>
+    <string name="shadow_glow_app">A glow in the app\'s own colour</string>
+    <string name="new_badge">New</string>
+    <string name="set_new_badge">\"New\" on new apps</string>
+    <string name="new_badge_on">On apps installed in the last 3 days until you open them</string>
+    <string name="position_top">Glides to near the top</string>
+    <string name="position_middle">Glides to the middle</string>
+    <string name="position_free">Scrolls only when it has to</string>
+    <string name="set_section_position">The section you\'re on</string>
+    <string name="games">Games</string>
+    <string name="video_apps">Video and TV</string>
+    <string name="music_apps">Music and audio</string>
 </resources>

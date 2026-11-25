@@ -157,6 +157,7 @@ class HomeActivity : BaseActivity() {
 
         setUpTopBar()
         buildSections()
+        setUpAlignment()
         fadeWhenIdle.clear()
         listOf(R.id.sections, R.id.appsHint, R.id.brand, R.id.networkIcon, R.id.checkUpdate,
             R.id.openTvSettings, R.id.openSettings, R.id.sideMenu, R.id.vpnIcon, R.id.openSearch, R.id.systemInfo).forEach { fadeWhenIdle.add(findViewById(it)) }
@@ -597,6 +598,9 @@ class HomeActivity : BaseActivity() {
                 Rows.RECENT -> R.drawable.ic_history
                 Rows.WATCH_NEXT -> R.drawable.ic_play
                 Rows.SIDELOADED -> R.drawable.ic_apps
+                Rows.GAMES -> R.drawable.ic_games
+                Rows.VIDEO -> R.drawable.ic_tv
+                Rows.MUSIC -> R.drawable.ic_music
                 else -> R.drawable.ic_folder
             }
             entries.add(SideMenu.Entry(icon, section.row.name(this), section.row.id) { goToSection(section) })
@@ -632,9 +636,62 @@ class HomeActivity : BaseActivity() {
         }
     }
 
+    // ------------------------------------------------------------------ where the section you're on sits
+
+    /**
+     * As focus moves to another section, that section glides to the chosen height (near the
+     * top, or the middle) instead of the screen scrolling only as far as it must. Sections too
+     * tall for that scroll the usual way.
+     */
+    private fun setUpAlignment() {
+        if (Look.SECTION_POSITION.get(this) == Look.POSITION_FREE) {
+            return
+        }
+        (scroll as? HomeScroll)?.aligned = { rect ->
+            val y = rect.centerY()
+            sections.any { section ->
+                section.view.visibility == View.VISIBLE && alignTarget(section) != null &&
+                    sectionTop(section).let { top -> y >= top && y < top + section.view.height }
+            }
+        }
+        scroll.viewTreeObserver.addOnGlobalFocusChangeListener { _, now ->
+            val section = now?.let { view -> sections.firstOrNull { it.list === view.parent } }
+            val target = section?.let { alignTarget(it) }
+            if (target != null && target != scroll.scrollY) {
+                scroll.smoothScrollTo(0, target)
+            }
+        }
+    }
+
+    /** Where a section starts, measured down the whole scrolling page. */
+    private fun sectionTop(section: Section): Int {
+        val rect = android.graphics.Rect(0, 0, section.view.width, section.view.height)
+        scroll.offsetDescendantRectToMyCoords(section.view, rect)
+        return rect.top
+    }
+
+    /** How far down to scroll so [section] sits where the viewer chose; null to scroll as usual. */
+    private fun alignTarget(section: Section): Int? {
+        val mode = Look.SECTION_POSITION.get(this)
+        val screen = scroll.height
+        if (mode == Look.POSITION_FREE || screen == 0 || section.view.height > screen * 0.8f) {
+            return null
+        }
+        val top = sectionTop(section)
+        val first = sections.firstOrNull { it.view.visibility == View.VISIBLE } === section
+        val target = when {
+            // The first section keeps the top of the screen in view
+            first -> 0
+            mode == Look.POSITION_MIDDLE -> top + section.view.height / 2 - screen / 2
+            else -> top - Math.round(Look.dp(this, 28f))
+        }
+        val most = maxOf(0, (scroll.getChildAt(0)?.height ?: 0) - screen)
+        return target.coerceIn(0, most)
+    }
+
     private fun goToSection(section: Section) {
         scroll.post {
-            scroll.smoothScrollTo(0, maxOf(0, section.view.top - Math.round(Look.dp(this, 24f))))
+            scroll.smoothScrollTo(0, alignTarget(section) ?: maxOf(0, section.view.top - Math.round(Look.dp(this, 24f))))
             focusIn(section, 0)
         }
     }
@@ -970,6 +1027,9 @@ class HomeActivity : BaseActivity() {
                 Rows.TV -> ordered(loose.filter { it.tv } + foldersFor(section.row), Prefs.order(this, section.row.id))
                 Rows.MOBILE -> ordered(loose.filter { !it.tv } + foldersFor(section.row), Prefs.order(this, section.row.id))
                 Rows.SIDELOADED -> ordered(loose.filter { it.sideloaded }, Prefs.order(this, section.row.id))
+                Rows.GAMES -> ordered(loose.filter { it.group == Apps.GAME }, Prefs.order(this, section.row.id))
+                Rows.VIDEO -> ordered(loose.filter { it.group == Apps.VIDEO }, Prefs.order(this, section.row.id))
+                Rows.MUSIC -> ordered(loose.filter { it.group == Apps.MUSIC }, Prefs.order(this, section.row.id))
                 Rows.RECENT -> Prefs.recent(this).mapNotNull { everyApp[it] }
                 Rows.WATCH_NEXT -> watchNext
                 else -> (rows[section.row.id]?.apps ?: section.row.apps).mapNotNull { byPackage[it] }

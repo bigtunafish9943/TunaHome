@@ -48,7 +48,7 @@
         android:textSize="13sp"
         android:visibility="gone" />
 
-    <ScrollView
+    <com.tunastream.home.HomeScroll
         android:id="@+id/scroll"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
@@ -243,7 +243,7 @@
                 android:clipToPadding="false"
                 android:orientation="vertical" />
         </LinearLayout>
-    </ScrollView>
+    </com.tunastream.home.HomeScroll>
 
     <!-- The side menu: Left from the first app opens it -->
     <FrameLayout

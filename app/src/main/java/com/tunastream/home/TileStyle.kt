@@ -20,6 +20,10 @@ class TileStyle(context: Context, sizeOverride: Int = -1) {
     val motion = Look.FOCUS_MOTION.get(context)
     val shadow = Look.FOCUS_SHADOW.get(context)
     val glowColour = if (shadow == Look.SHADOW_GLOW_WHITE) Color.WHITE else context.themeColor(R.attr.tsAccent)
+    /** The glow and outline take each app's own colour. */
+    val glowApp = shadow == Look.SHADOW_GLOW_APP
+    val outlineApp = Look.FOCUS_OUTLINE.get(context) == Look.OUTLINE_APP
+    val newBadge = Look.NEW_BADGE.get(context)
     val lift = Look.dp(context, 14f)
     /** Icons fill the whole card, edge to edge, cut to its rounded corners. */
     val fullBleed = Look.fullBleed(context)
@@ -27,8 +31,8 @@ class TileStyle(context: Context, sizeOverride: Int = -1) {
     private val corner: Float
     private val cardColour: Int
     private val edgeColour: Int
-    private val outlineColour: Int
-    private val outlineWidth: Int
+    val outlineColour: Int
+    val outlineWidth: Int
 
     init {
         val res = context.resources

@@ -134,7 +134,17 @@ object Prefs {
     fun uses(context: Context): Map<String, Int> =
         pairs(context, "app_uses").mapValues { it.value.toIntOrNull() ?: 0 }
 
+    @Volatile
+    private var openedCache: Set<String>? = null
+
+    /** Whether an app has ever been opened from TunaHome (quick: kept in memory). */
+    fun everOpened(context: Context, pkg: String): Boolean {
+        val set = openedCache ?: (uses(context).keys + recent(context)).also { openedCache = it }
+        return pkg in set
+    }
+
     fun addUse(context: Context, pkg: String) {
+        openedCache = null
         val map = pairs(context, "app_uses")
         map[pkg] = ((map[pkg]?.toIntOrNull() ?: 0) + 1).toString()
         savePairs(context, "app_uses", map)

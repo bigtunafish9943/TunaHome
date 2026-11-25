@@ -16,6 +16,9 @@ object Rows {
     const val WATCH_NEXT = "watchnext"
     const val NOW_PLAYING = "nowplaying"
     const val SIDELOADED = "sideloaded"
+    const val GAMES = "games"
+    const val VIDEO = "video"
+    const val MUSIC = "music"
     const val CUSTOM = "custom"
 
     private const val KEY = "rows"
@@ -60,6 +63,9 @@ object Rows {
                 WATCH_NEXT -> R.string.watch_next
                 NOW_PLAYING -> R.string.np_title
                 SIDELOADED -> R.string.sideloaded
+                GAMES -> R.string.games
+                VIDEO -> R.string.video_apps
+                MUSIC -> R.string.music_apps
                 else -> R.string.row_untitled
             }
         )
@@ -110,6 +116,12 @@ object Rows {
         if (rows.none { it.kind == SIDELOADED }) {
             val at = rows.indexOfFirst { it.kind == MOBILE }
             rows.add(if (at >= 0) at + 1 else rows.size, Row(SIDELOADED, SIDELOADED, null, false))
+        }
+        // Sections filled by what sort of app it is came later: hidden, after the rest
+        for (kind in listOf(GAMES, VIDEO, MUSIC)) {
+            if (rows.none { it.kind == kind }) {
+                rows.add(Row(kind, kind, null, false))
+            }
         }
         // Now playing came later: at the top (it only shows when switched on and something plays)
         if (rows.none { it.kind == NOW_PLAYING }) {

@@ -283,6 +283,9 @@ class AppAdapter(
 
         private const val BIG = 1
 
+        /** How long a newly installed app is marked "New" (until it's opened). */
+        private const val NEW_FOR_MS = 3L * 24 * 60 * 60 * 1000
+
         /** The shortest time between two moves of a picked-up app. */
         const val MOVE_GAP_MS = 90L
     }
@@ -370,6 +373,7 @@ class AppAdapter(
         private val label: TextView = view.findViewById(R.id.label)
         private val cardLabel: TextView = view.findViewById(R.id.cardLabel)
         private val lockBadge: View = view.findViewById(R.id.lockBadge)
+        private val newBadge: View = view.findViewById(R.id.newBadge)
         private val progress: View = view.findViewById(R.id.progress)
         private var entry: AppEntry? = null
 
@@ -435,6 +439,13 @@ class AppAdapter(
             icon.visibility = if (showBanner) View.GONE else View.VISIBLE
             cardLabel.visibility = if (tiles.style == Look.TILE_ICON_NAME) View.VISIBLE else View.GONE
             lockBadge.visibility = if (AppLock.isLocked(itemView.context, app.appPkg)) View.VISIBLE else View.GONE
+            val fresh = tiles.newBadge && app.installed > 0 &&
+                System.currentTimeMillis() - app.installed < NEW_FOR_MS && !Prefs.everOpened(itemView.context, app.pkg)
+            newBadge.visibility = if (fresh) View.VISIBLE else View.GONE
+            if (tiles.outlineApp) {
+                (ring.background as? android.graphics.drawable.GradientDrawable)
+                    ?.setStroke(tiles.outlineWidth, if (app.colour != 0) app.colour else tiles.outlineColour)
+            }
             if (app.progress >= 0f) {
                 progress.visibility = View.VISIBLE
                 progress.layoutParams = progress.layoutParams.apply {
@@ -481,7 +492,12 @@ class AppAdapter(
             val depth = if (lit && tiles.shadow != Look.SHADOW_NONE) tiles.lift else 0f
             val rise = if (lit && tiles.shadow == Look.SHADOW_LIFT) -tiles.lift / 3 else 0f
             if (android.os.Build.VERSION.SDK_INT >= 28 && tiles.shadow != Look.SHADOW_NONE) {
-                val colour = if (tiles.shadow == Look.SHADOW_LIFT) Color.BLACK else tiles.glowColour
+                val own = entry?.colour ?: 0
+                val colour = when {
+                    tiles.shadow == Look.SHADOW_LIFT -> Color.BLACK
+                    tiles.glowApp && own != 0 -> own
+                    else -> tiles.glowColour
+                }
                 card.outlineSpotShadowColor = colour
                 card.outlineAmbientShadowColor = colour
             }

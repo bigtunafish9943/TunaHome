@@ -251,9 +251,10 @@ object Look {
     const val OUTLINE_ACCENT = 0
     const val OUTLINE_WHITE = 1
     const val OUTLINE_NONE = 2
+    const val OUTLINE_APP = 3
     val FOCUS_OUTLINE = Choice(
         "look_focus_outline", OUTLINE_ACCENT,
-        intArrayOf(R.string.outline_accent, R.string.outline_white, R.string.outline_none)
+        intArrayOf(R.string.outline_accent, R.string.outline_white, R.string.outline_none, R.string.outline_app)
     )
 
     val DIM_OTHERS = Switch("look_dim_others", false)
@@ -274,11 +275,16 @@ object Look {
     const val SHADOW_LIFT = 1
     const val SHADOW_GLOW = 2
     const val SHADOW_GLOW_WHITE = 3
+    const val SHADOW_GLOW_APP = 4
     val FOCUS_SHADOW = Choice(
         "look_focus_shadow", SHADOW_GLOW, intArrayOf(
             R.string.shadow_none, R.string.shadow_lift, R.string.shadow_glow, R.string.shadow_glow_white,
+            R.string.shadow_glow_app,
         )
     )
+
+    /** A small "New" on apps installed in the last few days that haven't been opened yet. */
+    val NEW_BADGE = Switch("look_new_badge", true)
 
     /** Sections gliding in when the home screen appears, the side menu sliding open... */
     const val ANIM_FULL = 0
@@ -310,6 +316,15 @@ object Look {
 
     /** Select twice quickly picks an app up to move it. Opening then waits a moment for a second press. */
     val DOUBLE_PRESS = Switch("look_double_press", true)
+
+    /** Where the section you're on sits as you move up and down. */
+    const val POSITION_TOP = 0
+    const val POSITION_MIDDLE = 1
+    const val POSITION_FREE = 2
+    val SECTION_POSITION = Choice(
+        "look_section_position", POSITION_TOP,
+        intArrayOf(R.string.position_top, R.string.position_middle, R.string.position_free)
+    )
 
     /** Moving up or down into a section goes back to the app you were on there last. */
     val REMEMBER_PLACE = Switch("look_remember_place", true)

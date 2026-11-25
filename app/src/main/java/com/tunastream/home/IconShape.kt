@@ -79,6 +79,56 @@ object IconShape {
         }
     }
 
+    /**
+     * The colour a picture is mostly made of, brightened to glow well: the commonest vivid hue,
+     * averaged. 0 when it's mostly grey, black or white. Slow: call from a background thread.
+     */
+    fun mainColour(picture: Drawable?): Int {
+        picture ?: return 0
+        return try {
+            val size = 24
+            val bitmap = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
+            val copy = picture.constantState?.newDrawable()?.mutate() ?: picture
+            copy.setBounds(0, 0, size, size)
+            copy.draw(Canvas(bitmap))
+            val px = IntArray(size * size)
+            bitmap.getPixels(px, 0, size, 0, 0, size, size)
+            // Twelve slices of the colour wheel; each vivid pixel counts towards its slice
+            val weight = FloatArray(12)
+            val red = FloatArray(12)
+            val green = FloatArray(12)
+            val blue = FloatArray(12)
+            val hsv = FloatArray(3)
+            var total = 0f
+            for (p in px) {
+                if ((p ushr 24) < 128) continue
+                android.graphics.Color.colorToHSV(p, hsv)
+                val w = hsv[1] * hsv[1] * hsv[2]
+                if (w < 0.05f) continue
+                val slice = (hsv[0] / 30f).toInt().coerceIn(0, 11)
+                weight[slice] += w
+                red[slice] += (p shr 16 and 0xFF) * w
+                green[slice] += (p shr 8 and 0xFF) * w
+                blue[slice] += (p and 0xFF) * w
+                total += w
+            }
+            if (total < 6f) {
+                return 0
+            }
+            val best = weight.indices.maxByOrNull { weight[it] } ?: return 0
+            val w = weight[best]
+            val colour = android.graphics.Color.rgb(
+                (red[best] / w).toInt(), (green[best] / w).toInt(), (blue[best] / w).toInt()
+            )
+            android.graphics.Color.colorToHSV(colour, hsv)
+            hsv[1] = hsv[1].coerceAtLeast(0.55f)
+            hsv[2] = hsv[2].coerceAtLeast(0.9f)
+            android.graphics.Color.HSVToColor(hsv)
+        } catch (e: Exception) {
+            0
+        }
+    }
+
     /** Every pixel the colour given, keeping how see-through it was. */
     private fun tint(bitmap: Bitmap, colour: Int) {
         val w = bitmap.width
