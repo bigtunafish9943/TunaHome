@@ -54,6 +54,12 @@ class AppAdapter(
     private val spotlightOn: Boolean
         get() = spotlight && lines == 1
 
+    /** Called when the viewer moves onto an app. */
+    var onFocused: ((AppEntry) -> Unit)? = null
+
+    /** The app shown at [position], if any. */
+    fun appAtPosition(position: Int): AppEntry? = items.getOrNull(appAt(position))
+
     /** Called when an app is picked up, so the home screen can say how to move it. */
     var onMoveStart: (() -> Unit)? = null
 
@@ -388,6 +394,7 @@ class AppAdapter(
                 showFocus(focused, true)
                 if (focused) {
                     keepInView(v)
+                    entry?.let { onFocused?.invoke(it) }
                 }
             }
             view.setOnClickListener {

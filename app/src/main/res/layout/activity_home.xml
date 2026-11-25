@@ -26,6 +26,17 @@
         app:surface_type="texture_view"
         app:use_controller="false" />
 
+    <!-- The picture of the app you're on, when the background follows it -->
+    <ImageView
+        android:id="@+id/followBackdrop"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:alpha="0"
+        android:contentDescription="@null"
+        android:importantForAccessibility="no"
+        android:scaleType="centerCrop"
+        android:visibility="gone" />
+
     <!-- Darkens the background so names and the clock stay readable -->
     <View
         android:id="@+id/backdropShade"

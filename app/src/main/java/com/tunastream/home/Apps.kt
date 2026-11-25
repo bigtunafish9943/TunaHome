@@ -36,6 +36,13 @@ class AppEntry(
     val isWatchNext: Boolean
         get() = pkg.startsWith("watchnext:")
 
+    val isPcGame: Boolean
+        get() = pkg.startsWith(PcGames.PREFIX)
+
+    /** Something to play inside another app (a show, a PC game), rather than an app itself. */
+    val isInsideApp: Boolean
+        get() = isWatchNext || isPcGame
+
     val isFolder: Boolean
         get() = pkg.startsWith(Folders.PREFIX)
 }

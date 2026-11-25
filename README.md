@@ -28,13 +28,14 @@ The app id is `com.tunastream.home`.
 - **Sideloaded apps, Games, Video and TV, and Music and audio** sections (hidden to begin with), filled automatically from what each app says it is, or else its name.
 - **The section you're on glides into place**, near the top or in the middle of the screen, as you move up and down.
 - **"New"** on apps installed in the last three days until you open them.
+- **PC games** from [TunaReceive](https://github.com/bigtunafish9943/TunaReceive), with box art, most recently played first; select one to start it. Needs a TunaReceive that shares its games list; without TunaReceive the section simply doesn't show.
 - **Goes back to where you were:** moving up or down into a section lands on the app you were on there last.
 
 ## Make it yours
 
 Everything is in TunaHome settings, most used first. Each setting is a short list to pick from.
 
-- **Background:** the theme's colours, your own picture, your own videos and pictures (from the TV or a web address), or a **wallpaper app such as Aerial Views**. Wallpaper apps made for Projectivy Launcher work with TunaHome the same way: pick which videos you want in the wallpaper app's own settings. Also: how much to darken it, how it fits the screen, how often pictures change, shuffled or in order, and the name of what's showing. Videos are silent and stop as soon as you open an app. Brightness, contrast, colour strength and blur can be changed, and animated GIF and WebP pictures play (Android 9 and later).
+- **Background:** the theme's colours, your own picture, your own videos and pictures (from the TV or a web address), or a **wallpaper app such as Aerial Views**. Wallpaper apps made for Projectivy Launcher work with TunaHome the same way: pick which videos you want in the wallpaper app's own settings. Also: how much to darken it, how it fits the screen, how often pictures change, shuffled or in order, and the name of what's showing. Videos are silent and stop as soon as you open an app. The background can follow the app you're on (its TV picture fades in, sharp or blurred) and drift a little as you scroll. Brightness, contrast, colour strength and blur can be changed, and animated GIF and WebP pictures play (Android 9 and later).
 - **Sections:** show, hide, rename, reorder and delete sections, add your own, set how many lines of apps each one has, section name style, space between sections, how a section scrolls, and which app you start on.
 - **Theme and colours:** nine themes named as in TunaStream (Deep Sea, Reef, Kelp, Midnight, Gold, Halloween, Autumn, Winter, Summer) with seasonal themes, a highlight colour and a text colour.
 - **Text:** over 40 fonts (each shown in its own style when you choose), your own .ttf or .otf font file, a separate clock font, six text sizes and a text shadow.

@@ -872,4 +872,12 @@
     <string name="games">Games</string>
     <string name="video_apps">Video and TV</string>
     <string name="music_apps">Music and audio</string>
+    <string name="pc_games">PC games</string>
+    <string name="pc_game_play">Play</string>
+    <string name="heading_follow">As you move around</string>
+    <string name="bg_follow">Background follows the app you\'re on</string>
+    <string name="follow_picture">Its TV picture</string>
+    <string name="follow_blurred">Its TV picture, blurred</string>
+    <string name="bg_drift">Background moves as you scroll</string>
+    <string name="drift_on">A little, for depth</string>
 </resources>

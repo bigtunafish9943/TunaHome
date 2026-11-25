@@ -70,6 +70,8 @@
             <action android:name="com.novalauncher.category.CUSTOM_ICON_PICKER" />
         </intent>
         <!-- The icon packs TunaHome can download, so it can see them once installed -->
+        <!-- TunaReceive shares the games on your PC -->
+        <package android:name="com.tunastream.receive" />
         <package android:name="com.donnnno.arcticons" />
         <package android:name="com.donnnno.arcticons.light" />
         <package android:name="com.donnnno.arcticons.daynight" />

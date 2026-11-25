@@ -133,6 +133,9 @@ class Backdrop(
             return android.graphics.ColorMatrixColorFilter(matrix)
         }
 
+        /** The background drifts a little as you scroll down the sections, for a sense of depth. */
+        val DRIFT = Look.Switch("bg_drift", false)
+
         val SHUFFLE = Look.Switch("bg_shuffle", true)
         val SHOW_CAPTION = Look.Switch("bg_caption", false)
         val PLAY_VIDEOS = Look.Switch("bg_play_videos", true)

@@ -17,7 +17,7 @@ object Launch {
         try {
             activity.startActivity(app.launch)
             Sounds.play(activity, Sounds.OPEN)
-            if (!app.isWatchNext) {
+            if (!app.isInsideApp) {
                 Prefs.setLastOpened(activity, app.pkg)
                 Prefs.addRecent(activity, app.pkg)
                 Prefs.addUse(activity, app.pkg)

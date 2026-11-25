@@ -323,6 +323,10 @@ class SettingsActivity : BaseActivity() {
             }
         }
 
+        heading(R.string.heading_follow)
+        choice(R.string.bg_follow, Ambient.FOLLOW)
+        switch(R.string.bg_drift, Backdrop.DRIFT, R.string.drift_on, R.string.off)
+
         heading(R.string.heading_idle)
         choice(R.string.set_idle, Look.IDLE)
         if (Look.IDLE.get(this) != 0) {

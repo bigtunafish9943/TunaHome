@@ -49,10 +49,12 @@ class HomeActivity : BaseActivity() {
     private lateinit var appsHint: TextView
     private lateinit var backdrop: Backdrop
     private lateinit var tiles: TileStyle
+    private lateinit var ambient: Ambient
     private val sections = ArrayList<Section>()
 
     private var apps: List<AppEntry> = emptyList()
     private var watchNext: List<AppEntry> = emptyList()
+    private var pcGames: List<AppEntry> = emptyList()
     private var loadingWatchNext = false
     private var loaded = false
     private var loading = false
@@ -149,6 +151,8 @@ class HomeActivity : BaseActivity() {
             findViewById(R.id.backdropCaption),
         )
         tiles = TileStyle(this)
+        ambient = Ambient(findViewById(R.id.followBackdrop))
+        setUpDrift()
         sideMenu = SideMenu(this)
         if (sideMenu.showsRail) {
             // Leave room down the left for the closed menu's icons
@@ -158,6 +162,12 @@ class HomeActivity : BaseActivity() {
         setUpTopBar()
         buildSections()
         setUpAlignment()
+        // Off the apps (on the buttons at the top): the usual background shows again
+        scroll.viewTreeObserver.addOnGlobalFocusChangeListener { _, now ->
+            if (ambient.enabled && now != null && now.parent !is SectionList) {
+                ambient.focused(null)
+            }
+        }
         fadeWhenIdle.clear()
         listOf(R.id.sections, R.id.appsHint, R.id.brand, R.id.networkIcon, R.id.checkUpdate,
             R.id.openTvSettings, R.id.openSettings, R.id.sideMenu, R.id.vpnIcon, R.id.openSearch, R.id.systemInfo).forEach { fadeWhenIdle.add(findViewById(it)) }
@@ -247,6 +257,7 @@ class HomeActivity : BaseActivity() {
     /** Another app is in front: let go of the video player so that app can use the decoder. */
     override fun onStop() {
         backdrop.stop()
+        ambient.clear()
         nowPlaying?.stop()
         networkCallback?.let {
             try {
@@ -549,6 +560,10 @@ class HomeActivity : BaseActivity() {
         weatherTick.run()
         weatherHandler.removeCallbacks(infoTick)
         infoTick.run()
+        // Back on the home screen: the background follows the app you're on again
+        if (ambient.enabled) {
+            ambient.focused(focusedApp())
+        }
         if (Prefs.appsChanged) {
             Prefs.appsChanged = false
             reload()
@@ -598,7 +613,7 @@ class HomeActivity : BaseActivity() {
                 Rows.RECENT -> R.drawable.ic_history
                 Rows.WATCH_NEXT -> R.drawable.ic_play
                 Rows.SIDELOADED -> R.drawable.ic_apps
-                Rows.GAMES -> R.drawable.ic_games
+                Rows.GAMES, Rows.PC_GAMES -> R.drawable.ic_games
                 Rows.VIDEO -> R.drawable.ic_tv
                 Rows.MUSIC -> R.drawable.ic_music
                 else -> R.drawable.ic_folder
@@ -660,6 +675,31 @@ class HomeActivity : BaseActivity() {
             if (target != null && target != scroll.scrollY) {
                 scroll.smoothScrollTo(0, target)
             }
+        }
+    }
+
+    /** The app the viewer is on, if they're on one. */
+    private fun focusedApp(): AppEntry? {
+        val view = currentFocus ?: return null
+        val section = sections.firstOrNull { it.list === view.parent } ?: return null
+        return section.adapter.appAtPosition(section.list.getChildAdapterPosition(view))
+    }
+
+    /** The background moves up a little as you scroll down, slower than the sections. */
+    private fun setUpDrift() {
+        if (!Backdrop.DRIFT.get(this)) {
+            return
+        }
+        val layers = listOf<View>(findViewById(R.id.backdropImage), findViewById(R.id.backdropVideo), findViewById(R.id.followBackdrop))
+        // A little bigger than the screen, so there is picture to move into
+        layers.forEach {
+            it.scaleX = 1.1f
+            it.scaleY = 1.1f
+        }
+        val room = resources.displayMetrics.heightPixels * 0.045f
+        scroll.setOnScrollChangeListener { _, _, y, _, _ ->
+            val shift = -minOf(y * 0.12f, room)
+            layers.forEach { it.translationY = shift }
         }
     }
 
@@ -872,6 +912,7 @@ class HomeActivity : BaseActivity() {
                 RecyclerView.RecycledViewPool().apply { setMaxRecycledViews(0, 24) }
             })
             adapter.canMove = !row.ownOrder
+            adapter.onFocused = { app -> ambient.focused(app) }
             adapter.onMoveStart = {
                 Toast.makeText(this, R.string.move_hint, Toast.LENGTH_SHORT).show()
             }
@@ -929,13 +970,20 @@ class HomeActivity : BaseActivity() {
     // ------------------------------------------------------------------ Watch Next
 
     private fun reloadWatchNext() {
-        if (loadingWatchNext || sections.none { it.row.kind == Rows.WATCH_NEXT }) {
+        val wantShows = sections.any { it.row.kind == Rows.WATCH_NEXT }
+        val wantGames = sections.any { it.row.kind == Rows.PC_GAMES }
+        if (loadingWatchNext || (!wantShows && !wantGames)) {
             return
         }
         loadingWatchNext = true
         thread(name = "TunaHome Watch Next") {
-            val found = try {
+            val found = if (!wantShows) emptyList() else try {
                 WatchNext.load(applicationContext)
+            } catch (e: Throwable) {
+                emptyList()
+            }
+            val games = if (!wantGames) emptyList() else try {
+                PcGames.load(applicationContext)
             } catch (e: Throwable) {
                 emptyList()
             }
@@ -943,6 +991,11 @@ class HomeActivity : BaseActivity() {
                 loadingWatchNext = false
                 if (isDestroyed) {
                     return@runOnUiThread
+                }
+                if (games.map { it.pkg } != pcGames.map { it.pkg }) {
+                    pcGames = games
+                    sections.filter { it.row.kind == Rows.PC_GAMES }.forEach { it.show(games) }
+                    applyGaps()
                 }
                 // Nothing new: leave the section alone, so it doesn't jump under the viewer
                 val same = found.size == watchNext.size && found.indices.all {
@@ -1032,6 +1085,7 @@ class HomeActivity : BaseActivity() {
                 Rows.MUSIC -> ordered(loose.filter { it.group == Apps.MUSIC }, Prefs.order(this, section.row.id))
                 Rows.RECENT -> Prefs.recent(this).mapNotNull { everyApp[it] }
                 Rows.WATCH_NEXT -> watchNext
+                Rows.PC_GAMES -> pcGames
                 else -> (rows[section.row.id]?.apps ?: section.row.apps).mapNotNull { byPackage[it] }
             }
             section.show(if (section.row.ownOrder) list else sorted(list, section.row.sort))
@@ -1207,7 +1261,7 @@ class HomeActivity : BaseActivity() {
     // ------------------------------------------------------------------ an app's menu
 
     private fun showMenu(app: AppEntry, row: Rows.Row) {
-        if (app.isWatchNext) {
+        if (app.isInsideApp) {
             watchNextMenu(app)
             return
         }
@@ -1336,7 +1390,8 @@ class HomeActivity : BaseActivity() {
     /** A Watch Next card belongs to its app: offer to open it, or that app's info. */
     private fun watchNextMenu(item: AppEntry) {
         val appName = apps.firstOrNull { it.pkg == item.appPkg }?.label ?: item.appPkg
-        val labels = arrayOf(getString(R.string.watch_next_play), getString(R.string.watch_next_open_app, appName),
+        val labels = arrayOf(getString(if (item.isPcGame) R.string.pc_game_play else R.string.watch_next_play),
+            getString(R.string.watch_next_open_app, appName),
             getString(R.string.menu_app_info))
         AlertDialog.Builder(this)
             .setTitle(item.label)

@@ -17,6 +17,7 @@ object Rows {
     const val NOW_PLAYING = "nowplaying"
     const val SIDELOADED = "sideloaded"
     const val GAMES = "games"
+    const val PC_GAMES = "pcgames"
     const val VIDEO = "video"
     const val MUSIC = "music"
     const val CUSTOM = "custom"
@@ -64,6 +65,7 @@ object Rows {
                 NOW_PLAYING -> R.string.np_title
                 SIDELOADED -> R.string.sideloaded
                 GAMES -> R.string.games
+                PC_GAMES -> R.string.pc_games
                 VIDEO -> R.string.video_apps
                 MUSIC -> R.string.music_apps
                 else -> R.string.row_untitled
@@ -75,7 +77,7 @@ object Rows {
 
         /** Sections in an order of their own (newest first, or what the TV says) can't be sorted or moved in. */
         val ownOrder: Boolean
-            get() = kind == RECENT || kind == WATCH_NEXT || kind == NOW_PLAYING
+            get() = kind == RECENT || kind == WATCH_NEXT || kind == NOW_PLAYING || kind == PC_GAMES
     }
 
     fun load(context: Context): MutableList<Row> {
@@ -116,6 +118,11 @@ object Rows {
         if (rows.none { it.kind == SIDELOADED }) {
             val at = rows.indexOfFirst { it.kind == MOBILE }
             rows.add(if (at >= 0) at + 1 else rows.size, Row(SIDELOADED, SIDELOADED, null, false))
+        }
+        // PC games came later: under Watch Next (it hides itself without TunaReceive)
+        if (rows.none { it.kind == PC_GAMES }) {
+            val at = rows.indexOfFirst { it.kind == WATCH_NEXT }
+            rows.add(if (at >= 0) at + 1 else rows.size, Row(PC_GAMES, PC_GAMES, null, true))
         }
         // Sections filled by what sort of app it is came later: hidden, after the rest
         for (kind in listOf(GAMES, VIDEO, MUSIC)) {
