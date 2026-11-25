@@ -231,6 +231,10 @@ class SettingsActivity : BaseActivity() {
             }
         }
 
+        if (source != Backdrop.SOURCE_THEME && Backdrop.status.isNotEmpty()) {
+            row(R.string.bg_status, Backdrop.status) { build() }
+        }
+
         if (source != Backdrop.SOURCE_THEME) {
             heading(R.string.heading_how_it_shows)
             choice(R.string.bg_dim, Backdrop.DIM)

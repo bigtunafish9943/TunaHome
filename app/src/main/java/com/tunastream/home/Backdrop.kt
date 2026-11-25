@@ -85,6 +85,11 @@ class Backdrop(
         private const val APP = "bg_app"
         private const val VIDEOS = "bg_videos"
 
+        /** What the background is doing, in plain words, for the Background settings page. */
+        @Volatile
+        var status: String = ""
+            private set
+
         fun app(context: Context): ComponentName? =
             Prefs.of(context).getString(APP, null)?.let { ComponentName.unflattenFromString(it) }
 
@@ -145,6 +150,7 @@ class Backdrop(
         shade.visibility = if (source == SOURCE_THEME) View.GONE else View.VISIBLE
         applyFit()
 
+        status = ""
         when (source) {
             SOURCE_PICTURE -> thread(name = "TunaHome wallpaper") {
                 val picture = try {
@@ -162,11 +168,18 @@ class Backdrop(
             SOURCE_APP -> {
                 val app = WallpaperApps.find(context, app(context))
                 if (app == null) {
+                    report(R.string.status_no_app)
                     clear()
                 } else {
-                    WallpaperApps.fetch(context, app) { list ->
+                    report(R.string.status_asking, app.name)
+                    WallpaperApps.fetch(context, app) { list, problem ->
                         if (showing != generation) {
                             return@fetch
+                        }
+                        when {
+                            problem != null -> report(R.string.status_app_failed, app.name, problem)
+                            list.isEmpty() -> report(R.string.status_app_empty, app.name)
+                            else -> report(R.string.status_app_gave, app.name, list.size)
                         }
                         play(list.mapNotNull { w ->
                             when (w.type) {
@@ -192,6 +205,10 @@ class Backdrop(
         player = null
         video.player = null
         video.visibility = View.GONE
+    }
+
+    private fun report(text: Int, vararg args: Any) {
+        status = context.getString(text, *args)
     }
 
     private fun clear() {
@@ -265,6 +282,7 @@ class Backdrop(
     private fun failed() {
         failures++
         if (failures >= items.size) {
+            report(R.string.status_nothing_played)
             stop()
             clear()
             return
@@ -303,6 +321,9 @@ class Backdrop(
 
     private fun pictureShown(drawable: Drawable) {
         failures = 0
+        if (items.isNotEmpty()) {
+            report(R.string.status_picture, index + 1, items.size)
+        }
         showDrawable(drawable)
         // The picture covers the screen now, so the video can stop
         player?.pause()
@@ -346,14 +367,16 @@ class Backdrop(
             }
 
             override fun onPlayerError(error: PlaybackException) {
+                report(R.string.status_video_failed, error.errorCodeName)
                 failed()
             }
 
             override fun onRenderedFirstFrame() {
                 failures = 0
-                if (video.visibility != View.VISIBLE || video.alpha < 1f) {
-                    video.visibility = View.VISIBLE
-                    video.alpha = 0f
+                report(R.string.status_playing, index + 1, items.size)
+                // The video layer was already on screen, nearly see-through: fade it in fully
+                video.animate().cancel()
+                if (video.alpha < 1f) {
                     video.animate().alpha(1f).setDuration(800).start()
                 }
             }
@@ -365,6 +388,14 @@ class Backdrop(
 
     private fun playVideo(item: Item) {
         val player = ensurePlayer()
+        // The video needs its layer on screen to have something to draw on, so put it there
+        // now, almost see-through, and fade it in once the first frame is drawn. (Hidden, it
+        // never gets a surface, never draws a frame, and the background stays plain.)
+        if (video.visibility != View.VISIBLE) {
+            video.alpha = 0.01f
+            video.visibility = View.VISIBLE
+        }
+        report(R.string.status_loading_video, index + 1, items.size)
         player.setMediaItem(MediaItem.fromUri(item.uri))
         // A single video just loops
         player.repeatMode = if (items.size == 1) Player.REPEAT_MODE_ONE else Player.REPEAT_MODE_OFF

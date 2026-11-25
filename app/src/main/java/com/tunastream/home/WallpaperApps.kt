@@ -105,11 +105,11 @@ object WallpaperApps {
      * Gets [source]'s list, from what was kept if it is still good, otherwise by asking the app.
      * [done] runs on the main thread, with an empty list if the app gave nothing or didn't answer.
      */
-    fun fetch(context: Context, source: Source, done: (List<Wallpaper>) -> Unit) {
+    fun fetch(context: Context, source: Source, done: (List<Wallpaper>, String?) -> Unit) {
         val main = Handler(Looper.getMainLooper())
         kept[source.component]?.let {
             if (SystemClock.elapsedRealtime() - it.at < source.keepMs && it.items.isNotEmpty()) {
-                main.post { done(it.items) }
+                main.post { done(it.items, null) }
                 return
             }
         }
@@ -118,7 +118,7 @@ object WallpaperApps {
         var finished = false
         lateinit var connection: ServiceConnection
 
-        fun finish(items: List<Wallpaper>) {
+        fun finish(items: List<Wallpaper>, problem: String?) {
             main.post {
                 if (finished) {
                     return@post
@@ -132,7 +132,7 @@ object WallpaperApps {
                 if (items.isNotEmpty()) {
                     kept[source.component] = Kept(SystemClock.elapsedRealtime(), items)
                 }
-                done(items)
+                done(items, problem)
             }
         }
 
@@ -140,6 +140,7 @@ object WallpaperApps {
             override fun onServiceConnected(name: ComponentName?, binder: IBinder?) {
                 // The app may go to the internet for its list: never on the main thread
                 thread(name = "TunaHome wallpaper app") {
+                    var problem: String? = null
                     val items = try {
                         IWallpaperProviderService.Stub.asInterface(binder)
                             .getWallpapers(Event.TimeElapsed)
@@ -147,14 +148,15 @@ object WallpaperApps {
                             ?: emptyList()
                     } catch (e: Exception) {
                         Log.w(TAG, "Wallpaper app ${source.name} failed: $e")
+                        problem = e.toString()
                         emptyList()
                     }
-                    finish(items)
+                    finish(items, problem)
                 }
             }
 
             override fun onServiceDisconnected(name: ComponentName?) {
-                finish(emptyList())
+                finish(emptyList(), "it closed the connection")
             }
         }
 
@@ -165,9 +167,9 @@ object WallpaperApps {
             false
         }
         if (!bound) {
-            finish(emptyList())
+            finish(emptyList(), "Android wouldn't connect to it")
             return
         }
-        main.postDelayed({ finish(emptyList()) }, TIMEOUT_MS)
+        main.postDelayed({ finish(emptyList(), "it didn't answer within 30 seconds") }, TIMEOUT_MS)
     }
 }

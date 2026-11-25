@@ -151,6 +151,17 @@
     <string name="bg_no_apps_body">A wallpaper app gives TunaHome videos and pictures to show behind your apps, the same way it does for Projectivy Launcher. Aerial Views is a free one with aerial videos from around the world.\n\nInstall it, then come back here and choose it.</string>
     <string name="bg_get_aerial">Get Aerial Views</string>
     <string name="bg_get_aerial_manual">Open the Play Store on the TV and search for Aerial Views.</string>
+    <string name="bg_status">What the home screen is doing</string>
+    <string name="status_no_app">No wallpaper app is chosen, or it was uninstalled. Choose one under Wallpaper app.</string>
+    <string name="status_asking">Asking %1$s for its videos and pictures…</string>
+    <string name="status_app_failed">%1$s couldn\'t give its list: %2$s</string>
+    <string name="status_app_empty">%1$s gave no videos or pictures. Open its settings and choose some to share with launchers (its Projectivy section).</string>
+    <string name="status_app_gave">%1$s gave %2$d videos and pictures.</string>
+    <string name="status_loading_video">Starting video %1$d of %2$d…</string>
+    <string name="status_playing">Playing video %1$d of %2$d.</string>
+    <string name="status_picture">Showing picture %1$d of %2$d.</string>
+    <string name="status_video_failed">A video couldn\'t play (%1$s). Trying the next one.</string>
+    <string name="status_nothing_played">None of them could be shown, so the theme\'s colours are showing.</string>
     <string name="bg_dim">Darken the background</string>
     <string name="dim_none">Not at all</string>
     <string name="dim_light">A little</string>
