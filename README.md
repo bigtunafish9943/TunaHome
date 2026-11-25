@@ -12,6 +12,7 @@ The app id is `com.tunastream.home`.
 
 - **Sections of apps across the screen.** Favourites, TV apps and Mobile apps to begin with, plus sections of your own. Each section can show its apps on 1 to 5 lines, or as many lines as it takes so nothing scrolls sideways. Apps fill each line across before the next.
 - **Put apps where you want them.** Press select twice quickly on an app (or hold select and choose Move), then use the D-pad to move it (up and down too, in a section with more than one line) and press select to put it down.
+- **Side menu.** Press Left on the first app of a line to open a menu of your sections (choose one to jump to it) and shortcuts to TunaHome settings, TV settings, network, installed apps and About this TV. Right or Back closes it. When closed it can show its icons down the left, or nothing.
 - **An app's menu.** Hold select on an app (or press Menu on a remote, or X or Y on a controller) to move it, add it to favourites or one of your sections, change its icon, hide it, open its app info, or uninstall it.
 - **Update, TV settings and TunaHome settings** are small buttons beside the clock.
 - **Updates itself** from this repo's releases. An update is installed only if it matches the checksum GitHub publishes and is signed with the same key as the TunaHome you have.
@@ -30,7 +31,7 @@ Everything is in TunaHome settings, most used first. Each setting is a short lis
 - **Sections:** show, hide, rename, reorder and delete sections, add your own, set how many lines of apps each one has, section name style, space between sections, how a section scrolls, and which app you start on.
 - **Theme and colours:** nine themes named as in TunaStream (Deep Sea, Reef, Kelp, Midnight, Gold, Halloween, Autumn, Winter, Summer) with seasonal themes, a highlight colour and a text colour.
 - **Text:** over 40 fonts (each shown in its own style when you choose), your own .ttf or .otf font file, a separate clock font, six text sizes and a text shadow.
-- **Icons:** one list to pick from: TV pictures, the apps' own icons, or any icon pack on the TV (plus more to download); the name inside the card if you like; five sizes; icon packs made for phone launchers; corners from square to fully rounded; card colour; edges; spacing; when names show; and how the app you're on stands out (enlarged, outline colour, dim the rest). Any app can have an icon of your own (from the TV or a web address).
+- **Icons:** one list to pick from: TV pictures, the apps' own icons, or any icon pack on the TV (plus more to download); icons fill the whole card edge to edge, or sit smaller inside it; the name inside the card if you like; five sizes; icon packs made for phone launchers; corners from square to fully rounded; card colour; edges; spacing; when names show; and how the app you're on stands out (enlarged, outline colour, dim the rest). Any app can have an icon of your own (from the TV or a web address).
 - **Top of the screen:** name and logo, version, clock style and size, date, and which buttons show.
 
 Choosing a file needs an app on the TV that can browse files, such as a file manager.

@@ -17,6 +17,8 @@ class TileStyle(context: Context, sizeOverride: Int = -1) {
     val dimOthers = Look.DIM_OTHERS.get(context)
     val scroll = Look.ROW_SCROLL.get(context)
     val doublePress = Look.DOUBLE_PRESS.get(context)
+    /** Icons fill the whole card, edge to edge, cut to its rounded corners. */
+    val fullBleed = Look.fullBleed(context)
     val iconSize: Int
     private val corner: Float
     private val cardColour: Int
@@ -45,7 +47,14 @@ class TileStyle(context: Context, sizeOverride: Int = -1) {
         gap = Math.round(Look.dp(context, Look.tileGapDp(context)))
         val fill = Look.ICON_FILLS[Look.ICON_FILL.get(context)]
         // With the name inside the card, the icon leaves room for it
-        iconSize = Math.round(minOf(width, height) * if (style == Look.TILE_ICON_NAME) fill * 0.8f else fill)
+        iconSize = Math.round(
+            minOf(width, height) * when {
+                // An app with no TV picture, in the TV picture style: a modest icon in the middle
+                style == Look.TILE_BANNER -> 0.6f
+                style == Look.TILE_ICON_NAME && !fullBleed -> fill * 0.8f
+                else -> fill
+            }
+        )
         corner = minOf(Look.dp(context, Look.cornerDp(context)), height / 2f)
 
         val surface = context.themeColor(R.attr.tsSurface)

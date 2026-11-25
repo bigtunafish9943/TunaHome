@@ -100,6 +100,14 @@ class AppAdapter(
 
     fun positionOf(pkg: String): Int = positionOfApp(items.indexOfFirst { it.pkg == pkg })
 
+    /** Whether the tile at [position] is the first on its line, where Left opens the side menu. */
+    fun isLineStart(position: Int): Boolean = when {
+        position < 0 -> false
+        lines == Rows.WRAP -> position % wrapColumns == 0
+        sideways -> position < lines
+        else -> position == 0
+    }
+
     override fun getItemCount(): Int = if (sideways) columns * lines else items.size
 
     override fun getItemId(position: Int): Long {
@@ -272,8 +280,19 @@ class AppAdapter(
             (view as android.widget.LinearLayout).setGravity(Gravity.CENTER_HORIZONTAL)
         }
 
-        val icon = view.findViewById<View>(R.id.icon)
-        icon.layoutParams = (icon.layoutParams as FrameLayout.LayoutParams).apply {
+        val icon = view.findViewById<ImageView>(R.id.icon)
+        if (tiles.fullBleed) {
+            // Edge to edge: the icon is the card, cut to its rounded corners
+            icon.scaleType = ImageView.ScaleType.CENTER_CROP
+            icon.layoutParams = FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT
+            )
+            view.findViewById<TextView>(R.id.cardLabel).apply {
+                setBackgroundResource(R.drawable.card_label_bg)
+                setTextColor(Color.WHITE)
+                setPadding(paddingLeft, Math.round(tiles.height * 0.12f), paddingRight, paddingBottom)
+            }
+        } else icon.layoutParams = (icon.layoutParams as FrameLayout.LayoutParams).apply {
             width = tiles.iconSize
             height = tiles.iconSize
             gravity = if (tiles.style == Look.TILE_ICON_NAME) Gravity.CENTER_HORIZONTAL or Gravity.TOP
@@ -284,7 +303,7 @@ class AppAdapter(
         }
         val label = view.findViewById<TextView>(R.id.label)
         label.layoutParams = label.layoutParams.apply { width = tiles.width }
-        if (tiles.darkCard) {
+        if (tiles.darkCard && !tiles.fullBleed) {
             view.findViewById<TextView>(R.id.cardLabel).setTextColor(Color.rgb(0x15, 0x1A, 0x22))
         }
         Look.styleText(view)

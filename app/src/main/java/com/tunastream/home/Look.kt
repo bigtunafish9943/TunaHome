@@ -148,10 +148,36 @@ object Look {
 
     /** How much of the card an icon fills. */
     val ICON_FILL = Choice(
-        "look_icon_fill", 1,
-        intArrayOf(R.string.fill_small, R.string.fill_medium, R.string.fill_large, R.string.fill_most)
+        "look_icon_fill", 4, intArrayOf(
+            R.string.fill_small, R.string.fill_medium, R.string.fill_large, R.string.fill_most,
+            R.string.fill_edge,
+        )
     )
-    val ICON_FILLS = floatArrayOf(0.4f, 0.58f, 0.72f, 0.88f)
+    val ICON_FILLS = floatArrayOf(0.4f, 0.58f, 0.72f, 0.88f, 1f)
+    const val FILL_EDGE = 4
+
+    fun fullBleed(context: Context): Boolean =
+        ICON_FILL.get(context) == FILL_EDGE && TILE_STYLE.get(context) != TILE_BANNER
+
+    /** Space between the top bar and the first section. */
+    val HEADER_GAP = Choice(
+        "look_header_gap", 2, intArrayOf(
+            R.string.gap_none, R.string.gap_tight, R.string.gap_normal, R.string.gap_wide, R.string.gap_widest,
+        )
+    )
+    private val HEADER_GAP_DP = floatArrayOf(0f, 6f, 14f, 28f, 48f)
+    fun headerGapDp(context: Context): Float = HEADER_GAP_DP[HEADER_GAP.get(context)]
+
+    // ------------------------------------------------------------------ side menu
+
+    const val MENU_OFF = 0
+    const val MENU_HIDDEN = 1
+    const val MENU_RAIL = 2
+    val SIDE_MENU = Choice(
+        "look_side_menu", MENU_RAIL,
+        intArrayOf(R.string.menu_mode_off, R.string.menu_mode_hidden, R.string.menu_mode_rail)
+    )
+    val SIDE_MENU_SHORTCUTS = Switch("look_side_menu_shortcuts", true)
 
     val TILE_CORNERS = Choice(
         "look_tile_corners", 2, intArrayOf(

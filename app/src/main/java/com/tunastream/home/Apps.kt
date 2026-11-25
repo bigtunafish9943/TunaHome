@@ -32,6 +32,7 @@ object Apps {
         val pack = IconPacks.chosen(context)?.let { IconPacks.Loaded(context, it) }
         val found = LinkedHashMap<String, AppEntry>()
         var packHits = 0
+        val fullBleed = Look.fullBleed(context)
         for (category in arrayOf(Intent.CATEGORY_LEANBACK_LAUNCHER, Intent.CATEGORY_LAUNCHER)) {
             val query = Intent(Intent.ACTION_MAIN).addCategory(category)
             for (info in pm.queryIntentActivities(query, 0)) {
@@ -66,10 +67,13 @@ object Apps {
                 if (fromPack != null) {
                     packHits++
                 }
-                val icon: Drawable? = fromPack ?: try {
+                var icon: Drawable? = fromPack ?: try {
                     info.loadIcon(pm)
                 } catch (e: Exception) {
                     null
+                }
+                if (fullBleed) {
+                    icon = IconShape.fullBleed(context.resources, icon)
                 }
                 found[pkg] = AppEntry(
                     pkg, label, launch, banner, icon,

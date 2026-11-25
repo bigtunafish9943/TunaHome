@@ -166,4 +166,36 @@
                 android:orientation="vertical" />
         </LinearLayout>
     </ScrollView>
+
+    <!-- The side menu: Left from the first app opens it -->
+    <FrameLayout
+        android:id="@+id/sideMenu"
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        android:visibility="gone">
+
+        <View
+            android:id="@+id/sideMenuShade"
+            android:layout_width="420dp"
+            android:layout_height="match_parent"
+            android:alpha="0"
+            android:background="@drawable/side_menu_shade" />
+
+        <ScrollView
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:scrollbars="none">
+
+            <LinearLayout
+                android:id="@+id/sideMenuItems"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:descendantFocusability="blocksDescendants"
+                android:orientation="vertical"
+                android:paddingStart="12dp"
+                android:paddingTop="96dp"
+                android:paddingEnd="12dp"
+                android:paddingBottom="@dimen/safe_top" />
+        </ScrollView>
+    </FrameLayout>
 </FrameLayout>

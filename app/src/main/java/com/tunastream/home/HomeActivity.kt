@@ -65,6 +65,7 @@ class HomeActivity : BaseActivity() {
     private val fadeWhenIdle = ArrayList<View>()
 
     private var networkCallback: ConnectivityManager.NetworkCallback? = null
+    private lateinit var sideMenu: SideMenu
 
     /** The app whose picture is being chosen, while the TV's picture chooser is open. */
     private var choosingPictureFor: String? = null
@@ -90,12 +91,17 @@ class HomeActivity : BaseActivity() {
             findViewById(R.id.backdropCaption),
         )
         tiles = TileStyle(this)
+        sideMenu = SideMenu(this)
+        if (sideMenu.showsRail) {
+            // Leave room down the left for the closed menu's icons
+            scroll.setPadding(Math.round(Look.dp(this, 56f)), 0, 0, 0)
+        }
 
         setUpTopBar()
         buildSections()
         fadeWhenIdle.clear()
         listOf(R.id.sections, R.id.appsHint, R.id.brand, R.id.networkIcon, R.id.checkUpdate,
-            R.id.openTvSettings, R.id.openSettings).forEach { fadeWhenIdle.add(findViewById(it)) }
+            R.id.openTvSettings, R.id.openSettings, R.id.sideMenu).forEach { fadeWhenIdle.add(findViewById(it)) }
         if (!Look.IDLE_CLOCK.get(this)) {
             fadeWhenIdle.add(findViewById(R.id.clockBox))
         }
@@ -152,6 +158,7 @@ class HomeActivity : BaseActivity() {
     override fun onPause() {
         // Leaving mid-move: keep the app where it was put
         sections.forEach { it.adapter.finishMove() }
+        sideMenu.close(false)
         idleHandler.removeCallbacks(goIdle)
         if (idle) {
             leaveIdle(false)
@@ -194,6 +201,28 @@ class HomeActivity : BaseActivity() {
      * is picked up, the D-pad, select and Back move it and put it down.
      */
     override fun dispatchKeyEvent(event: KeyEvent): Boolean {
+        if (sideMenu.isOpen) {
+            scheduleIdle()
+            if (sideMenu.key(event)) {
+                return true
+            }
+            return super.dispatchKeyEvent(event)
+        }
+        // Left on the first app of a line opens the side menu
+        if (event.keyCode == KeyEvent.KEYCODE_DPAD_LEFT && event.action == KeyEvent.ACTION_DOWN &&
+            sideMenu.enabled && !idle && sections.none { it.adapter.isMoving }
+        ) {
+            val focused = currentFocus
+            val list = focused?.parent as? RecyclerView
+            val section = sections.firstOrNull { it.list === list }
+            if (focused != null && list != null && section != null &&
+                section.adapter.isLineStart(list.getChildAdapterPosition(focused))
+            ) {
+                refreshMenu()
+                sideMenu.open(section.row.id)
+                return true
+            }
+        }
         sections.firstOrNull { it.adapter.isMoving }?.let { section ->
             scheduleIdle()
             if (section.adapter.moveKey(event)) {
@@ -293,6 +322,71 @@ class HomeActivity : BaseActivity() {
         goToTop()
     }
 
+    // ------------------------------------------------------------------ side menu
+
+    /** The side menu's entries: every section showing, then the shortcuts. */
+    private fun refreshMenu() {
+        val entries = ArrayList<SideMenu.Entry>()
+        for (section in sections) {
+            if (section.view.visibility != View.VISIBLE) {
+                continue
+            }
+            val icon = when (section.row.kind) {
+                Rows.FAVOURITES -> R.drawable.ic_star
+                Rows.TV -> R.drawable.ic_tv
+                Rows.MOBILE -> R.drawable.ic_phone
+                Rows.RECENT -> R.drawable.ic_history
+                else -> R.drawable.ic_folder
+            }
+            entries.add(SideMenu.Entry(icon, section.row.name(this), section.row.id) { goToSection(section) })
+        }
+        if (Look.SIDE_MENU_SHORTCUTS.get(this)) {
+            entries.add(SideMenu.Entry(0, "", null) {})
+            entries.add(SideMenu.Entry(R.drawable.ic_settings, getString(R.string.tunahome_settings), null) {
+                openTunaHomeSettings()
+            })
+            entries.add(SideMenu.Entry(R.drawable.ic_display, getString(R.string.tv_settings), null) {
+                openTvSettings(this)
+            })
+            entries.add(SideMenu.Entry(R.drawable.ic_net_wifi, getString(R.string.menu_network), null) {
+                openSetting(Settings.ACTION_WIFI_SETTINGS)
+            })
+            entries.add(SideMenu.Entry(R.drawable.ic_apps, getString(R.string.menu_installed_apps), null) {
+                openSetting(Settings.ACTION_APPLICATION_SETTINGS)
+            })
+            entries.add(SideMenu.Entry(R.drawable.ic_info, getString(R.string.menu_about_tv), null) {
+                openSetting(Settings.ACTION_DEVICE_INFO_SETTINGS)
+            })
+        }
+        sideMenu.setEntries(entries)
+    }
+
+    /** A page of the TV's own settings, or the TV's settings if this TV doesn't have that page. */
+    private fun openSetting(action: String) {
+        try {
+            startActivity(Intent(action))
+        } catch (e: Exception) {
+            openTvSettings(this)
+        }
+    }
+
+    private fun goToSection(section: Section) {
+        scroll.post {
+            scroll.smoothScrollTo(0, maxOf(0, section.view.top - Math.round(Look.dp(this, 24f))))
+            focusIn(section, 0)
+        }
+    }
+
+    private fun openTunaHomeSettings() {
+        if (AppLock.settingsLocked(this)) {
+            AppLock.ask(this, getString(R.string.tunahome_settings)) {
+                startActivity(Intent(this, SettingsActivity::class.java))
+            }
+        } else {
+            startActivity(Intent(this, SettingsActivity::class.java))
+        }
+    }
+
     private fun goToTop() {
         scroll.smoothScrollTo(0, 0)
         focusFirst()
@@ -320,15 +414,7 @@ class HomeActivity : BaseActivity() {
         tvSettings.visibility = if (Look.SHOW_TV_SETTINGS_BUTTON.get(this)) View.VISIBLE else View.GONE
         tvSettings.setOnClickListener { openTvSettings(this) }
         // Always shown: it is the way back to every other setting
-        findViewById<View>(R.id.openSettings).setOnClickListener {
-            if (AppLock.settingsLocked(this)) {
-                AppLock.ask(this, getString(R.string.tunahome_settings)) {
-                    startActivity(Intent(this, SettingsActivity::class.java))
-                }
-            } else {
-                startActivity(Intent(this, SettingsActivity::class.java))
-            }
-        }
+        findViewById<View>(R.id.openSettings).setOnClickListener { openTunaHomeSettings() }
 
         val clock = findViewById<TextClock>(R.id.clock)
         when (Look.CLOCK.get(this)) {
@@ -418,7 +504,7 @@ class HomeActivity : BaseActivity() {
                 Look.TITLES_BOLD -> title.setTypeface(title.typeface, android.graphics.Typeface.BOLD)
                 Look.TITLES_HIDDEN -> title.visibility = View.GONE
             }
-            (title.layoutParams as LinearLayout.LayoutParams).topMargin = rowGap
+            (title.layoutParams as LinearLayout.LayoutParams).topMargin = 0
 
             val list = view.findViewById<RecyclerView>(R.id.sectionApps)
             val lines = row.lines
@@ -538,10 +624,35 @@ class HomeActivity : BaseActivity() {
             appsHint.setText(hint)
         }
 
+        applyGaps()
+        if (!sideMenu.isOpen) {
+            refreshMenu()
+        }
+
         if (!placedFocus && sections.any { it.adapter.appCount > 0 }) {
             placedFocus = true
             placeStartFocus()
         }
+    }
+
+    /** Space above each section: the header gap above the first one showing, the section gap above the rest. */
+    private fun applyGaps() {
+        val headerGap = Math.round(Look.dp(this, Look.headerGapDp(this)))
+        val rowGap = Math.round(Look.dp(this, Look.rowGapDp(this)))
+        var first = true
+        for (section in sections) {
+            if (section.view.visibility != View.VISIBLE) {
+                continue
+            }
+            val params = section.view.layoutParams as LinearLayout.LayoutParams
+            val want = if (first) headerGap else rowGap
+            if (params.topMargin != want) {
+                params.topMargin = want
+                section.view.layoutParams = params
+            }
+            first = false
+        }
+        (appsHint.layoutParams as LinearLayout.LayoutParams).topMargin = headerGap
     }
 
     /** Where the viewer starts: the first app, or the one they opened last. */

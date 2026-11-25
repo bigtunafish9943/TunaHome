@@ -425,7 +425,14 @@ class SettingsActivity : BaseActivity() {
             }
         }
         heading(R.string.heading_all_sections)
+        choice(R.string.set_header_gap, Look.HEADER_GAP)
         switch(R.string.set_double_press, Look.DOUBLE_PRESS, R.string.double_press_on, R.string.off)
+        heading(R.string.heading_side_menu)
+        choice(R.string.set_side_menu, Look.SIDE_MENU)
+        if (Look.SIDE_MENU.get(this) != Look.MENU_OFF) {
+            switch(R.string.set_side_menu_shortcuts, Look.SIDE_MENU_SHORTCUTS, R.string.shown, R.string.hidden)
+        }
+        heading(R.string.heading_section_look)
         choice(R.string.set_row_titles, Look.ROW_TITLES)
         choice(R.string.set_row_gap, Look.ROW_GAP)
         choice(R.string.set_row_scroll, Look.ROW_SCROLL)
@@ -707,6 +714,7 @@ class SettingsActivity : BaseActivity() {
                 switch(R.string.set_show_version, Look.SHOW_VERSION, R.string.shown, R.string.hidden)
             }
         }
+        choice(R.string.set_header_gap, Look.HEADER_GAP)
         choice(R.string.set_clock, Look.CLOCK)
         choice(R.string.set_clock_size, Look.CLOCK_SIZE)
         choice(R.string.set_date, Look.DATE)
