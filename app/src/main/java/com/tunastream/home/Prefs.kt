@@ -74,4 +74,17 @@ object Prefs {
         of(context).edit().remove("order_tv").remove("order_mobile").apply()
         appsChanged = true
     }
+
+    /** The app opened last, for "When TunaHome opens, go to the app you used last". */
+    fun lastOpened(context: Context): String? = of(context).getString("last_opened", null)
+
+    fun setLastOpened(context: Context, pkg: String) {
+        of(context).edit().putString("last_opened", pkg).apply()
+    }
+
+    fun autoUpdateCheck(context: Context): Boolean = of(context).getBoolean("auto_update_check", true)
+
+    fun setAutoUpdateCheck(context: Context, on: Boolean) {
+        of(context).edit().putBoolean("auto_update_check", on).apply()
+    }
 }

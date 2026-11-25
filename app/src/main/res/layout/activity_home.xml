@@ -1,22 +1,51 @@
 <?xml version="1.0" encoding="utf-8"?>
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
-    <!-- Your own picture, when one is chosen in Settings; otherwise the theme's colours show -->
+    <!-- The background: a picture, a video, or nothing (the theme's colours) -->
     <ImageView
-        android:id="@+id/wallpaper"
+        android:id="@+id/backdropImage"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:contentDescription="@null"
+        android:importantForAccessibility="no"
         android:scaleType="centerCrop" />
 
-    <!-- Darkens a picture a little so names and the clock stay readable -->
-    <View
-        android:id="@+id/wallpaperShade"
+    <androidx.media3.ui.PlayerView
+        android:id="@+id/backdropVideo"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:background="#59000000"
+        android:descendantFocusability="blocksDescendants"
+        android:focusable="false"
+        android:importantForAccessibility="no"
+        android:visibility="gone"
+        app:resize_mode="zoom"
+        app:shutter_background_color="@android:color/transparent"
+        app:surface_type="texture_view"
+        app:use_controller="false" />
+
+    <!-- Darkens the background so names and the clock stay readable -->
+    <View
+        android:id="@+id/backdropShade"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:alpha="0.3"
+        android:background="#FF000000"
+        android:visibility="gone" />
+
+    <!-- What the background shows, when a wallpaper app names it -->
+    <TextView
+        android:id="@+id/backdropCaption"
+        style="@style/Shadowed"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|end"
+        android:layout_marginEnd="@dimen/safe_side"
+        android:layout_marginBottom="@dimen/safe_top"
+        android:textColor="?attr/tsText"
+        android:textSize="13sp"
         android:visibility="gone" />
 
     <ScrollView
@@ -39,11 +68,13 @@
             android:paddingBottom="@dimen/safe_top">
 
             <LinearLayout
+                android:id="@+id/topBar"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="@dimen/safe_side"
                 android:layout_marginEnd="@dimen/safe_side"
                 android:gravity="center_vertical"
+                android:minHeight="46dp"
                 android:orientation="horizontal">
 
                 <include layout="@layout/brand" />
@@ -71,17 +102,35 @@
                     android:contentDescription="@string/tunahome_settings"
                     android:src="@drawable/ic_settings" />
 
-                <TextClock
-                    android:id="@+id/clock"
-                    style="@style/Shadowed"
+                <LinearLayout
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginStart="6dp"
-                    android:fontFamily="sans-serif-light"
-                    android:format12Hour="h:mm"
-                    android:format24Hour="HH:mm"
-                    android:textColor="?attr/tsText"
-                    android:textSize="26sp" />
+                    android:gravity="end"
+                    android:orientation="vertical">
+
+                    <TextClock
+                        android:id="@+id/clock"
+                        style="@style/Shadowed"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="sans-serif-light"
+                        android:format12Hour="h:mm"
+                        android:format24Hour="HH:mm"
+                        android:includeFontPadding="false"
+                        android:textColor="?attr/tsText"
+                        android:textSize="26sp" />
+
+                    <TextClock
+                        android:id="@+id/date"
+                        style="@style/Shadowed"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="2dp"
+                        android:textColor="?attr/tsTextSecondary"
+                        android:textSize="13sp"
+                        android:visibility="gone" />
+                </LinearLayout>
             </LinearLayout>
 
             <TextView
@@ -95,32 +144,14 @@
                 android:textColor="?attr/tsTextSecondary"
                 android:textSize="13sp" />
 
-            <TextView
-                android:id="@+id/favouritesTitle"
-                style="@style/RowTitle"
-                android:text="@string/favourites" />
-
-            <androidx.recyclerview.widget.RecyclerView
-                android:id="@+id/favourites"
-                style="@style/AppRow" />
-
-            <TextView
-                android:id="@+id/tvAppsTitle"
-                style="@style/RowTitle"
-                android:text="@string/tv_apps" />
-
-            <androidx.recyclerview.widget.RecyclerView
-                android:id="@+id/tvApps"
-                style="@style/AppRow" />
-
-            <TextView
-                android:id="@+id/mobileAppsTitle"
-                style="@style/RowTitle"
-                android:text="@string/mobile_apps" />
-
-            <androidx.recyclerview.widget.RecyclerView
-                android:id="@+id/mobileApps"
-                style="@style/AppRow" />
+            <!-- One section per row the viewer has, added in code -->
+            <LinearLayout
+                android:id="@+id/sections"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:clipChildren="false"
+                android:clipToPadding="false"
+                android:orientation="vertical" />
         </LinearLayout>
     </ScrollView>
 </FrameLayout>

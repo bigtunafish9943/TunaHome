@@ -26,3 +26,17 @@ standard library (Apache License 2.0).
 
 Icons: the settings, TV and download symbols are from Google's Material
 Symbols (Apache License 2.0).
+
+Fonts: the fonts in app/src/main/assets/fonts are from Google Fonts
+(https://github.com/google/fonts), under the SIL Open Font License 1.1.
+Each font's licence is beside it in app/src/main/assets/fonts/licences.
+They were trimmed to Latin characters to keep the app small; the
+names and licences are unchanged.
+
+Wallpaper apps: projectivyapi/ is Projectivy Launcher's wallpaper
+plugin interface, copied unchanged from
+https://github.com/spocky/projectivy-plugin-wallpaper-provider
+(Apache License 2.0, see projectivyapi/LICENSE). It lets wallpaper
+apps such as Aerial Views show their videos behind TunaHome.
+
+Video: AndroidX Media3 (Apache License 2.0).

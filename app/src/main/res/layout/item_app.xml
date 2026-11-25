@@ -1,10 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- One app: its banner (or its icon when it has none). Its name shows only while you are on it. -->
+<!-- One app. Its size, card, outline and name are set in code from the viewer's settings. -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/tile"
-    android:layout_width="@dimen/tile_width"
+    android:layout_width="wrap_content"
     android:layout_height="wrap_content"
-    android:layout_margin="@dimen/tile_gap"
     android:clickable="true"
     android:focusable="true"
     android:longClickable="true"
@@ -12,9 +11,8 @@
 
     <FrameLayout
         android:id="@+id/card"
-        android:layout_width="match_parent"
-        android:layout_height="@dimen/tile_height"
-        android:background="@drawable/tile_bg">
+        android:layout_width="@dimen/tile_width"
+        android:layout_height="@dimen/tile_height">
 
         <ImageView
             android:id="@+id/banner"
@@ -31,11 +29,26 @@
             android:contentDescription="@null"
             android:scaleType="fitCenter" />
 
+        <!-- The name inside the card, for the "icon and name" style -->
+        <TextView
+            android:id="@+id/cardLabel"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="bottom"
+            android:ellipsize="end"
+            android:gravity="center"
+            android:maxLines="1"
+            android:paddingStart="6dp"
+            android:paddingEnd="6dp"
+            android:paddingBottom="6dp"
+            android:textColor="?attr/tsText"
+            android:textSize="12sp"
+            android:visibility="gone" />
+
         <View
             android:id="@+id/ring"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:background="@drawable/tile_ring"
             android:visibility="invisible" />
     </FrameLayout>
 

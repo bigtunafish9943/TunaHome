@@ -6,12 +6,14 @@ import android.content.Intent
 import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.Drawable
 
-/** One app on the home screen. Apps made for TV have a banner; the rest show their icon. */
+/** One app on the home screen. */
 class AppEntry(
     val pkg: String,
     val label: String,
     val launch: Intent,
+    /** Its wide TV picture, or the viewer's own picture for it; null when it has neither. */
     val banner: Drawable?,
+    /** Its icon, from the chosen icon pack when that has one. */
     val icon: Drawable?,
     /** Made for TV, as opposed to a phone or tablet app that happens to be installed. */
     val tv: Boolean,
@@ -25,13 +27,9 @@ object Apps {
      */
     fun load(context: Context): List<AppEntry> {
         val pm = context.packageManager
+        val pack = IconPacks.chosen(context)?.let { IconPacks.Loaded(context, it) }
         val found = LinkedHashMap<String, AppEntry>()
-        val categories = if (Prefs.showPhoneApps(context)) {
-            arrayOf(Intent.CATEGORY_LEANBACK_LAUNCHER, Intent.CATEGORY_LAUNCHER)
-        } else {
-            arrayOf(Intent.CATEGORY_LEANBACK_LAUNCHER)
-        }
-        for (category in categories) {
+        for (category in arrayOf(Intent.CATEGORY_LEANBACK_LAUNCHER, Intent.CATEGORY_LAUNCHER)) {
             val query = Intent(Intent.ACTION_MAIN).addCategory(category)
             for (info in pm.queryIntentActivities(query, 0)) {
                 val activity = info.activityInfo ?: continue
@@ -48,7 +46,7 @@ object Apps {
                 // A picture the viewer chose for this app wins over the app's own
                 val own = try {
                     Pictures.loadTile(context, pkg)
-                } catch (e: Exception) {
+                } catch (e: Throwable) {
                     null
                 }
                 val banner: Drawable? = if (own != null) {
@@ -58,7 +56,7 @@ object Apps {
                 } catch (e: Exception) {
                     null
                 }
-                val icon: Drawable? = if (banner != null) null else try {
+                val icon: Drawable? = pack?.icon(pkg, activity.name) ?: try {
                     info.loadIcon(pm)
                 } catch (e: Exception) {
                     null

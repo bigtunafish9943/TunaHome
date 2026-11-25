@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Laid over the theme when an accent colour is picked in Settings -->
+    <style name="AccentCyan">
+        <item name="tsAccent">#0CC8F6</item>
+        <item name="tsAccentSoft">#8BE6FC</item>
+    </style>
+    <style name="AccentBlue">
+        <item name="tsAccent">#3D8BFF</item>
+        <item name="tsAccentSoft">#A8CBFF</item>
+    </style>
+    <style name="AccentPurple">
+        <item name="tsAccent">#B08CFF</item>
+        <item name="tsAccentSoft">#DCCBFF</item>
+    </style>
+    <style name="AccentPink">
+        <item name="tsAccent">#FF5FA2</item>
+        <item name="tsAccentSoft">#FFB3D3</item>
+    </style>
+    <style name="AccentRed">
+        <item name="tsAccent">#FF5A5A</item>
+        <item name="tsAccentSoft">#FFB0B0</item>
+    </style>
+    <style name="AccentOrange">
+        <item name="tsAccent">#FF9F43</item>
+        <item name="tsAccentSoft">#FFD3A6</item>
+    </style>
+    <style name="AccentGold">
+        <item name="tsAccent">#FFC23D</item>
+        <item name="tsAccentSoft">#FFE2A3</item>
+    </style>
+    <style name="AccentLime">
+        <item name="tsAccent">#A8E04A</item>
+        <item name="tsAccentSoft">#D9F5A8</item>
+    </style>
+    <style name="AccentGreen">
+        <item name="tsAccent">#5EE89A</item>
+        <item name="tsAccentSoft">#B2F6CF</item>
+    </style>
+    <style name="AccentTeal">
+        <item name="tsAccent">#2ED3B7</item>
+        <item name="tsAccentSoft">#A3EFE2</item>
+    </style>
+    <style name="AccentWhite">
+        <item name="tsAccent">#F4F7FA</item>
+        <item name="tsAccentSoft">#FFFFFF</item>
+    </style>
+    <!-- Laid over the theme when a text colour is picked in Settings -->
+    <style name="TextWhite">
+        <item name="tsText">#FFFFFF</item>
+        <item name="tsTextSecondary">#D3D9E0</item>
+    </style>
+    <style name="TextWarm">
+        <item name="tsText">#FFF3E2</item>
+        <item name="tsTextSecondary">#DCC9B0</item>
+    </style>
+    <style name="TextCool">
+        <item name="tsText">#E6F3FF</item>
+        <item name="tsTextSecondary">#ADC3D8</item>
+    </style>
+</resources>

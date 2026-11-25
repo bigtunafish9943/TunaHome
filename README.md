@@ -10,19 +10,24 @@ The app id is `com.tunastream.home`.
 
 ## What it does
 
-- **Rows of apps that run the width of the screen.** Favourites first, in the order you choose, then apps made for TV, then mobile apps. The app you are on is enlarged and its name appears under it.
-- **Put apps where you want them.** Hold select on an app and choose Move, press left or right to slide it along its row, then press select. Every row can be reordered; TunaHome settings can put them back in A to Z order.
-- **An app's menu.** Hold select on an app (or press Menu on a remote, or X or Y on a controller) to move it, add it to favourites, change its picture, hide it, open its app info, or uninstall it.
+- **Sections of apps across the screen.** Favourites, TV apps and Mobile apps to begin with, plus sections of your own. Each section can show its apps on 1 to 5 lines, or as many lines as it takes so nothing scrolls sideways. Apps fill each line across before the next.
+- **Put apps where you want them.** Hold select on an app and choose Move, then use the D-pad to move it (up and down too, in a section with more than one line) and press select to put it down.
+- **An app's menu.** Hold select on an app (or press Menu on a remote, or X or Y on a controller) to move it, add it to favourites or one of your sections, change its picture, hide it, open its app info, or uninstall it.
 - **Update, TV settings and TunaHome settings** are small buttons beside the clock.
-- **Make it yours**, in TunaHome settings:
-  - **Wallpaper:** any picture on the TV, behind the home screen. Without one, the theme's colours show.
-  - **Theme:** nine colour themes, named as in TunaStream: Deep Sea, Reef, Kelp, Midnight, Gold, Halloween, Autumn, Winter and Summer. With seasonal themes on, Halloween shows in October, Autumn in November, Winter from December to 15 January, and Summer from 21 June to the end of August.
-  - **Text style and text size.**
-  - **App picture size**, and your own picture for any app from its menu.
-- **Remote and controller.** Everything works with the D-pad and select. Back returns to the top of the home screen.
-- **Updates itself** from this repo's releases, from the Update button or when the home screen opens. An update is installed only if it matches the checksum GitHub publishes and is signed with the same key as the TunaHome you have.
+- **Updates itself** from this repo's releases. An update is installed only if it matches the checksum GitHub publishes and is signed with the same key as the TunaHome you have.
 
-Choosing a picture needs an app on the TV that can browse files, such as a file manager.
+## Make it yours
+
+Everything is in TunaHome settings, most used first. Each setting is a short list to pick from.
+
+- **Background:** the theme's colours, your own picture, your own videos and pictures (from the TV or a web address), or a **wallpaper app such as Aerial Views**. Wallpaper apps made for Projectivy Launcher work with TunaHome the same way: pick which videos you want in the wallpaper app's own settings. Also: how much to darken it, how it fits the screen, how often pictures change, shuffled or in order, and the name of what's showing. Videos are silent and stop as soon as you open an app.
+- **Sections:** show, hide, rename, reorder and delete sections, add your own, set how many lines of apps each one has, section name style, space between sections, how a section scrolls, and which app you start on.
+- **Theme and colours:** nine themes named as in TunaStream (Deep Sea, Reef, Kelp, Midnight, Gold, Halloween, Autumn, Winter, Summer) with seasonal themes, a highlight colour and a text colour.
+- **Text:** over 40 fonts (each shown in its own style when you choose), your own .ttf or .otf font file, a separate clock font, six text sizes and a text shadow.
+- **App pictures:** TV picture, icon, or icon and name; five sizes; icon packs made for phone launchers; corners from square to fully rounded; card colour; edges; spacing; when names show; and how the app you're on stands out (enlarged, outline colour, dim the rest). Any app can have a picture of your own.
+- **Top of the screen:** name and logo, version, clock style and size, date, and which buttons show.
+
+Choosing a file needs an app on the TV that can browse files, such as a file manager.
 
 ## Making the Home button open TunaHome
 

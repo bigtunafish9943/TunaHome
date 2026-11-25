@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- A small heading between groups of settings -->
+<TextView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:layout_marginStart="4dp"
+    android:layout_marginTop="14dp"
+    android:layout_marginBottom="8dp"
+    android:fontFamily="sans-serif-medium"
+    android:textAllCaps="true"
+    android:letterSpacing="0.08"
+    android:textColor="?attr/tsAccentSoft"
+    android:textSize="12sp" />

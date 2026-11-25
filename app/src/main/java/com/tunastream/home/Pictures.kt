@@ -66,6 +66,116 @@ object Pictures {
         return if (file.exists()) BitmapFactory.decodeFile(file.path) else null
     }
 
+    // ------------------------------------------------------------------ any picture, anywhere
+
+    /**
+     * Reads a picture from the TV (content:// or file://) or the web (http, https), shrunk so it
+     * covers [width] x [height] and no more. Slow: call from a background thread.
+     */
+    fun decode(context: Context, uri: Uri, width: Int, height: Int): Bitmap? {
+        val scheme = uri.scheme?.lowercase()
+        val bytes: ByteArray? = if (scheme == "http" || scheme == "https") download(uri.toString()) else null
+
+        fun open(): java.io.InputStream? =
+            if (bytes != null) java.io.ByteArrayInputStream(bytes) else context.contentResolver.openInputStream(uri)
+
+        val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+        val sizing = open() ?: return null
+        sizing.use { BitmapFactory.decodeStream(it, null, bounds) }
+        if (bounds.outWidth <= 0 || bounds.outHeight <= 0) {
+            return null
+        }
+        var sample = 1
+        while (bounds.outWidth / (sample * 2) >= width && bounds.outHeight / (sample * 2) >= height) {
+            sample *= 2
+        }
+        val options = BitmapFactory.Options().apply { inSampleSize = sample }
+        val reading = open() ?: return null
+        return reading.use { BitmapFactory.decodeStream(it, null, options) }
+    }
+
+    private const val MAX_DOWNLOAD = 25 * 1024 * 1024
+
+    private fun download(address: String): ByteArray? {
+        val conn = java.net.URL(address).openConnection() as java.net.HttpURLConnection
+        conn.connectTimeout = 15000
+        conn.readTimeout = 30000
+        conn.instanceFollowRedirects = true
+        conn.setRequestProperty("User-Agent", "TunaHome/" + BuildConfig.VERSION_NAME)
+        try {
+            if (conn.responseCode != java.net.HttpURLConnection.HTTP_OK) {
+                return null
+            }
+            conn.inputStream.use { input ->
+                val out = java.io.ByteArrayOutputStream()
+                val buf = ByteArray(64 * 1024)
+                while (true) {
+                    val n = input.read(buf)
+                    if (n <= 0) {
+                        break
+                    }
+                    out.write(buf, 0, n)
+                    if (out.size() > MAX_DOWNLOAD) {
+                        return null
+                    }
+                }
+                return out.toByteArray()
+            }
+        } finally {
+            conn.disconnect()
+        }
+    }
+
+    // ------------------------------------------------------------------ your own videos
+
+    private fun videoDir(context: Context) = File(context.filesDir, "videos")
+
+    /**
+     * Copies a chosen video into TunaHome, for TVs whose file chooser can't give lasting access.
+     * Returns its address, or null. Slow: call from a background thread.
+     */
+    fun copyVideo(context: Context, uri: Uri, extension: String, progress: (Long) -> Unit): String? {
+        val dir = videoDir(context)
+        dir.mkdirs()
+        val target = File(dir, "background-" + System.currentTimeMillis() + "." + extension)
+        val input = context.contentResolver.openInputStream(uri) ?: return null
+        input.use { source ->
+            FileOutputStream(target).use { out ->
+                val buf = ByteArray(256 * 1024)
+                var total = 0L
+                while (true) {
+                    val n = source.read(buf)
+                    if (n <= 0) {
+                        break
+                    }
+                    out.write(buf, 0, n)
+                    total += n
+                    progress(total)
+                }
+            }
+        }
+        return Uri.fromFile(target).toString()
+    }
+
+    /** Deletes TunaHome's own copy of a video, if the address is one. */
+    fun forgetVideo(context: Context, address: String) {
+        val uri = Uri.parse(address)
+        if (uri.scheme == "file") {
+            val file = File(uri.path ?: return)
+            if (file.parentFile == videoDir(context)) {
+                file.delete()
+            }
+        } else if (uri.scheme == "content") {
+            try {
+                context.contentResolver.releasePersistableUriPermission(
+                    uri, android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION
+                )
+            } catch (e: Exception) {
+                // It wasn't kept
+            }
+        }
+    }
+
     // ------------------------------------------------------------------ shared
 
     /** Copies a chosen picture to [target], scaled down so it covers the given size and no more. */

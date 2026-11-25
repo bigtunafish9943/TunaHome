@@ -17,7 +17,9 @@
         <include layout="@layout/brand" />
 
         <TextView
+            android:id="@+id/pageTitle"
             style="@style/RowTitle"
+            android:layout_marginStart="0dp"
             android:layout_marginBottom="8dp"
             android:text="@string/settings" />
 

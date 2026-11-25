@@ -9,44 +9,46 @@ import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
+import android.text.format.DateFormat
+import android.util.TypedValue
 import android.view.View
 import android.widget.ImageView
+import android.widget.LinearLayout
 import android.widget.ScrollView
+import android.widget.TextClock
 import android.widget.TextView
 import android.widget.Toast
+import androidx.media3.ui.PlayerView
+import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import java.util.Locale
 import kotlin.concurrent.thread
 
 /**
- * The home screen: the name, a few small buttons and the clock, then rows of apps that run the
- * width of the screen: favourites, apps made for TV, and mobile apps.
+ * The home screen: the name, a few small buttons and the clock, then sections of apps that run
+ * the width of the screen, in the order and style the viewer chose, over the chosen background.
  */
 class HomeActivity : BaseActivity() {
-    /** One titled row of apps. Hidden altogether while it has nothing in it. */
-    private class Row(val title: View, val list: RecyclerView, val adapter: AppAdapter) {
+    /** One section of apps on screen. Hidden altogether while it has nothing in it. */
+    private class Section(val row: Rows.Row, val view: View, val list: RecyclerView, val adapter: AppAdapter) {
         fun show(apps: List<AppEntry>) {
             adapter.submit(apps)
-            val visibility = if (apps.isEmpty()) View.GONE else View.VISIBLE
-            title.visibility = visibility
-            list.visibility = visibility
+            view.visibility = if (apps.isEmpty()) View.GONE else View.VISIBLE
         }
     }
 
     private lateinit var scroll: ScrollView
-    private lateinit var wallpaper: ImageView
-    private lateinit var wallpaperShade: View
     private lateinit var appsHint: TextView
-    private lateinit var favourites: Row
-    private lateinit var tvApps: Row
-    private lateinit var mobileApps: Row
+    private lateinit var backdrop: Backdrop
+    private lateinit var tiles: TileStyle
+    private val sections = ArrayList<Section>()
 
     private var apps: List<AppEntry> = emptyList()
     private var loaded = false
     private var loading = false
     private var loadAgain = false
     private var placedFocus = false
-    private var wallpaperShown = -1L
 
     /** The app whose picture is being chosen, while the TV's picture chooser is open. */
     private var choosingPictureFor: String? = null
@@ -63,21 +65,18 @@ class HomeActivity : BaseActivity() {
         choosingPictureFor = savedInstanceState?.getString(STATE_PICTURE_FOR)
 
         scroll = findViewById(R.id.scroll)
-        wallpaper = findViewById(R.id.wallpaper)
-        wallpaperShade = findViewById(R.id.wallpaperShade)
         appsHint = findViewById(R.id.appsHint)
-        findViewById<TextView>(R.id.brandVersion).text =
-            getString(R.string.version, BuildConfig.VERSION_NAME)
+        backdrop = Backdrop(
+            this,
+            findViewById<ImageView>(R.id.backdropImage),
+            findViewById<PlayerView>(R.id.backdropVideo),
+            findViewById(R.id.backdropShade),
+            findViewById(R.id.backdropCaption),
+        )
+        tiles = TileStyle(this)
 
-        favourites = row(R.id.favouritesTitle, R.id.favourites) { Prefs.setFavourites(this, it) }
-        tvApps = row(R.id.tvAppsTitle, R.id.tvApps) { Prefs.setOrder(this, "tv", it) }
-        mobileApps = row(R.id.mobileAppsTitle, R.id.mobileApps) { Prefs.setOrder(this, "mobile", it) }
-
-        findViewById<View>(R.id.checkUpdate).setOnClickListener { Updater.check(this, true) }
-        findViewById<View>(R.id.openTvSettings).setOnClickListener { openTvSettings(this) }
-        findViewById<View>(R.id.openSettings).setOnClickListener {
-            startActivity(Intent(this, SettingsActivity::class.java))
-        }
+        setUpTopBar()
+        buildSections()
 
         // Apps installed, removed or updated while TunaHome is open
         val filter = IntentFilter().apply {
@@ -97,36 +96,26 @@ class HomeActivity : BaseActivity() {
         reload()
     }
 
-    /** Sets up one row. [saveOrder] is given the row's packages after an app was moved in it. */
-    private fun row(titleId: Int, listId: Int, saveOrder: (List<String>) -> Unit): Row {
-        val list = findViewById<RecyclerView>(listId)
-        lateinit var made: Row
-        val adapter = AppAdapter(::open, { app -> showMenu(app, made) }, saveOrder)
-        list.layoutManager = LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false)
-        list.adapter = adapter
-        list.itemAnimator = null
-        made = Row(findViewById(titleId), list, adapter)
-        return made
-    }
-
-    /** A row in the viewer's own order; apps they haven't placed follow in A to Z order. */
-    private fun ordered(apps: List<AppEntry>, order: List<String>): List<AppEntry> {
-        if (order.isEmpty()) {
-            return apps
-        }
-        val place = HashMap<String, Int>()
-        order.forEachIndexed { index, pkg -> place[pkg] = index }
-        return apps.sortedBy { place[it.pkg] ?: Int.MAX_VALUE }
-    }
-
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
         outState.putString(STATE_PICTURE_FOR, choosingPictureFor)
     }
 
     override fun onDestroy() {
+        backdrop.stop()
         unregisterReceiver(packageReceiver)
         super.onDestroy()
+    }
+
+    override fun onStart() {
+        super.onStart()
+        backdrop.start()
+    }
+
+    /** Another app is in front: let go of the video player so that app can use the decoder. */
+    override fun onStop() {
+        backdrop.stop()
+        super.onStop()
     }
 
     override fun onResume() {
@@ -135,9 +124,10 @@ class HomeActivity : BaseActivity() {
             Prefs.appsChanged = false
             reload()
         }
-        showWallpaper()
         Updater.resumeIfWaiting(this)
-        Updater.check(this, false)
+        if (Prefs.autoUpdateCheck(this)) {
+            Updater.check(this, false)
+        }
     }
 
     /** Home pressed while already here: back to the top. */
@@ -161,43 +151,140 @@ class HomeActivity : BaseActivity() {
     }
 
     private fun focusFirst() {
-        val first = listOf(favourites, tvApps, mobileApps).firstOrNull { it.adapter.itemCount > 0 }
-            ?: return
+        val first = sections.firstOrNull { it.adapter.appCount > 0 } ?: return
         focusIn(first, 0)
     }
 
-    private fun focusIn(row: Row, position: Int) {
-        row.list.scrollToPosition(position)
-        row.list.post { row.list.layoutManager?.findViewByPosition(position)?.requestFocus() }
+    private fun focusIn(section: Section, position: Int) {
+        section.list.scrollToPosition(position)
+        section.list.post { section.list.layoutManager?.findViewByPosition(position)?.requestFocus() }
     }
 
-    // ------------------------------------------------------------------ wallpaper
+    // ------------------------------------------------------------------ top of the screen
 
-    /** Shows the viewer's picture behind everything, or the theme's colours when there is none. */
-    private fun showWallpaper() {
-        val stamp = Prefs.wallpaperStamp(this)
-        if (stamp == wallpaperShown) {
-            return
+    private fun setUpTopBar() {
+        findViewById<View>(R.id.brand).visibility = if (Look.SHOW_BRAND.get(this)) View.VISIBLE else View.GONE
+        findViewById<TextView>(R.id.brandVersion).apply {
+            text = getString(R.string.version, BuildConfig.VERSION_NAME)
+            visibility = if (Look.SHOW_VERSION.get(this@HomeActivity)) View.VISIBLE else View.GONE
         }
-        wallpaperShown = stamp
-        if (stamp == 0L) {
-            wallpaper.setImageDrawable(null)
-            wallpaperShade.visibility = View.GONE
-            return
+
+        val update = findViewById<View>(R.id.checkUpdate)
+        update.visibility = if (Look.SHOW_UPDATE_BUTTON.get(this)) View.VISIBLE else View.GONE
+        update.setOnClickListener { Updater.check(this, true) }
+        val tvSettings = findViewById<View>(R.id.openTvSettings)
+        tvSettings.visibility = if (Look.SHOW_TV_SETTINGS_BUTTON.get(this)) View.VISIBLE else View.GONE
+        tvSettings.setOnClickListener { openTvSettings(this) }
+        // Always shown: it is the way back to every other setting
+        findViewById<View>(R.id.openSettings).setOnClickListener {
+            startActivity(Intent(this, SettingsActivity::class.java))
         }
-        thread(name = "TunaHome wallpaper") {
-            val picture = try {
-                Pictures.loadWallpaper(applicationContext)
-            } catch (e: Throwable) {
-                null
+
+        val clock = findViewById<TextClock>(R.id.clock)
+        when (Look.CLOCK.get(this)) {
+            Look.CLOCK_24 -> {
+                clock.format12Hour = "HH:mm"
+                clock.format24Hour = "HH:mm"
             }
-            runOnUiThread {
-                if (!isDestroyed && wallpaperShown == stamp) {
-                    wallpaper.setImageBitmap(picture)
-                    wallpaperShade.visibility = if (picture != null) View.VISIBLE else View.GONE
+            Look.CLOCK_12 -> {
+                clock.format12Hour = "h:mm"
+                clock.format24Hour = "h:mm"
+            }
+            Look.CLOCK_12_AMPM -> {
+                clock.format12Hour = "h:mm a"
+                clock.format24Hour = "h:mm a"
+            }
+            Look.CLOCK_HIDDEN -> clock.visibility = View.GONE
+            else -> {
+                clock.format12Hour = "h:mm"
+                clock.format24Hour = "HH:mm"
+            }
+        }
+        clock.setTextSize(TypedValue.COMPLEX_UNIT_PX, clock.textSize * Look.clockScale(this))
+        Look.clockFont(this)?.let { id -> Fonts.typeface(this, id, 300)?.let { clock.typeface = it } }
+
+        val date = findViewById<TextClock>(R.id.date)
+        val skeleton = when (Look.DATE.get(this)) {
+            Look.DATE_SHORT -> "EEEdMMM"
+            Look.DATE_LONG -> "EEEEdMMMM"
+            else -> null
+        }
+        if (skeleton != null) {
+            val pattern = DateFormat.getBestDateTimePattern(Locale.getDefault(), skeleton)
+            date.format12Hour = pattern
+            date.format24Hour = pattern
+            date.visibility = View.VISIBLE
+        }
+    }
+
+    // ------------------------------------------------------------------ sections
+
+    private fun buildSections() {
+        val holder = findViewById<LinearLayout>(R.id.sections)
+        holder.removeAllViews()
+        sections.clear()
+        val titles = Look.ROW_TITLES.get(this)
+        val rowGap = Math.round(Look.dp(this, Look.rowGapDp(this)))
+
+        for (row in Rows.load(this)) {
+            if (!row.visible) {
+                continue
+            }
+            val view = layoutInflater.inflate(R.layout.item_section, holder, false)
+            val title = view.findViewById<TextView>(R.id.sectionTitle)
+            val name = row.name(this)
+            title.text = if (titles == Look.TITLES_CAPS) name.uppercase(Locale.getDefault()) else name
+            when (titles) {
+                Look.TITLES_BOLD -> title.setTypeface(title.typeface, android.graphics.Typeface.BOLD)
+                Look.TITLES_HIDDEN -> title.visibility = View.GONE
+            }
+            (title.layoutParams as LinearLayout.LayoutParams).topMargin = rowGap
+
+            val list = view.findViewById<RecyclerView>(R.id.sectionApps)
+            val lines = row.lines
+            val adapter = AppAdapter(
+                tiles, lines, ::open, { app -> showMenu(app, row) }, { order -> saveOrder(row, order) }
+            )
+            list.layoutManager = when {
+                lines == Rows.WRAP -> {
+                    val sidePadding = list.paddingStart + list.paddingEnd
+                    val across = (resources.displayMetrics.widthPixels - sidePadding) /
+                        (tiles.width + 2 * tiles.gap)
+                    adapter.wrapColumns = across
+                    list.isNestedScrollingEnabled = false
+                    GridLayoutManager(this, maxOf(1, across), GridLayoutManager.VERTICAL, false)
                 }
+                lines > 1 -> GridLayoutManager(this, lines, GridLayoutManager.HORIZONTAL, false)
+                else -> LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false)
             }
+            list.adapter = adapter
+            list.itemAnimator = null
+            Look.styleText(view)
+            holder.addView(view)
+            sections.add(Section(row, view, list, adapter))
         }
+    }
+
+    /** A section's apps were rearranged by moving one. */
+    private fun saveOrder(row: Rows.Row, order: List<String>) {
+        when (row.kind) {
+            Rows.FAVOURITES -> Prefs.setFavourites(this, order)
+            Rows.CUSTOM -> Rows.update(this, row.id, restyle = false) {
+                it.apps.clear()
+                it.apps.addAll(order)
+            }
+            else -> Prefs.setOrder(this, row.id, order)
+        }
+    }
+
+    /** A section in the viewer's own order; apps they haven't placed follow in A to Z order. */
+    private fun ordered(apps: List<AppEntry>, order: List<String>): List<AppEntry> {
+        if (order.isEmpty()) {
+            return apps
+        }
+        val place = HashMap<String, Int>()
+        order.forEachIndexed { index, pkg -> place[pkg] = index }
+        return apps.sortedBy { place[it.pkg] ?: Int.MAX_VALUE }
     }
 
     // ------------------------------------------------------------------ the list of apps
@@ -230,20 +317,28 @@ class HomeActivity : BaseActivity() {
         }
     }
 
-    /** Puts the loaded apps on screen, leaving out hidden ones and ordering the favourites. */
+    /** Puts the loaded apps into their sections, leaving out hidden ones. */
     private fun show() {
         val hidden = Prefs.hidden(this)
         val visible = apps.filter { it.pkg !in hidden }
         val byPackage = visible.associateBy { it.pkg }
+        // Custom rows may have been changed from another screen: read them fresh
+        val rows = Rows.load(this).associateBy { it.id }
 
-        favourites.show(Prefs.favourites(this).mapNotNull { byPackage[it] })
-        tvApps.show(ordered(visible.filter { it.tv }, Prefs.order(this, "tv")))
-        mobileApps.show(ordered(visible.filter { !it.tv }, Prefs.order(this, "mobile")))
+        for (section in sections) {
+            val list = when (section.row.kind) {
+                Rows.FAVOURITES -> Prefs.favourites(this).mapNotNull { byPackage[it] }
+                Rows.TV -> ordered(visible.filter { it.tv }, Prefs.order(this, section.row.id))
+                Rows.MOBILE -> ordered(visible.filter { !it.tv }, Prefs.order(this, section.row.id))
+                else -> (rows[section.row.id]?.apps ?: section.row.apps).mapNotNull { byPackage[it] }
+            }
+            section.show(list)
+        }
 
-        // One line of text only while loading or when there is nothing to show
         val hint = when {
             !loaded -> R.string.loading_apps
             visible.isEmpty() -> R.string.no_apps
+            sections.none { it.adapter.appCount > 0 } -> R.string.no_sections
             else -> 0
         }
         appsHint.visibility = if (hint == 0) View.GONE else View.VISIBLE
@@ -251,15 +346,33 @@ class HomeActivity : BaseActivity() {
             appsHint.setText(hint)
         }
 
-        if (!placedFocus && visible.isNotEmpty()) {
+        if (!placedFocus && sections.any { it.adapter.appCount > 0 }) {
             placedFocus = true
-            focusFirst()
+            placeStartFocus()
         }
+    }
+
+    /** Where the viewer starts: the first app, or the one they opened last. */
+    private fun placeStartFocus() {
+        if (Look.START_ON.get(this) == Look.START_LAST) {
+            val last = Prefs.lastOpened(this)
+            if (last != null) {
+                for (section in sections) {
+                    val position = section.adapter.positionOf(last)
+                    if (position >= 0) {
+                        focusIn(section, position)
+                        return
+                    }
+                }
+            }
+        }
+        focusFirst()
     }
 
     private fun open(app: AppEntry) {
         try {
             startActivity(app.launch)
+            Prefs.setLastOpened(this, app.pkg)
         } catch (e: Exception) {
             Toast.makeText(this, getString(R.string.open_failed, app.label), Toast.LENGTH_LONG).show()
             reload()
@@ -268,33 +381,45 @@ class HomeActivity : BaseActivity() {
 
     // ------------------------------------------------------------------ an app's menu
 
-    private fun showMenu(app: AppEntry, row: Row) {
-        val list = Prefs.favourites(this)
-        val at = list.indexOf(app.pkg)
+    private fun showMenu(app: AppEntry, row: Rows.Row) {
+        val section = sections.firstOrNull { it.row.id == row.id }
+        val favourites = Prefs.favourites(this)
         val labels = ArrayList<String>()
         val actions = ArrayList<() -> Unit>()
 
         // First, so that hold select then select picks the app up
-        if (row.adapter.itemCount > 1) {
+        if (section != null && section.adapter.appCount > 1) {
             labels.add(getString(R.string.menu_move))
             actions.add {
-                if (row.adapter.startMove(app.pkg)) {
+                if (section.adapter.startMove(app.pkg)) {
                     Toast.makeText(this, R.string.move_hint, Toast.LENGTH_LONG).show()
                 }
             }
         }
 
-        if (at < 0) {
-            labels.add(getString(R.string.menu_add_favourite))
-            actions.add {
-                list.add(app.pkg)
-                saveFavourites(list, app.pkg)
-            }
-        } else {
+        if (app.pkg in favourites) {
             labels.add(getString(R.string.menu_remove_favourite))
             actions.add {
-                list.remove(app.pkg)
-                saveFavourites(list, null)
+                favourites.remove(app.pkg)
+                Prefs.setFavourites(this, favourites)
+                show()
+            }
+        } else {
+            labels.add(getString(R.string.menu_add_favourite))
+            actions.add {
+                favourites.add(app.pkg)
+                Prefs.setFavourites(this, favourites)
+                show()
+            }
+        }
+
+        labels.add(getString(R.string.menu_add_to_row))
+        actions.add { addToRow(app) }
+        if (row.custom) {
+            labels.add(getString(R.string.menu_remove_from_row, row.name(this)))
+            actions.add {
+                Rows.update(this, row.id, restyle = false) { it.apps.remove(app.pkg) }
+                show()
             }
         }
 
@@ -337,16 +462,26 @@ class HomeActivity : BaseActivity() {
             .show()
     }
 
-    /** Saves the favourites and, after a move, stays on the app that was moved. */
-    private fun saveFavourites(list: List<String>, keepFocusOn: String?) {
-        Prefs.setFavourites(this, list)
-        show()
-        if (keepFocusOn != null) {
-            val position = favourites.adapter.positionOf(keepFocusOn)
-            if (position >= 0) {
-                focusIn(favourites, position)
+    /** Adds an app to one of the viewer's own rows, or to a new one. */
+    private fun addToRow(app: AppEntry) {
+        val own = Rows.load(this).filter { it.custom && app.pkg !in it.apps }
+        val names = own.map { it.name(this) } + getString(R.string.row_new)
+        AlertDialog.Builder(this)
+            .setTitle(getString(R.string.menu_add_to_row_title, app.label))
+            .setItems(names.toTypedArray()) { _, which ->
+                if (which < own.size) {
+                    Rows.update(this, own[which].id, restyle = false) { it.apps.add(app.pkg) }
+                    show()
+                } else {
+                    askForText(R.string.row_new, "") { title ->
+                        val made = Rows.add(this, title)
+                        Rows.update(this, made.id) { it.apps.add(app.pkg) }
+                        // A new section: build the screen again
+                        recreate()
+                    }
+                }
             }
-        }
+            .show()
     }
 
     // ------------------------------------------------------------------ an app's own picture
