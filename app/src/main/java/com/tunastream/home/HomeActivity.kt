@@ -422,14 +422,15 @@ class HomeActivity : BaseActivity() {
 
             val list = view.findViewById<RecyclerView>(R.id.sectionApps)
             val lines = row.lines
+            val sectionTiles = if (row.cardSize >= 0) TileStyle(this, row.cardSize) else tiles
             val adapter = AppAdapter(
-                tiles, lines, ::open, { app -> showMenu(app, row) }, { order -> saveOrder(row, order) }
+                sectionTiles, lines, ::open, { app -> showMenu(app, row) }, { order -> saveOrder(row, order) }
             )
             list.layoutManager = when {
                 lines == Rows.WRAP -> {
                     val sidePadding = list.paddingStart + list.paddingEnd
                     val across = (resources.displayMetrics.widthPixels - sidePadding) /
-                        (tiles.width + 2 * tiles.gap)
+                        (sectionTiles.width + 2 * sectionTiles.gap)
                     adapter.wrapColumns = across
                     list.isNestedScrollingEnabled = false
                     GridLayoutManager(this, maxOf(1, across), GridLayoutManager.VERTICAL, false)

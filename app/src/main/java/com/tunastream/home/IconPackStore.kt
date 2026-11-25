@@ -36,6 +36,7 @@ object IconPackStore {
     private const val REPO = "https://f-droid.org/repo/"
     private const val MAX_BYTES = 200L * 1024 * 1024
     private const val ACTION_RESULT = "com.tunastream.home.ICON_PACK_INSTALL_RESULT"
+    private const val EXTRA_PACK = "pack"
 
     class Offer(val pkg: String, val name: String, val about: Int)
 
@@ -60,6 +61,10 @@ object IconPackStore {
     /** The pack just installed through TunaHome, to switch to once Android has finished. */
     @Volatile
     var waitingFor: String? = null
+
+    /** What happened last time, for the Get icon packs row. */
+    @Volatile
+    var status: String = ""
 
     /** A pack waiting for the viewer to allow installs from TunaHome. */
     private var afterPermission: Offer? = null
@@ -128,6 +133,7 @@ object IconPackStore {
             } catch (e: Exception) {
                 Log.w(TAG, "Icon pack ${offer.pkg}: $e")
                 failure = e.message ?: e.toString()
+                status = activity.getString(R.string.pack_failed_body, failure)
             }
             val done = file
             ui.post {
@@ -220,6 +226,7 @@ object IconPackStore {
                 }
             }
             val result = Intent(context, InstallResult::class.java).setAction(ACTION_RESULT)
+                .putExtra(EXTRA_PACK, pkg)
             var flags = PendingIntent.FLAG_UPDATE_CURRENT
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                 flags = flags or PendingIntent.FLAG_MUTABLE
@@ -244,12 +251,22 @@ object IconPackStore {
                     }
                 }
                 PackageInstaller.STATUS_SUCCESS -> {
-                    Toast.makeText(context, R.string.pack_installed, Toast.LENGTH_LONG).show()
+                    // Use it straight away, with icons showing, as the viewer was told
+                    val pkg = intent.getStringExtra(EXTRA_PACK)
+                    if (pkg != null && pkg == waitingFor) {
+                        waitingFor = null
+                        IconPacks.choose(context, pkg)
+                        Look.TILE_STYLE.set(context, Look.TILE_ICON)
+                        Prefs.appsChanged = true
+                    }
+                    IconPackStore.status = context.getString(R.string.pack_status_installed)
+                    Toast.makeText(context, R.string.pack_now_using, Toast.LENGTH_LONG).show()
                 }
                 else -> {
                     waitingFor = null
-                    Log.w(TAG, "Icon pack install refused ($status): " +
-                        intent.getStringExtra(PackageInstaller.EXTRA_STATUS_MESSAGE))
+                    val message = intent.getStringExtra(PackageInstaller.EXTRA_STATUS_MESSAGE)
+                    Log.w(TAG, "Icon pack install refused ($status): $message")
+                    IconPackStore.status = context.getString(R.string.pack_status_refused, message ?: status.toString())
                     Toast.makeText(context, R.string.pack_not_installed, Toast.LENGTH_LONG).show()
                 }
             }

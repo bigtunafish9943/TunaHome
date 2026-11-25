@@ -31,6 +31,7 @@ object Apps {
         val pm = context.packageManager
         val pack = IconPacks.chosen(context)?.let { IconPacks.Loaded(context, it) }
         val found = LinkedHashMap<String, AppEntry>()
+        var packHits = 0
         for (category in arrayOf(Intent.CATEGORY_LEANBACK_LAUNCHER, Intent.CATEGORY_LAUNCHER)) {
             val query = Intent(Intent.ACTION_MAIN).addCategory(category)
             for (info in pm.queryIntentActivities(query, 0)) {
@@ -56,15 +57,19 @@ object Apps {
                 } catch (e: Exception) {
                     null
                 }
-                val icon: Drawable? = pack?.icon(pkg, activity.name) ?: try {
-                    info.loadIcon(pm)
-                } catch (e: Exception) {
-                    null
-                }
                 val label = try {
                     info.loadLabel(pm).toString()
                 } catch (e: Exception) {
                     pkg
+                }
+                val fromPack = pack?.icon(pkg, activity.name, label)
+                if (fromPack != null) {
+                    packHits++
+                }
+                val icon: Drawable? = fromPack ?: try {
+                    info.loadIcon(pm)
+                } catch (e: Exception) {
+                    null
                 }
                 found[pkg] = AppEntry(
                     pkg, label, launch, banner, icon,
@@ -73,6 +78,7 @@ object Apps {
                 )
             }
         }
+        IconPacks.covered = if (pack != null) packHits to found.size else null
         return found.values.sortedBy { it.label.lowercase() }
     }
 }

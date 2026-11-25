@@ -7,7 +7,7 @@ import android.graphics.drawable.GradientDrawable
 /**
  * How app tiles look, worked out once from the viewer's settings when the home screen is built.
  */
-class TileStyle(context: Context) {
+class TileStyle(context: Context, sizeOverride: Int = -1) {
     val style = Look.TILE_STYLE.get(context)
     val width: Int
     val height: Int
@@ -26,16 +26,26 @@ class TileStyle(context: Context) {
 
     init {
         val res = context.resources
-        val scale = Look.tileScale(context)
+        // A section can have its own card size; otherwise the size set for every card
+        val scale = if (sizeOverride in Look.CARD_SCALES.indices) Look.CARD_SCALES[sizeOverride]
+        else Look.tileScale(context)
         val baseWidth = res.getDimension(R.dimen.tile_width) * scale
-        // Square tiles for icons; TV pictures are 16:9
-        width = Math.round(if (style == Look.TILE_BANNER) baseWidth else baseWidth * 0.72f)
-        height = Math.round(
-            if (style == Look.TILE_BANNER) res.getDimension(R.dimen.tile_height) * scale
-            else baseWidth * 0.72f
-        )
+        // Width, then height as a share of it. "Auto" is 16:9 for TV pictures, square for icons.
+        val shape = Look.CARD_SHAPE.get(context).let {
+            if (it == Look.SHAPE_AUTO) (if (style == Look.TILE_BANNER) Look.SHAPE_WIDE else Look.SHAPE_SQUARE) else it
+        }
+        val (widthShare, heightRatio) = when (shape) {
+            Look.SHAPE_STANDARD -> 0.85f to 0.75f
+            Look.SHAPE_SQUARE -> 0.72f to 1f
+            Look.SHAPE_TALL -> 0.6f to 1.5f
+            else -> 1f to 9f / 16f
+        }
+        width = Math.round(baseWidth * widthShare)
+        height = Math.round(baseWidth * widthShare * heightRatio)
         gap = Math.round(Look.dp(context, Look.tileGapDp(context)))
-        iconSize = Math.round(height * if (style == Look.TILE_ICON_NAME) 0.5f else 0.6f)
+        val fill = Look.ICON_FILLS[Look.ICON_FILL.get(context)]
+        // With the name inside the card, the icon leaves room for it
+        iconSize = Math.round(minOf(width, height) * if (style == Look.TILE_ICON_NAME) fill * 0.8f else fill)
         corner = minOf(Look.dp(context, Look.cornerDp(context)), height / 2f)
 
         val surface = context.themeColor(R.attr.tsSurface)

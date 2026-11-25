@@ -120,8 +120,38 @@ object Look {
         intArrayOf(R.string.tile_style_banner, R.string.tile_style_icon, R.string.tile_style_icon_name)
     )
 
-    val TILE_SIZE = Choice("look_tile_size2", 2, SIZES5)
+    /** The old five-step size, read only to carry it over to [CARD_SIZE]. */
+    private val TILE_SIZE = Choice("look_tile_size2", 2, SIZES5)
     private val TILE_SCALES = floatArrayOf(0.65f, 0.8f, 1f, 1.25f, 1.5f)
+
+    /** How big every card is, from half to double. */
+    val CARD_SIZE = Choice(
+        "look_card_size", 5, intArrayOf(
+            R.string.pct_50, R.string.pct_60, R.string.pct_70, R.string.pct_80, R.string.pct_90,
+            R.string.pct_100, R.string.pct_115, R.string.pct_130, R.string.pct_150,
+            R.string.pct_175, R.string.pct_200,
+        )
+    )
+    val CARD_SCALES = floatArrayOf(0.5f, 0.6f, 0.7f, 0.8f, 0.9f, 1f, 1.15f, 1.3f, 1.5f, 1.75f, 2f)
+
+    const val SHAPE_AUTO = 0
+    const val SHAPE_WIDE = 1
+    const val SHAPE_STANDARD = 2
+    const val SHAPE_SQUARE = 3
+    const val SHAPE_TALL = 4
+    val CARD_SHAPE = Choice(
+        "look_card_shape", SHAPE_AUTO, intArrayOf(
+            R.string.shape_auto, R.string.shape_wide, R.string.shape_standard,
+            R.string.shape_square, R.string.shape_tall,
+        )
+    )
+
+    /** How much of the card an icon fills. */
+    val ICON_FILL = Choice(
+        "look_icon_fill", 1,
+        intArrayOf(R.string.fill_small, R.string.fill_medium, R.string.fill_large, R.string.fill_most)
+    )
+    val ICON_FILLS = floatArrayOf(0.4f, 0.58f, 0.72f, 0.88f)
 
     val TILE_CORNERS = Choice(
         "look_tile_corners", 2, intArrayOf(
@@ -273,7 +303,14 @@ object Look {
     // ------------------------------------------------------------------ working out the numbers
 
     fun textScale(context: Context): Float = TEXT_SCALES[TEXT_SIZE.get(context)]
-    fun tileScale(context: Context): Float = TILE_SCALES[TILE_SIZE.get(context)]
+    fun tileScale(context: Context): Float {
+        if (!Prefs.of(context).contains(CARD_SIZE.key) && Prefs.of(context).contains(TILE_SIZE.key)) {
+            // Carry the old size over to the closest new one
+            val old = TILE_SCALES[TILE_SIZE.get(context)]
+            return CARD_SCALES.minByOrNull { Math.abs(it - old) } ?: 1f
+        }
+        return CARD_SCALES[CARD_SIZE.get(context)]
+    }
     fun cornerDp(context: Context): Float = CORNER_DP[TILE_CORNERS.get(context)]
     fun tileGapDp(context: Context): Float = GAP_DP[TILE_GAP.get(context)]
     fun focusZoom(context: Context): Float = ZOOMS[FOCUS_ZOOM.get(context)]

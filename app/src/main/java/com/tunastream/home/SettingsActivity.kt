@@ -158,7 +158,7 @@ class SettingsActivity : BaseActivity() {
             getString(TunaTheme.nameOf(TunaTheme.current(this))) + " · " + Look.ACCENT.name(this)
         )
         pageRow(TEXT, Fonts.name(this, Look.font(this)) + " · " + Look.TEXT_SIZE.name(this))
-        pageRow(PICTURES, Look.TILE_STYLE.name(this) + " · " + Look.TILE_SIZE.name(this))
+        pageRow(PICTURES, Look.TILE_STYLE.name(this) + " · " + cardSizeName(-1))
         pageRow(TOP_BAR, Look.CLOCK.name(this))
         val hidden = Prefs.hidden(this).size
         pageRow(
@@ -413,8 +413,11 @@ class SettingsActivity : BaseActivity() {
         val all = Rows.load(this)
         all.forEachIndexed { index, section ->
             val lines = linesName(section.lines)
-            val summary = if (section.visible) getString(R.string.section_shown, lines)
+            var summary = if (section.visible) getString(R.string.section_shown, lines)
             else getString(R.string.section_hidden)
+            if (section.visible && section.cardSize >= 0) {
+                summary += getString(R.string.section_own_size, cardSizeName(section.cardSize))
+            }
             row(section.name(this), summary) { sectionMenu(section.id, index, all.size) }
         }
         row(R.string.section_add, getString(R.string.section_add_summary)) {
@@ -429,6 +432,13 @@ class SettingsActivity : BaseActivity() {
         choice(R.string.set_row_gap, Look.ROW_GAP)
         choice(R.string.set_row_scroll, Look.ROW_SCROLL)
         choice(R.string.set_start_on, Look.START_ON)
+    }
+
+    /** A card size by name; -1 is the size set for every card. */
+    private fun cardSizeName(index: Int): String {
+        val i = if (index in Look.CARD_SCALES.indices) index
+        else Look.CARD_SCALES.indexOfFirst { it == Look.tileScale(this) }.coerceAtLeast(0)
+        return getString(Look.CARD_SIZE.names[i])
     }
 
     private fun linesName(lines: Int): String =
@@ -461,6 +471,16 @@ class SettingsActivity : BaseActivity() {
                 Prefs.clearRecent(this)
                 Look.touch(this)
                 Toast.makeText(this, R.string.recent_cleared, Toast.LENGTH_LONG).show()
+            }
+        }
+
+        labels.add(getString(R.string.section_card_size, cardSizeName(section.cardSize)))
+        actions.add {
+            val names = listOf(getString(R.string.card_size_usual, cardSizeName(-1))) +
+                Look.CARD_SIZE.names.map { getString(it) }
+            chooseOne(getString(R.string.section_card_size_title, section.name(this)), names, section.cardSize + 1) { which ->
+                Rows.update(this, id) { it.cardSize = which - 1 }
+                changed()
             }
         }
 
@@ -586,13 +606,27 @@ class SettingsActivity : BaseActivity() {
 
     private fun picturesPage() {
         choice(R.string.set_tile_style, Look.TILE_STYLE)
-        choice(R.string.set_tile_size, Look.TILE_SIZE)
+        row(R.string.set_card_size, cardSizeName(-1)) {
+            chooseOne(getString(R.string.set_card_size), Look.CARD_SIZE.names.map { getString(it) },
+                Look.CARD_SCALES.indexOfFirst { it == Look.tileScale(this) }) {
+                Look.CARD_SIZE.set(this, it)
+                changed()
+            }
+        }
+        choice(R.string.set_card_shape, Look.CARD_SHAPE)
+        choice(R.string.set_icon_fill, Look.ICON_FILL)
         val packs = IconPacks.installed(this)
         val chosenPack = IconPacks.chosen(this)
+        val packName = packs.firstOrNull { it.pkg == chosenPack }?.name
+        val coverage = IconPacks.covered
         row(
             R.string.set_icon_pack,
-            packs.firstOrNull { it.pkg == chosenPack }?.name
-                ?: getString(if (packs.isEmpty()) R.string.icon_pack_none_installed else R.string.icon_pack_none)
+            when {
+                packName != null && coverage != null ->
+                    getString(R.string.icon_pack_coverage, packName, coverage.first, coverage.second)
+                packName != null -> packName
+                else -> getString(if (packs.isEmpty()) R.string.icon_pack_none_installed else R.string.icon_pack_none)
+            }
         ) {
             if (packs.isEmpty()) {
                 openPackStore()
@@ -610,7 +644,7 @@ class SettingsActivity : BaseActivity() {
                 }
             }
         }
-        row(R.string.pack_get, getString(R.string.pack_get_summary)) { openPackStore() }
+        row(R.string.pack_get, IconPackStore.status.ifEmpty { getString(R.string.pack_get_summary) }) { openPackStore() }
         heading(R.string.heading_cards)
         choice(R.string.set_tile_corners, Look.TILE_CORNERS)
         choice(R.string.set_tile_card, Look.TILE_CARD)

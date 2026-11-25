@@ -25,6 +25,30 @@ object IconPacks {
 
     class Pack(val pkg: String, val name: String)
 
+    /**
+     * Icon packs are drawn for phone apps. Many TV apps are separate apps with their own
+     * package names, so look for the phone version's icon too.
+     */
+    private val TV_TO_PHONE = mapOf(
+        "com.netflix.ninja" to "com.netflix.mediaclient",
+        "com.google.android.youtube.tv" to "com.google.android.youtube",
+        "com.google.android.youtube.tvmusic" to "com.google.android.apps.youtube.music",
+        "com.google.android.youtube.tvkids" to "com.google.android.apps.youtube.kids",
+        "com.amazon.amazonvideo.livingroom" to "com.amazon.avod.thirdpartyclient",
+        "com.hulu.livingroomplus" to "com.hulu.plus",
+        "com.spotify.tv.android" to "com.spotify.music",
+        "com.cbs.ott" to "com.cbs.app",
+        "com.android.tv.settings" to "com.android.settings",
+        "com.google.android.katniss" to "com.google.android.googlequicksearchbox",
+    )
+
+    /** How many apps the chosen pack had an icon for, the last time apps were loaded. */
+    @Volatile
+    var covered: Pair<Int, Int>? = null
+
+    /** Lower case letters and digits only, so "Prime Video" and "prime_video" match. */
+    fun plain(text: String): String = text.lowercase().filter { it.isLetterOrDigit() }
+
     fun installed(context: Context): List<Pack> {
         val pm = context.packageManager
         val found = LinkedHashMap<String, Pack>()
@@ -51,6 +75,8 @@ object IconPacks {
     class Loaded(private val context: Context, private val pkg: String) {
         private val byComponent = HashMap<String, String>()
         private val byPackage = HashMap<String, String>()
+        /** Every drawable the pack names, by its plain name, for matching on an app's name. */
+        private val byName = HashMap<String, String>()
         private val res = try {
             context.packageManager.getResourcesForApplication(pkg)
         } catch (e: PackageManager.NameNotFoundException) {
@@ -89,6 +115,7 @@ object IconPacks {
                                 cls = app + cls
                             }
                             byComponent["$app/$cls"] = drawable
+                            byName[plain(drawable)] = drawable
                             if (!byPackage.containsKey(app)) {
                                 byPackage[app] = drawable
                             }
@@ -99,9 +126,18 @@ object IconPacks {
             }
         }
 
-        fun icon(appPkg: String, cls: String): Drawable? {
+        /**
+         * The pack's icon for an app: by its exact activity, then by its package, then by the
+         * phone version of a TV app, then by a drawable named the same as the app.
+         */
+        fun icon(appPkg: String, cls: String, label: String): Drawable? {
             val res = res ?: return null
-            val name = byComponent["$appPkg/$cls"] ?: byPackage[appPkg] ?: return null
+            val phone = TV_TO_PHONE[appPkg]
+            val name = byComponent["$appPkg/$cls"]
+                ?: byPackage[appPkg]
+                ?: phone?.let { byPackage[it] }
+                ?: plain(label).takeIf { it.length >= 3 }?.let { byName[it] }
+                ?: return null
             val id = res.getIdentifier(name, "drawable", pkg)
             if (id == 0) {
                 return null

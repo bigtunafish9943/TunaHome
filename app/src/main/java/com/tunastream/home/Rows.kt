@@ -31,6 +31,8 @@ object Rows {
         val apps: MutableList<String> = ArrayList(),
         /** How many lines of apps this section shows: 1 to 5, or [WRAP] for as many as needed. */
         var lines: Int = 1,
+        /** This section's own card size (a position in [Look.CARD_SCALES]), or -1 for the usual. */
+        var cardSize: Int = -1,
     ) {
         fun name(context: Context): String = title ?: context.getString(
             when (kind) {
@@ -64,6 +66,7 @@ object Rows {
                             o.optBoolean("visible", true),
                             apps,
                             o.optInt("lines", 1).coerceIn(WRAP, MAX_LINES),
+                            o.optInt("card_size", -1),
                         )
                     )
                 }
@@ -98,6 +101,7 @@ object Rows {
             o.put("title", row.title ?: JSONObject.NULL)
             o.put("visible", row.visible)
             o.put("lines", row.lines)
+            o.put("card_size", row.cardSize)
             if (row.custom) {
                 o.put("apps", JSONArray(row.apps))
             }
