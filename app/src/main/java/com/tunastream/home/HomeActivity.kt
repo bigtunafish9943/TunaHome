@@ -528,14 +528,9 @@ class HomeActivity : BaseActivity() {
                 Toast.makeText(this, R.string.move_hint, Toast.LENGTH_SHORT).show()
             }
             list.adapter = adapter
-            // Short slides when apps swap places while one is being moved
-            list.itemAnimator = androidx.recyclerview.widget.DefaultItemAnimator().apply {
-                moveDuration = 110
-                changeDuration = 0
-                addDuration = 0
-                removeDuration = 0
-                supportsChangeAnimations = false
-            }
+            // No slide animations: with apps swapping places quickly they could leave the list
+            // unsure which tile was which, and Android stopped TunaHome
+            list.itemAnimator = null
             Look.styleText(view)
             holder.addView(view)
             sections.add(Section(row, view, list, adapter))

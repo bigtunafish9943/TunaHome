@@ -152,6 +152,19 @@ class AppAdapter(
             return false
         }
         val down = event.action == KeyEvent.ACTION_DOWN
+        if (down && isArrow(event.keyCode)) {
+            // One move at a time: a held or fast-pressed D-pad sends presses quicker than the
+            // section can be redrawn. Presses that arrive before the last move is on screen are
+            // dropped rather than piled up.
+            val list = recycler
+            val now = android.os.SystemClock.uptimeMillis()
+            if (list == null || list.isComputingLayout || list.hasPendingAdapterUpdates() ||
+                now - lastMoveAt < MOVE_GAP_MS
+            ) {
+                return true
+            }
+            lastMoveAt = now
+        }
         val across = if (lines == Rows.WRAP) wrapColumns else columns
         val grid = sideways || lines == Rows.WRAP
         when (event.keyCode) {
@@ -166,6 +179,11 @@ class AppAdapter(
         }
         return true
     }
+
+    private var lastMoveAt = 0L
+
+    private fun isArrow(code: Int) = code == KeyEvent.KEYCODE_DPAD_LEFT || code == KeyEvent.KEYCODE_DPAD_RIGHT ||
+        code == KeyEvent.KEYCODE_DPAD_UP || code == KeyEvent.KEYCODE_DPAD_DOWN
 
     /** Swaps the moving app with the one [by] places away, if there is one. */
     private fun moveBy(by: Int) {
@@ -250,6 +268,9 @@ class AppAdapter(
     companion object {
         /** How quickly the second press has to follow to count as a double press. */
         const val DOUBLE_PRESS_MS = 320L
+
+        /** The shortest time between two moves of a picked-up app. */
+        const val MOVE_GAP_MS = 90L
     }
 
     override fun onAttachedToRecyclerView(recyclerView: RecyclerView) {
