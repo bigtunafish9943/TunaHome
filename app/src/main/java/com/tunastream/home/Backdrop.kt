@@ -4,7 +4,9 @@ import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.ComponentName
 import android.content.Context
+import android.graphics.Bitmap
 import android.graphics.Color
+import android.graphics.drawable.Animatable
 import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.ColorDrawable
 import android.graphics.drawable.Drawable
@@ -79,6 +81,58 @@ class Backdrop(
             "bg_fit", FIT_FILL, intArrayOf(R.string.fit_fill, R.string.fit_whole, R.string.fit_stretch)
         )
 
+        // Picture adjustments, as photo apps have them
+        val BRIGHTNESS = Look.Choice(
+            "bg_brightness", 2, intArrayOf(
+                R.string.adj_darker, R.string.adj_bit_darker, R.string.adj_normal,
+                R.string.adj_bit_brighter, R.string.adj_brighter,
+            )
+        )
+        private val BRIGHTNESS_SHIFT = floatArrayOf(-50f, -25f, 0f, 20f, 40f)
+
+        val CONTRAST = Look.Choice(
+            "bg_contrast", 1, intArrayOf(R.string.adj_low, R.string.adj_normal, R.string.adj_high, R.string.adj_higher)
+        )
+        private val CONTRAST_SCALE = floatArrayOf(0.8f, 1f, 1.2f, 1.4f)
+
+        val SATURATION = Look.Choice(
+            "bg_saturation", 2, intArrayOf(
+                R.string.adj_grey, R.string.adj_faded, R.string.adj_normal, R.string.adj_rich, R.string.adj_vivid,
+            )
+        )
+        private val SATURATION_SCALE = floatArrayOf(0f, 0.55f, 1f, 1.3f, 1.6f)
+
+        /** Pictures only: blurring a video every frame would be too much for the TV. */
+        val BLUR = Look.Choice(
+            "bg_blur", 0, intArrayOf(R.string.off, R.string.blur_light, R.string.blur_medium, R.string.blur_strong)
+        )
+
+        /** The colour changes chosen above, as one filter; null when nothing is changed. */
+        fun filter(context: Context): android.graphics.ColorMatrixColorFilter? {
+            val b = BRIGHTNESS.get(context)
+            val c = CONTRAST.get(context)
+            val sat = SATURATION.get(context)
+            if (b == 2 && c == 1 && sat == 2) {
+                return null
+            }
+            val matrix = android.graphics.ColorMatrix()
+            matrix.setSaturation(SATURATION_SCALE[sat])
+            val scale = CONTRAST_SCALE[c]
+            // Contrast around the middle grey, then brightness as a shift
+            val shift = (1 - scale) * 128f + BRIGHTNESS_SHIFT[b]
+            matrix.postConcat(
+                android.graphics.ColorMatrix(
+                    floatArrayOf(
+                        scale, 0f, 0f, 0f, shift,
+                        0f, scale, 0f, 0f, shift,
+                        0f, 0f, scale, 0f, shift,
+                        0f, 0f, 0f, 1f, 0f,
+                    )
+                )
+            )
+            return android.graphics.ColorMatrixColorFilter(matrix)
+        }
+
         val SHUFFLE = Look.Switch("bg_shuffle", true)
         val SHOW_CAPTION = Look.Switch("bg_caption", false)
         val PLAY_VIDEOS = Look.Switch("bg_play_videos", true)
@@ -150,12 +204,13 @@ class Backdrop(
         shade.alpha = DIM_ALPHA[DIM.get(context)]
         shade.visibility = if (source == SOURCE_THEME) View.GONE else View.VISIBLE
         applyFit()
+        applyFilter()
 
         status = ""
         when (source) {
             SOURCE_PICTURE -> thread(name = "TunaHome wallpaper") {
                 val picture = try {
-                    Pictures.loadWallpaper(context)
+                    Pictures.loadWallpaper(context)?.let { soften(it) }
                 } catch (e: Throwable) {
                     null
                 }
@@ -168,7 +223,7 @@ class Backdrop(
             SOURCE_VIDEOS -> play(videos(context).map { Item(it.uri, it.isVideo, null) })
             SOURCE_DAILY -> thread(name = "TunaHome picture of the day") {
                 val (picture, caption) = try {
-                    Daily.picture(context)
+                    Daily.picture(context).let { (p, c) -> p?.let { soften(it) } to c }
                 } catch (e: Throwable) {
                     null to null
                 }
@@ -225,6 +280,7 @@ class Backdrop(
 
     /** Stops everything and lets go of the video player. Call when another app comes in front. */
     fun stop() {
+        (image.drawable as? Animatable)?.stop()
         running = false
         generation++
         main.removeCallbacksAndMessages(null)
@@ -243,6 +299,26 @@ class Backdrop(
         caption.visibility = View.GONE
         shade.visibility = View.GONE
         video.visibility = View.GONE
+    }
+
+    /** Brightness, contrast and colour strength, on pictures and videos alike. */
+    private fun applyFilter() {
+        val filter = filter(context)
+        image.colorFilter = filter
+        // A video is drawn on its own layer: the filter goes on that layer's paint
+        (video.videoSurfaceView as? android.view.TextureView)?.setLayerPaint(
+            if (filter == null) null else android.graphics.Paint().apply { colorFilter = filter }
+        )
+    }
+
+    /** Blurs a picture, if the viewer asked for that. Slow: call from a background thread. */
+    private fun soften(picture: Bitmap): Bitmap {
+        val blur = BLUR.get(context)
+        return if (blur == 0) picture else try {
+            Pictures.blur(picture, blur)
+        } catch (e: Throwable) {
+            picture
+        }
     }
 
     private fun applyFit() {
@@ -332,8 +408,14 @@ class Backdrop(
             return
         }
         thread(name = "TunaHome background picture") {
-            val bitmap = try {
-                Pictures.decode(context, Uri.parse(item.uri), 1920, 1080)
+            // A moving picture (GIF or animated WebP) plays as it is
+            val moving = try {
+                Pictures.animated(context, Uri.parse(item.uri), 1920, 1080)
+            } catch (e: Throwable) {
+                null
+            }
+            val bitmap = if (moving != null) null else try {
+                Pictures.decode(context, Uri.parse(item.uri), 1920, 1080)?.let { soften(it) }
             } catch (e: Throwable) {
                 null
             }
@@ -341,7 +423,11 @@ class Backdrop(
                 if (showing != generation) {
                     return@post
                 }
-                if (bitmap == null) failed() else pictureShown(BitmapDrawable(context.resources, bitmap))
+                when {
+                    moving != null -> pictureShown(moving)
+                    bitmap == null -> failed()
+                    else -> pictureShown(BitmapDrawable(context.resources, bitmap))
+                }
             }
         }
     }
@@ -363,6 +449,15 @@ class Backdrop(
     /** Fades from what was showing to [drawable]. */
     private fun showDrawable(drawable: Drawable) {
         val old = image.drawable
+        (old?.current as? Animatable)?.stop()
+        if (drawable is Animatable) {
+            // A moving picture: shown straight in, playing (a crossfade would hold it still)
+            image.setImageDrawable(drawable)
+            drawable.start()
+            image.alpha = 0f
+            image.animate().alpha(1f).setDuration(500).start()
+            return
+        }
         if (old == null) {
             image.setImageDrawable(drawable)
             image.alpha = 0f

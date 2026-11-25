@@ -48,6 +48,12 @@ class AppAdapter(
     /** False for sections in an order of their own (Watch Next, Recently opened). */
     var canMove = true
 
+    /** The first app shown twice the size. Single-line sections only. */
+    var spotlight = false
+
+    private val spotlightOn: Boolean
+        get() = spotlight && lines == 1
+
     /** Called when an app is picked up, so the home screen can say how to move it. */
     var onMoveStart: (() -> Unit)? = null
 
@@ -201,7 +207,7 @@ class AppAdapter(
         java.util.Collections.swap(items, from, to)
         val fromPosition = positionOfApp(from)
         val toPosition = positionOfApp(to)
-        if (Math.abs(by) == 1 && !sideways) {
+        if (Math.abs(by) == 1 && !sideways && !spotlightOn) {
             // Neighbours in a single line: slide them past each other
             notifyItemMoved(fromPosition, toPosition)
         } else {
@@ -275,6 +281,8 @@ class AppAdapter(
         /** How quickly the second press has to follow to count as a double press. */
         const val DOUBLE_PRESS_MS = 320L
 
+        private const val BIG = 1
+
         /** The shortest time between two moves of a picked-up app. */
         const val MOVE_GAP_MS = 90L
     }
@@ -289,21 +297,31 @@ class AppAdapter(
 
     // ------------------------------------------------------------------ tiles
 
+    override fun getItemViewType(position: Int): Int = if (spotlightOn && position == 0) BIG else 0
+
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): Holder {
         val view = LayoutInflater.from(parent.context).inflate(R.layout.item_app, parent, false)
         val context = parent.context
+        val big = viewType == BIG
+        // The spotlight card covers two cards across and two down, gaps included
+        val cardWidth = if (big) tiles.width * 2 + tiles.gap * 2 else tiles.width
+        val cardHeight = if (big) tiles.height * 2 + tiles.gap * 2 else tiles.height
 
         val card = view.findViewById<View>(R.id.card)
         card.layoutParams = card.layoutParams.apply {
-            width = tiles.width
-            height = tiles.height
+            width = cardWidth
+            height = cardHeight
         }
         card.background = tiles.card(context)
         view.findViewById<View>(R.id.ring).background = tiles.ring()
         view.layoutParams = RecyclerView.LayoutParams(
             if (lines == Rows.WRAP) ViewGroup.LayoutParams.MATCH_PARENT else ViewGroup.LayoutParams.WRAP_CONTENT,
             ViewGroup.LayoutParams.WRAP_CONTENT
-        ).apply { setMargins(tiles.gap, tiles.gap, tiles.gap, tiles.gap) }
+        ).apply {
+            // Beside a spotlight card the others line up with its bottom edge
+            val top = if (spotlightOn && !big) tiles.gap + cardHeight + tiles.gap * 2 else tiles.gap
+            setMargins(tiles.gap, top, tiles.gap, tiles.gap)
+        }
         if (lines == Rows.WRAP) {
             // In a wrapping grid the tile sits in the middle of its column
             (view as android.widget.LinearLayout).setGravity(Gravity.CENTER_HORIZONTAL)
@@ -319,24 +337,24 @@ class AppAdapter(
             view.findViewById<TextView>(R.id.cardLabel).apply {
                 setBackgroundResource(R.drawable.card_label_bg)
                 setTextColor(Color.WHITE)
-                setPadding(paddingLeft, Math.round(tiles.height * 0.12f), paddingRight, paddingBottom)
+                setPadding(paddingLeft, Math.round(cardHeight * 0.12f), paddingRight, paddingBottom)
             }
         } else icon.layoutParams = (icon.layoutParams as FrameLayout.LayoutParams).apply {
-            width = tiles.iconSize
-            height = tiles.iconSize
+            width = if (big) tiles.iconSize * 2 else tiles.iconSize
+            height = if (big) tiles.iconSize * 2 else tiles.iconSize
             gravity = if (tiles.style == Look.TILE_ICON_NAME) Gravity.CENTER_HORIZONTAL or Gravity.TOP
             else Gravity.CENTER
             if (tiles.style == Look.TILE_ICON_NAME) {
-                topMargin = Math.round(tiles.height * 0.14f)
+                topMargin = Math.round(cardHeight * 0.14f)
             }
         }
         val label = view.findViewById<TextView>(R.id.label)
-        label.layoutParams = label.layoutParams.apply { width = tiles.width }
+        label.layoutParams = label.layoutParams.apply { width = cardWidth }
         if (tiles.darkCard && !tiles.fullBleed) {
             view.findViewById<TextView>(R.id.cardLabel).setTextColor(Color.rgb(0x15, 0x1A, 0x22))
         }
         Look.styleText(view)
-        return Holder(view)
+        return Holder(view, big)
     }
 
     override fun onBindViewHolder(holder: Holder, position: Int) {
@@ -344,7 +362,7 @@ class AppAdapter(
         holder.bind(if (index < items.size) items[index] else null)
     }
 
-    inner class Holder(view: View) : RecyclerView.ViewHolder(view) {
+    inner class Holder(view: View, private val big: Boolean) : RecyclerView.ViewHolder(view) {
         private val card: View = view.findViewById(R.id.card)
         private val banner: ImageView = view.findViewById(R.id.banner)
         private val icon: ImageView = view.findViewById(R.id.icon)
@@ -420,7 +438,7 @@ class AppAdapter(
             if (app.progress >= 0f) {
                 progress.visibility = View.VISIBLE
                 progress.layoutParams = progress.layoutParams.apply {
-                    width = Math.max(1, Math.round(tiles.width * app.progress))
+                    width = Math.max(1, Math.round((if (big) tiles.width * 2 + tiles.gap * 2 else tiles.width) * app.progress))
                 }
             } else {
                 progress.visibility = View.GONE
@@ -454,7 +472,11 @@ class AppAdapter(
             }
             val lit = focused || moving
             val alpha = if (tiles.dimOthers && !lit) 0.55f else 1f
-            val scale = if (moving) maxOf(tiles.zoom, 1.1f) + 0.08f else if (focused) tiles.zoom else 1f
+            var scale = if (moving) maxOf(tiles.zoom, 1.1f) + 0.08f else if (focused) tiles.zoom else 1f
+            if (big) {
+                // A big card grows half as much, or it would cover its neighbours
+                scale = 1f + (scale - 1f) / 2f
+            }
             // The glow or shadow behind the card you're on (Android 9 and later colour it)
             val depth = if (lit && tiles.shadow != Look.SHADOW_NONE) tiles.lift else 0f
             val rise = if (lit && tiles.shadow == Look.SHADOW_LIFT) -tiles.lift / 3 else 0f

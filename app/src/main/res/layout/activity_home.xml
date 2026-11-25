@@ -84,6 +84,20 @@
                     android:layout_height="1dp"
                     android:layout_weight="1" />
 
+                <!-- Free storage and memory, when switched on -->
+                <TextView
+                    android:id="@+id/systemInfo"
+                    style="@style/Shadowed"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginEnd="14dp"
+                    android:alpha="0.85"
+                    android:focusable="false"
+                    android:maxLines="1"
+                    android:textColor="?attr/tsTextSecondary"
+                    android:textSize="12sp"
+                    android:visibility="gone" />
+
                 <!-- Shown only while a VPN is on -->
                 <ImageView
                     android:id="@+id/vpnIcon"

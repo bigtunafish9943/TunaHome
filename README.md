@@ -22,17 +22,22 @@ The app id is `com.tunastream.home`.
 - **App lock.** A PIN on chosen apps and, if you like, on TunaHome settings. It's a child lock, not security: it only stops apps being opened from TunaHome.
 - **Open an app when the TV wakes up**, such as TunaReceive. Needs the Home button setting (below), because Android only lets that kind of app open things by itself.
 - **Free icon packs** from F-Droid, downloaded and installed from inside TunaHome (Android asks you to confirm).
+- **Watch Next, Now playing, weather, search with voice, folders and shortcut keys** (double, triple or four presses, or two buttons together).
+- **Rename any app** from its menu, and **sort any section** your own way, A to Z, most used, newest installed or recently updated.
+- **Spotlight:** the first app in a one-line section can be shown twice the size.
+- **Sideloaded apps** section (hidden to begin with) for apps that didn't come from the Play Store.
+- **Goes back to where you were:** moving up or down into a section lands on the app you were on there last.
 
 ## Make it yours
 
 Everything is in TunaHome settings, most used first. Each setting is a short list to pick from.
 
-- **Background:** the theme's colours, your own picture, your own videos and pictures (from the TV or a web address), or a **wallpaper app such as Aerial Views**. Wallpaper apps made for Projectivy Launcher work with TunaHome the same way: pick which videos you want in the wallpaper app's own settings. Also: how much to darken it, how it fits the screen, how often pictures change, shuffled or in order, and the name of what's showing. Videos are silent and stop as soon as you open an app.
+- **Background:** the theme's colours, your own picture, your own videos and pictures (from the TV or a web address), or a **wallpaper app such as Aerial Views**. Wallpaper apps made for Projectivy Launcher work with TunaHome the same way: pick which videos you want in the wallpaper app's own settings. Also: how much to darken it, how it fits the screen, how often pictures change, shuffled or in order, and the name of what's showing. Videos are silent and stop as soon as you open an app. Brightness, contrast, colour strength and blur can be changed, and animated GIF and WebP pictures play (Android 9 and later).
 - **Sections:** show, hide, rename, reorder and delete sections, add your own, set how many lines of apps each one has, section name style, space between sections, how a section scrolls, and which app you start on.
 - **Theme and colours:** nine themes named as in TunaStream (Deep Sea, Reef, Kelp, Midnight, Gold, Halloween, Autumn, Winter, Summer) with seasonal themes, a highlight colour and a text colour.
 - **Text:** over 40 fonts (each shown in its own style when you choose), your own .ttf or .otf font file, a separate clock font, six text sizes and a text shadow.
-- **Icons:** one list to pick from: TV pictures, the apps' own icons, or any icon pack on the TV (plus more to download); icons fill the whole card edge to edge, or sit smaller inside it; the name inside the card if you like; five sizes; icon packs made for phone launchers; corners from square to fully rounded; card colour; edges; spacing; when names show; and how the app you're on stands out (enlarged, outline colour, dim the rest). Any app can have an icon of your own (from the TV or a web address).
-- **Top of the screen:** name and logo, version, clock style and size, date, and which buttons show.
+- **Icons:** one list to pick from: TV pictures, the apps' own icons, or any icon pack on the TV (plus more to download); icons fill the whole card edge to edge, or sit smaller inside it; the name inside the card if you like; five sizes; icon packs made for phone launchers; every icon in one colour (white or the highlight colour); corners from square to fully rounded; card colour; edges; spacing; when names show; and how the app you're on stands out (enlarged, outline colour, dim the rest). Any app can have an icon of your own (from the TV or a web address).
+- **Top of the screen:** name and logo, version, clock style and size, date, free storage and memory, and which buttons show.
 
 Choosing a file needs an app on the TV that can browse files, such as a file manager.
 

@@ -23,6 +23,11 @@ class AppEntry(
     val appPkg: String = pkg,
     /** How far through a Watch Next show you are, 0 to 1; below 0 for none. */
     val progress: Float = -1f,
+    /** When it was first installed and last updated, for sorting a section. */
+    val installed: Long = 0,
+    val updated: Long = 0,
+    /** Installed from a file or another app rather than from the Play Store. */
+    val sideloaded: Boolean = false,
 ) {
     val isWatchNext: Boolean
         get() = pkg.startsWith("watchnext:")
@@ -32,6 +37,20 @@ class AppEntry(
 }
 
 object Apps {
+    /** App stores: an app installed by anything else was sideloaded. */
+    private val STORES = setOf("com.android.vending", "com.amazon.venezia", "com.google.android.feedback")
+
+    private fun installer(pm: android.content.pm.PackageManager, pkg: String): String? = try {
+        if (android.os.Build.VERSION.SDK_INT >= 30) {
+            pm.getInstallSourceInfo(pkg).installingPackageName
+        } else {
+            @Suppress("DEPRECATION")
+            pm.getInstallerPackageName(pkg)
+        }
+    } catch (e: Exception) {
+        null
+    }
+
     /** The last list loaded, for screens that want it straight away (home, search). */
     @Volatile
     var cached: List<AppEntry> = emptyList()
@@ -66,6 +85,8 @@ object Apps {
         val found = LinkedHashMap<String, AppEntry>()
         var packHits = 0
         val fullBleed = Look.fullBleed(context)
+        val tint = Look.iconTint(context, accent)
+        val names = Prefs.appNames(context)
         for (category in arrayOf(Intent.CATEGORY_LEANBACK_LAUNCHER, Intent.CATEGORY_LAUNCHER)) {
             val query = Intent(Intent.ACTION_MAIN).addCategory(category)
             for (info in pm.queryIntentActivities(query, 0)) {
@@ -91,12 +112,14 @@ object Apps {
                 } catch (e: Exception) {
                     null
                 }
-                val label = try {
+                val ownLabel = try {
                     info.loadLabel(pm).toString()
                 } catch (e: Exception) {
                     pkg
                 }
-                val fromPack = pack?.icon(pkg, activity.name, label)
+                // A name the viewer gave it wins; the pack still looks it up by its own name
+                val label = names[pkg] ?: ownLabel
+                val fromPack = pack?.icon(pkg, activity.name, ownLabel)
                 if (fromPack != null) {
                     packHits++
                 }
@@ -105,7 +128,12 @@ object Apps {
                 } catch (e: Exception) {
                     null
                 }
-                if (pack != null && fromPack == null) {
+                if (tint != null) {
+                    // Every icon in one colour: a pack's drawing keeps its shape, an app's own
+                    // icon becomes line art
+                    icon = if (fromPack != null) IconShape.tinted(context.resources, icon, tint)
+                    else IconShape.outline(context.resources, icon, tint)
+                } else if (pack != null && fromPack == null) {
                     // An app the pack doesn't have: dressed to match it, as the viewer chose
                     icon = when (missing) {
                         Look.MISSING_FRAME -> pack.framed(pkg, icon) ?: icon
@@ -117,10 +145,21 @@ object Apps {
                 if (fullBleed && (fromPack != null || pack == null || missing == Look.MISSING_OWN)) {
                     icon = IconShape.fullBleed(context.resources, icon)
                 }
+                val app = activity.applicationInfo
+                val system = app != null && app.flags and
+                    (android.content.pm.ApplicationInfo.FLAG_SYSTEM or android.content.pm.ApplicationInfo.FLAG_UPDATED_SYSTEM_APP) != 0
+                val times = try {
+                    pm.getPackageInfo(pkg, 0).let { it.firstInstallTime to it.lastUpdateTime }
+                } catch (e: Exception) {
+                    0L to 0L
+                }
                 found[pkg] = AppEntry(
                     pkg, label, launch, banner, icon,
                     category == Intent.CATEGORY_LEANBACK_LAUNCHER,
                     own?.let { BitmapDrawable(context.resources, it) },
+                    installed = times.first,
+                    updated = times.second,
+                    sideloaded = !system && (installer(pm, pkg) ?: "") !in STORES,
                 )
             }
         }

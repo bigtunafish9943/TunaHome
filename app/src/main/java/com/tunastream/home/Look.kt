@@ -168,7 +168,23 @@ object Look {
     const val FILL_EDGE = 4
 
     fun fullBleed(context: Context): Boolean =
-        ICON_FILL.get(context) == FILL_EDGE && TILE_STYLE.get(context) != TILE_BANNER
+        ICON_FILL.get(context) == FILL_EDGE && TILE_STYLE.get(context) != TILE_BANNER && ICON_TINT.get(context) == TINT_NONE
+
+    /** Every icon drawn in one colour, as line-art packs are. */
+    const val TINT_NONE = 0
+    const val TINT_WHITE = 1
+    const val TINT_ACCENT = 2
+    val ICON_TINT = Choice(
+        "look_icon_tint", TINT_NONE, intArrayOf(R.string.tint_none, R.string.tint_white, R.string.tint_accent)
+    )
+
+    /** The colour every icon is drawn in, or null for their own colours (and for TV pictures). */
+    fun iconTint(context: Context, accent: Int): Int? = when {
+        TILE_STYLE.get(context) == TILE_BANNER -> null
+        ICON_TINT.get(context) == TINT_WHITE -> android.graphics.Color.WHITE
+        ICON_TINT.get(context) == TINT_ACCENT -> accent
+        else -> null
+    }
 
     /** Space between the top bar and the first section. */
     val HEADER_GAP = Choice(
@@ -295,6 +311,9 @@ object Look {
     /** Select twice quickly picks an app up to move it. Opening then waits a moment for a second press. */
     val DOUBLE_PRESS = Switch("look_double_press", true)
 
+    /** Moving up or down into a section goes back to the app you were on there last. */
+    val REMEMBER_PLACE = Switch("look_remember_place", true)
+
     val ROW_GAP = Choice(
         "look_row_gap", 1,
         intArrayOf(R.string.gap_tight, R.string.gap_normal, R.string.gap_wide, R.string.gap_widest)
@@ -355,6 +374,17 @@ object Look {
     val SHOW_VPN = Switch("look_show_vpn", true)
     val SHOW_UPDATE_BUTTON = Switch("look_show_update", true)
     val SHOW_SEARCH_BUTTON = Switch("look_show_search", true)
+
+    /** Free storage and memory beside the clock. */
+    const val INFO_HIDDEN = 0
+    const val INFO_STORAGE = 1
+    const val INFO_MEMORY = 2
+    const val INFO_BOTH = 3
+    val SYSTEM_INFO = Choice(
+        "look_system_info", INFO_HIDDEN, intArrayOf(
+            R.string.hidden, R.string.info_storage, R.string.info_memory, R.string.info_both,
+        )
+    )
 
     // ------------------------------------------------------------------ idle
 

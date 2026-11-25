@@ -94,6 +94,99 @@ object Pictures {
         return reading.use { BitmapFactory.decodeStream(it, null, options) }
     }
 
+    /**
+     * A moving picture (an animated GIF or WebP) ready to play, or null if [uri] isn't one or the
+     * TV is older than Android 9. Slow: call from a background thread.
+     */
+    fun animated(context: Context, uri: Uri, width: Int, height: Int): android.graphics.drawable.Drawable? {
+        if (android.os.Build.VERSION.SDK_INT < 28) {
+            return null
+        }
+        val path = uri.toString().substringBefore('?').lowercase()
+        val type = try {
+            context.contentResolver.getType(uri)?.lowercase() ?: ""
+        } catch (e: Exception) {
+            ""
+        }
+        val maybe = path.endsWith(".gif") || path.endsWith(".webp") || "gif" in type || "webp" in type
+        if (!maybe) {
+            return null
+        }
+        val scheme = uri.scheme?.lowercase()
+        val source = if (scheme == "http" || scheme == "https") {
+            val bytes = download(uri.toString()) ?: return null
+            android.graphics.ImageDecoder.createSource(java.nio.ByteBuffer.wrap(bytes))
+        } else {
+            android.graphics.ImageDecoder.createSource(context.contentResolver, uri)
+        }
+        val drawable = android.graphics.ImageDecoder.decodeDrawable(source) { decoder, info, _ ->
+            // No bigger than the screen: big GIFs are slow to play
+            var sample = 1
+            while (info.size.width / (sample * 2) >= width && info.size.height / (sample * 2) >= height) {
+                sample *= 2
+            }
+            if (sample > 1) {
+                decoder.setTargetSampleSize(sample)
+            }
+        }
+        return if (drawable is android.graphics.drawable.AnimatedImageDrawable) {
+            drawable.repeatCount = android.graphics.drawable.AnimatedImageDrawable.REPEAT_INFINITE
+            drawable
+        } else {
+            null
+        }
+    }
+
+    /**
+     * A soft, blurred copy of a picture: shrunk a lot, then smoothed. The screen scales it back
+     * up, which blurs it further. [strength] is 1 to 3.
+     */
+    fun blur(picture: Bitmap, strength: Int): Bitmap {
+        val shrink = when (strength) {
+            1 -> 6
+            2 -> 10
+            else -> 16
+        }
+        val w = maxOf(8, picture.width / shrink)
+        val h = maxOf(8, picture.height / shrink)
+        val small = Bitmap.createScaledBitmap(picture, w, h, true).copy(Bitmap.Config.ARGB_8888, true)
+        val px = IntArray(w * h)
+        small.getPixels(px, 0, w, 0, 0, w, h)
+        // Three box blurs one after another look much like a proper (Gaussian) blur
+        repeat(3) {
+            boxBlur(px, w, h, 2, horizontal = true)
+            boxBlur(px, w, h, 2, horizontal = false)
+        }
+        small.setPixels(px, 0, w, 0, 0, w, h)
+        return small
+    }
+
+    private fun boxBlur(px: IntArray, w: Int, h: Int, radius: Int, horizontal: Boolean) {
+        val lines = if (horizontal) h else w
+        val length = if (horizontal) w else h
+        val line = IntArray(length)
+        for (l in 0 until lines) {
+            for (i in 0 until length) {
+                line[i] = px[if (horizontal) l * w + i else i * w + l]
+            }
+            for (i in 0 until length) {
+                var r = 0
+                var g = 0
+                var b = 0
+                var n = 0
+                for (k in -radius..radius) {
+                    val p = line[(i + k).coerceIn(0, length - 1)]
+                    r += p shr 16 and 0xFF
+                    g += p shr 8 and 0xFF
+                    b += p and 0xFF
+                    n++
+                }
+                px[if (horizontal) l * w + i else i * w + l] =
+                    (0xFF shl 24) or ((r / n) shl 16) or ((g / n) shl 8) or (b / n)
+            }
+        }
+    }
+
     private const val MAX_DOWNLOAD = 25 * 1024 * 1024
 
     private fun download(address: String): ByteArray? {

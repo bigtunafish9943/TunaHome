@@ -309,6 +309,10 @@ class SettingsActivity : BaseActivity() {
             heading(R.string.heading_how_it_shows)
             choice(R.string.bg_dim, Backdrop.DIM)
             choice(R.string.bg_fit, Backdrop.FIT)
+            choice(R.string.bg_brightness, Backdrop.BRIGHTNESS)
+            choice(R.string.bg_contrast, Backdrop.CONTRAST)
+            choice(R.string.bg_saturation, Backdrop.SATURATION)
+            choice(R.string.bg_blur, Backdrop.BLUR)
             if (source != Backdrop.SOURCE_PICTURE && source != Backdrop.SOURCE_DAILY) {
                 choice(R.string.bg_change_every, Backdrop.CHANGE_EVERY)
                 switch(R.string.bg_shuffle, Backdrop.SHUFFLE, R.string.bg_shuffle_on, R.string.bg_shuffle_off)
@@ -473,6 +477,9 @@ class SettingsActivity : BaseActivity() {
             if (section.visible && section.cardSize >= 0) {
                 summary += getString(R.string.section_own_size, cardSizeName(section.cardSize))
             }
+            if (section.visible && !section.ownOrder && section.sort != Rows.SORT_OWN) {
+                summary += " · " + getString(Rows.SORT_NAMES[section.sort])
+            }
             row(section.name(this), summary) { sectionMenu(section.id, index, all.size) }
         }
         row(R.string.section_add, getString(R.string.section_add_summary)) {
@@ -484,6 +491,7 @@ class SettingsActivity : BaseActivity() {
         heading(R.string.heading_all_sections)
         choice(R.string.set_header_gap, Look.HEADER_GAP)
         switch(R.string.set_double_press, Look.DOUBLE_PRESS, R.string.double_press_on, R.string.off)
+        switch(R.string.set_remember_place, Look.REMEMBER_PLACE, R.string.remember_place_on, R.string.remember_place_off)
         heading(R.string.heading_side_menu)
         choice(R.string.set_side_menu, Look.SIDE_MENU)
         if (Look.SIDE_MENU.get(this) != Look.MENU_OFF) {
@@ -539,6 +547,27 @@ class SettingsActivity : BaseActivity() {
                 options.map { linesName(it) }, options.indexOf(section.lines)
             ) { which ->
                 Rows.update(this, id) { it.lines = options[which] }
+                changed()
+            }
+        }
+
+        if (!section.ownOrder) {
+            labels.add(getString(R.string.section_sort, getString(Rows.SORT_NAMES[section.sort])))
+            actions.add {
+                chooseOne(
+                    getString(R.string.section_sort_title, section.name(this)),
+                    Rows.SORT_NAMES.map { getString(it) }, section.sort
+                ) { which ->
+                    Rows.update(this, id) { it.sort = which }
+                    changed()
+                }
+            }
+        }
+
+        if (section.kind != Rows.NOW_PLAYING && section.lines == 1) {
+            labels.add(getString(R.string.section_spotlight, getString(if (section.spotlight) R.string.on else R.string.off)))
+            actions.add {
+                Rows.update(this, id) { it.spotlight = !it.spotlight }
                 changed()
             }
         }
@@ -750,6 +779,7 @@ class SettingsActivity : BaseActivity() {
         choice(R.string.set_card_shape, Look.CARD_SHAPE)
         if (!usingPictures) {
             choice(R.string.set_icon_fill, Look.ICON_FILL)
+            choice(R.string.set_icon_tint, Look.ICON_TINT)
         }
         row(R.string.pack_get, IconPackStore.status.ifEmpty { getString(R.string.pack_get_summary) }) { openPackStore() }
         heading(R.string.heading_cards)
@@ -930,6 +960,7 @@ class SettingsActivity : BaseActivity() {
         choice(R.string.set_clock, Look.CLOCK)
         choice(R.string.set_clock_size, Look.CLOCK_SIZE)
         choice(R.string.set_date, Look.DATE)
+        choice(R.string.set_system_info, Look.SYSTEM_INFO)
         switch(R.string.set_show_network, Look.SHOW_NETWORK, R.string.shown, R.string.hidden)
         switch(R.string.set_show_vpn, Look.SHOW_VPN, R.string.vpn_shown, R.string.hidden)
         switch(R.string.set_show_search, Look.SHOW_SEARCH_BUTTON, R.string.shown, R.string.hidden)

@@ -102,6 +102,44 @@ object Prefs {
         of(context).edit().putString("last_opened", pkg).apply()
     }
 
+    // ------------------------------------------------------------------ names and use
+
+    private fun pairs(context: Context, key: String): MutableMap<String, String> {
+        val map = LinkedHashMap<String, String>()
+        (of(context).getString(key, "") ?: "").split('\n').forEach { line ->
+            val tab = line.indexOf('\t')
+            if (tab > 0) {
+                map[line.substring(0, tab)] = line.substring(tab + 1)
+            }
+        }
+        return map
+    }
+
+    private fun savePairs(context: Context, key: String, map: Map<String, String>) {
+        of(context).edit().putString(key, map.entries.joinToString("\n") { it.key + "\t" + it.value }).apply()
+    }
+
+    /** Names the viewer gave apps, by package. */
+    fun appNames(context: Context): Map<String, String> = pairs(context, "app_names")
+
+    /** Gives an app a name of the viewer's own; null goes back to its own name. */
+    fun setAppName(context: Context, pkg: String, name: String?) {
+        val map = pairs(context, "app_names")
+        if (name.isNullOrBlank()) map.remove(pkg) else map[pkg] = name.replace('\n', ' ').replace('\t', ' ')
+        savePairs(context, "app_names", map)
+        appsChanged = true
+    }
+
+    /** How many times each app was opened from TunaHome, for sorting by most used. */
+    fun uses(context: Context): Map<String, Int> =
+        pairs(context, "app_uses").mapValues { it.value.toIntOrNull() ?: 0 }
+
+    fun addUse(context: Context, pkg: String) {
+        val map = pairs(context, "app_uses")
+        map[pkg] = ((map[pkg]?.toIntOrNull() ?: 0) + 1).toString()
+        savePairs(context, "app_uses", map)
+    }
+
     fun autoUpdateCheck(context: Context): Boolean = of(context).getBoolean("auto_update_check", true)
 
     fun setAutoUpdateCheck(context: Context, on: Boolean) {

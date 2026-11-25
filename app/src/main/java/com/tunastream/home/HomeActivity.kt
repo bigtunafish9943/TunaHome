@@ -159,7 +159,7 @@ class HomeActivity : BaseActivity() {
         buildSections()
         fadeWhenIdle.clear()
         listOf(R.id.sections, R.id.appsHint, R.id.brand, R.id.networkIcon, R.id.checkUpdate,
-            R.id.openTvSettings, R.id.openSettings, R.id.sideMenu, R.id.vpnIcon, R.id.openSearch).forEach { fadeWhenIdle.add(findViewById(it)) }
+            R.id.openTvSettings, R.id.openSettings, R.id.sideMenu, R.id.vpnIcon, R.id.openSearch, R.id.systemInfo).forEach { fadeWhenIdle.add(findViewById(it)) }
         if (!Look.IDLE_CLOCK.get(this)) {
             fadeWhenIdle.add(findViewById(R.id.clockBox))
             fadeWhenIdle.add(findViewById(R.id.weatherBox))
@@ -337,8 +337,61 @@ class HomeActivity : BaseActivity() {
 
     private var weatherSized = false
 
+    // Free storage and memory, every half minute while the home screen is up
+    private val infoTick: Runnable = object : Runnable {
+        override fun run() {
+            if (showSystemInfo()) {
+                weatherHandler.postDelayed(this, 30_000L)
+            }
+        }
+    }
+
+    /** Shows free storage and memory as chosen; false when it's switched off. */
+    private fun showSystemInfo(): Boolean {
+        val view = findViewById<TextView>(R.id.systemInfo)
+        val mode = Look.SYSTEM_INFO.get(this)
+        if (mode == Look.INFO_HIDDEN) {
+            view.visibility = View.GONE
+            return false
+        }
+        val parts = ArrayList<String>()
+        if (mode == Look.INFO_STORAGE || mode == Look.INFO_BOTH) {
+            try {
+                val stat = android.os.StatFs(android.os.Environment.getDataDirectory().path)
+                parts.add(getString(R.string.info_storage_free,
+                    android.text.format.Formatter.formatShortFileSize(this, stat.availableBytes)))
+            } catch (e: Exception) {
+                // Left out
+            }
+        }
+        if (mode == Look.INFO_MEMORY || mode == Look.INFO_BOTH) {
+            try {
+                val memory = android.app.ActivityManager.MemoryInfo()
+                getSystemService(android.app.ActivityManager::class.java)?.getMemoryInfo(memory)
+                parts.add(getString(R.string.info_memory_free,
+                    android.text.format.Formatter.formatShortFileSize(this, memory.availMem)))
+            } catch (e: Exception) {
+                // Left out
+            }
+        }
+        view.text = parts.joinToString("   ")
+        view.visibility = if (parts.isEmpty()) View.GONE else View.VISIBLE
+        return true
+    }
+
+    // Watch Next changes while you watch on another device, or as shows are added: look again
+    // every five minutes while the home screen is up
+    private val watchNextTick: Runnable = object : Runnable {
+        override fun run() {
+            reloadWatchNext()
+            weatherHandler.postDelayed(this, 5L * 60 * 1000)
+        }
+    }
+
     override fun onPause() {
         weatherHandler.removeCallbacks(weatherTick)
+        weatherHandler.removeCallbacks(infoTick)
+        weatherHandler.removeCallbacks(watchNextTick)
         hotkeys.reset()
         // Leaving mid-move: keep the app where it was put
         sections.forEach { it.adapter.finishMove() }
@@ -488,21 +541,21 @@ class HomeActivity : BaseActivity() {
     override fun onResume() {
         super.onResume()
         // Back from watching something: its place in Watch Next has changed
-        reloadWatchNext()
+        weatherHandler.removeCallbacks(watchNextTick)
+        watchNextTick.run()
         showWeather()
         weatherHandler.removeCallbacks(weatherTick)
         weatherTick.run()
+        weatherHandler.removeCallbacks(infoTick)
+        infoTick.run()
         if (Prefs.appsChanged) {
             Prefs.appsChanged = false
             reload()
         } else if (loaded) {
-            // Back from an app: it is now the most recent. Only that section changes, so the
-            // rest of the screen keeps your place.
-            val hidden = Prefs.hidden(this)
-            val byPackage = apps.filter { it.pkg !in hidden }.associateBy { it.pkg }
-            sections.filter { it.row.kind == Rows.RECENT }.forEach { section ->
-                section.show(Prefs.recent(this).mapNotNull { byPackage[it] })
-            }
+            // Back from an app: it is now the most recent, and used once more. Only those
+            // sections change, so the rest of the screen keeps your place.
+            show(sections.filter { it.row.kind == Rows.RECENT || it.row.sort == Rows.SORT_USED }
+                .map { it.row.id }.toSet())
         }
         scheduleIdle()
         Updater.resumeIfWaiting(this)
@@ -543,6 +596,7 @@ class HomeActivity : BaseActivity() {
                 Rows.MOBILE -> R.drawable.ic_phone
                 Rows.RECENT -> R.drawable.ic_history
                 Rows.WATCH_NEXT -> R.drawable.ic_play
+                Rows.SIDELOADED -> R.drawable.ic_apps
                 else -> R.drawable.ic_folder
             }
             entries.add(SideMenu.Entry(icon, section.row.name(this), section.row.id) { goToSection(section) })
@@ -733,7 +787,8 @@ class HomeActivity : BaseActivity() {
             }
             (title.layoutParams as LinearLayout.LayoutParams).topMargin = 0
 
-            val list = view.findViewById<RecyclerView>(R.id.sectionApps)
+            val list = view.findViewById<SectionList>(R.id.sectionApps)
+            list.remember = Look.REMEMBER_PLACE.get(this)
             val lines = row.lines
             val sectionTiles = if (row.cardSize >= 0) TileStyle(this, row.cardSize) else tiles
             val adapter = AppAdapter(
@@ -753,11 +808,13 @@ class HomeActivity : BaseActivity() {
             }
             (list.layoutManager as? LinearLayoutManager)?.initialPrefetchItemCount = 6
             list.setItemViewCacheSize(6)
-            val poolKey = "${System.identityHashCode(sectionTiles)}/${lines == Rows.WRAP}"
+            adapter.spotlight = row.spotlight && lines == 1
+            // Cards beside a spotlight card sit lower, so they keep to their own spares
+            val poolKey = "${System.identityHashCode(sectionTiles)}/${lines == Rows.WRAP}/${adapter.spotlight}"
             list.setRecycledViewPool(pools.getOrPut(poolKey) {
                 RecyclerView.RecycledViewPool().apply { setMaxRecycledViews(0, 24) }
             })
-            adapter.canMove = row.kind != Rows.RECENT && row.kind != Rows.WATCH_NEXT
+            adapter.canMove = !row.ownOrder
             adapter.onMoveStart = {
                 Toast.makeText(this, R.string.move_hint, Toast.LENGTH_SHORT).show()
             }
@@ -773,6 +830,12 @@ class HomeActivity : BaseActivity() {
 
     /** A section's apps were rearranged by moving one. */
     private fun saveOrder(row: Rows.Row, order: List<String>) {
+        if (row.sort != Rows.SORT_OWN) {
+            // Moving an app by hand puts the section back in the viewer's own order
+            row.sort = Rows.SORT_OWN
+            Rows.update(this, row.id, restyle = false) { it.sort = Rows.SORT_OWN }
+            Toast.makeText(this, R.string.sort_now_own, Toast.LENGTH_LONG).show()
+        }
         when (row.kind) {
             Rows.FAVOURITES -> Prefs.setFavourites(this, order)
             Rows.CUSTOM -> Rows.update(this, row.id, restyle = false) {
@@ -793,6 +856,19 @@ class HomeActivity : BaseActivity() {
         return apps.sortedBy { place[it.pkg] ?: Int.MAX_VALUE }
     }
 
+    /** A section sorted the way the viewer chose for it. */
+    private fun sorted(list: List<AppEntry>, sort: Int): List<AppEntry> = when (sort) {
+        Rows.SORT_AZ -> list.sortedBy { it.label.lowercase(Locale.getDefault()) }
+        Rows.SORT_USED -> {
+            val uses = Prefs.uses(this)
+            list.sortedWith(compareByDescending<AppEntry> { uses[it.pkg] ?: 0 }
+                .thenBy { it.label.lowercase(Locale.getDefault()) })
+        }
+        Rows.SORT_NEWEST -> list.sortedByDescending { it.installed }
+        Rows.SORT_UPDATED -> list.sortedByDescending { it.updated }
+        else -> list
+    }
+
     // ------------------------------------------------------------------ Watch Next
 
     private fun reloadWatchNext() {
@@ -809,6 +885,13 @@ class HomeActivity : BaseActivity() {
             runOnUiThread {
                 loadingWatchNext = false
                 if (isDestroyed) {
+                    return@runOnUiThread
+                }
+                // Nothing new: leave the section alone, so it doesn't jump under the viewer
+                val same = found.size == watchNext.size && found.indices.all {
+                    found[it].pkg == watchNext[it].pkg && found[it].progress == watchNext[it].progress
+                }
+                if (same && found.isNotEmpty()) {
                     return@runOnUiThread
                 }
                 watchNext = found
@@ -852,7 +935,7 @@ class HomeActivity : BaseActivity() {
     }
 
     /** Puts the loaded apps into their sections, leaving out hidden ones. */
-    private fun show() {
+    private fun show(only: Set<String>? = null) {
         val hidden = Prefs.hidden(this)
         val visible = apps.filter { it.pkg !in hidden }
         val everyApp = visible.associateBy { it.pkg }
@@ -879,15 +962,19 @@ class HomeActivity : BaseActivity() {
         }
 
         for (section in sections) {
+            if (only != null && section.row.id !in only) {
+                continue
+            }
             val list = when (section.row.kind) {
                 Rows.FAVOURITES -> Prefs.favourites(this).mapNotNull { byPackage[it] }
                 Rows.TV -> ordered(loose.filter { it.tv } + foldersFor(section.row), Prefs.order(this, section.row.id))
                 Rows.MOBILE -> ordered(loose.filter { !it.tv } + foldersFor(section.row), Prefs.order(this, section.row.id))
+                Rows.SIDELOADED -> ordered(loose.filter { it.sideloaded }, Prefs.order(this, section.row.id))
                 Rows.RECENT -> Prefs.recent(this).mapNotNull { everyApp[it] }
                 Rows.WATCH_NEXT -> watchNext
                 else -> (rows[section.row.id]?.apps ?: section.row.apps).mapNotNull { byPackage[it] }
             }
-            section.show(list)
+            section.show(if (section.row.ownOrder) list else sorted(list, section.row.sort))
         }
 
         val hint = when {
@@ -1112,6 +1199,23 @@ class HomeActivity : BaseActivity() {
 
         labels.add(getString(R.string.menu_change_picture))
         actions.add { pictureMenu(app) }
+
+        labels.add(getString(R.string.menu_rename))
+        actions.add {
+            askForText(R.string.menu_rename, app.label) { name ->
+                Prefs.setAppName(this, app.pkg, name)
+                Prefs.appsChanged = false
+                reload()
+            }
+        }
+        if (Prefs.appNames(this).containsKey(app.pkg)) {
+            labels.add(getString(R.string.menu_own_name))
+            actions.add {
+                Prefs.setAppName(this, app.pkg, null)
+                Prefs.appsChanged = false
+                reload()
+            }
+        }
 
         if (AppLock.isLocked(this, app.pkg)) {
             labels.add(getString(R.string.menu_unlock))

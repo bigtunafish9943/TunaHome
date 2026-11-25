@@ -60,6 +60,25 @@ object IconShape {
         }
     }
 
+    /**
+     * An icon pack's drawing in one colour, keeping its shape (line-art packs such as Arcticons
+     * come out as coloured lines). Slow: call from a background thread.
+     */
+    fun tinted(res: Resources, icon: Drawable?, colour: Int): Drawable? {
+        icon ?: return null
+        return try {
+            val size = 192
+            val bitmap = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
+            val copy = icon.constantState?.newDrawable()?.mutate() ?: icon
+            copy.setBounds(0, 0, size, size)
+            copy.draw(Canvas(bitmap))
+            tint(bitmap, colour)
+            BitmapDrawable(res, bitmap)
+        } catch (e: Exception) {
+            icon
+        }
+    }
+
     /** Every pixel the colour given, keeping how see-through it was. */
     private fun tint(bitmap: Bitmap, colour: Int) {
         val w = bitmap.width

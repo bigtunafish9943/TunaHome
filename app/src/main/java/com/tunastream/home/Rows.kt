@@ -15,6 +15,7 @@ object Rows {
     const val RECENT = "recent"
     const val WATCH_NEXT = "watchnext"
     const val NOW_PLAYING = "nowplaying"
+    const val SIDELOADED = "sideloaded"
     const val CUSTOM = "custom"
 
     private const val KEY = "rows"
@@ -22,6 +23,16 @@ object Rows {
     /** Lines of apps: as many as it takes to show every app without scrolling sideways. */
     const val WRAP = 0
     const val MAX_LINES = 5
+
+    /** How a section orders its apps. */
+    const val SORT_OWN = 0
+    const val SORT_AZ = 1
+    const val SORT_USED = 2
+    const val SORT_NEWEST = 3
+    const val SORT_UPDATED = 4
+    val SORT_NAMES = intArrayOf(
+        R.string.sort_own, R.string.sort_az, R.string.sort_used, R.string.sort_newest, R.string.sort_updated,
+    )
 
     class Row(
         val id: String,
@@ -35,6 +46,10 @@ object Rows {
         var lines: Int = 1,
         /** This section's own card size (a position in [Look.CARD_SCALES]), or -1 for the usual. */
         var cardSize: Int = -1,
+        /** One of the SORT_ orders. */
+        var sort: Int = SORT_OWN,
+        /** The first app shown twice the size (single-line sections only). */
+        var spotlight: Boolean = false,
     ) {
         fun name(context: Context): String = title ?: context.getString(
             when (kind) {
@@ -44,12 +59,17 @@ object Rows {
                 RECENT -> R.string.recent
                 WATCH_NEXT -> R.string.watch_next
                 NOW_PLAYING -> R.string.np_title
+                SIDELOADED -> R.string.sideloaded
                 else -> R.string.row_untitled
             }
         )
 
         val custom: Boolean
             get() = kind == CUSTOM
+
+        /** Sections in an order of their own (newest first, or what the TV says) can't be sorted or moved in. */
+        val ownOrder: Boolean
+            get() = kind == RECENT || kind == WATCH_NEXT || kind == NOW_PLAYING
     }
 
     fun load(context: Context): MutableList<Row> {
@@ -71,6 +91,8 @@ object Rows {
                             apps,
                             o.optInt("lines", 1).coerceIn(WRAP, MAX_LINES),
                             o.optInt("card_size", -1),
+                            o.optInt("sort", SORT_OWN).coerceIn(SORT_OWN, SORT_UPDATED),
+                            o.optBoolean("spotlight", false),
                         )
                     )
                 }
@@ -83,6 +105,11 @@ object Rows {
             if (rows.none { it.kind == kind }) {
                 rows.add(Row(kind, kind, null, true))
             }
+        }
+        // Sideloaded apps came later: hidden to begin with, under Mobile apps
+        if (rows.none { it.kind == SIDELOADED }) {
+            val at = rows.indexOfFirst { it.kind == MOBILE }
+            rows.add(if (at >= 0) at + 1 else rows.size, Row(SIDELOADED, SIDELOADED, null, false))
         }
         // Now playing came later: at the top (it only shows when switched on and something plays)
         if (rows.none { it.kind == NOW_PLAYING }) {
@@ -115,6 +142,8 @@ object Rows {
             o.put("visible", row.visible)
             o.put("lines", row.lines)
             o.put("card_size", row.cardSize)
+            o.put("sort", row.sort)
+            o.put("spotlight", row.spotlight)
             if (row.custom) {
                 o.put("apps", JSONArray(row.apps))
             }

@@ -49,7 +49,10 @@ class TileStyle(context: Context, sizeOverride: Int = -1) {
         width = Math.round(baseWidth * widthShare)
         height = Math.round(baseWidth * widthShare * heightRatio)
         gap = Math.round(Look.dp(context, Look.tileGapDp(context)))
-        val fill = Look.ICON_FILLS[Look.ICON_FILL.get(context)]
+        // Icons all in one colour are line drawings: edge to edge they would look far too big
+        val fill = Look.ICON_FILLS[Look.ICON_FILL.get(context)].let {
+            if (Look.ICON_TINT.get(context) != Look.TINT_NONE) minOf(it, 0.72f) else it
+        }
         // With the name inside the card, the icon leaves room for it
         iconSize = Math.round(
             minOf(width, height) * when {

@@ -11,7 +11,7 @@
         android:id="@+id/sectionTitle"
         style="@style/RowTitle" />
 
-    <androidx.recyclerview.widget.RecyclerView
+    <com.tunastream.home.SectionList
         android:id="@+id/sectionApps"
         style="@style/AppRow" />
 </LinearLayout>
