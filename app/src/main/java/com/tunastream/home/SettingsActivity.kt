@@ -270,6 +270,8 @@ class SettingsActivity : BaseActivity() {
         slider(R.string.fine_clock, Look.FINE_CLOCK)
         slider(R.string.fine_bg_dim, Backdrop.FINE_DIM)
         slider(R.string.fine_follow_dark, Ambient.FINE_DARK)
+        slider(R.string.fine_panel, Look.FINE_PANEL)
+        slider(R.string.fine_panel_corners, Look.FINE_PANEL_CORNERS)
         row(R.string.fine_reset, getString(R.string.fine_reset_summary)) {
             Look.allFine().forEach { it.clear(this) }
             changed()
@@ -732,6 +734,7 @@ class SettingsActivity : BaseActivity() {
         choice(R.string.set_row_titles, Look.ROW_TITLES)
         choice(R.string.set_row_gap, Look.ROW_GAP)
         choice(R.string.set_section_position, Look.SECTION_POSITION)
+        choice(R.string.set_section_panel, Look.SECTION_PANEL)
         choice(R.string.set_row_scroll, Look.ROW_SCROLL)
         choice(R.string.set_start_on, Look.START_ON)
     }
@@ -1220,6 +1223,7 @@ class SettingsActivity : BaseActivity() {
         }
         choice(R.string.set_header_gap, Look.HEADER_GAP)
         choice(R.string.set_clock, Look.CLOCK)
+        choice(R.string.set_clock_face, Look.CLOCK_FACE)
         choice(R.string.set_clock_size, Look.CLOCK_SIZE)
         choice(R.string.set_date, Look.DATE)
         choice(R.string.set_system_info, Look.SYSTEM_INFO)

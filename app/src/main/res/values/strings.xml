@@ -1001,4 +1001,16 @@
     <string name="preset_bold">Bold: bigger, brighter, the app\'s own colour</string>
     <string name="preset_neon">Neon: a strong glow and outline in the app\'s own colour</string>
     <string name="preset_cinema">Cinema: slow and soft, the rest fade back</string>
+    <string name="face_digital">Numbers</string>
+    <string name="face_hands">Hands</string>
+    <string name="face_both">Hands and numbers</string>
+    <string name="set_clock_face">Clock face</string>
+    <string name="panel_none">None</string>
+    <string name="panel_glass">Dark glass</string>
+    <string name="panel_tint">Tinted in the highlight colour</string>
+    <string name="panel_outline">A thin outline</string>
+    <string name="set_section_panel">Panel behind each section</string>
+    <string name="fine_panel">Section panel strength</string>
+    <string name="fine_panel_corners">Section panel corners</string>
+    <string name="quick_fine">Fine tuning, step by step…</string>
 </resources>

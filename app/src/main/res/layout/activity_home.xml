@@ -202,6 +202,14 @@
                     </LinearLayout>
                 </LinearLayout>
 
+                <!-- A clock with hands, when chosen -->
+                <com.tunastream.home.ClockFace
+                    android:id="@+id/clockFace"
+                    android:layout_width="44dp"
+                    android:layout_height="44dp"
+                    android:layout_marginStart="10dp"
+                    android:visibility="gone" />
+
                 <LinearLayout
                     android:id="@+id/clockBox"
                     android:layout_width="wrap_content"

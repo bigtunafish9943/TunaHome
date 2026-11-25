@@ -417,6 +417,24 @@ object Look {
     fun brandScale(context: Context): Float = BRAND_SCALES[BRAND_SIZE.get(context)]
     val SHOW_VERSION = Switch("look_show_version", true)
 
+    /** The clock as numbers, with hands, or both. */
+    const val FACE_DIGITAL = 0
+    const val FACE_HANDS = 1
+    const val FACE_BOTH = 2
+    val CLOCK_FACE = Choice(
+        "look_clock_face", FACE_DIGITAL, intArrayOf(R.string.face_digital, R.string.face_hands, R.string.face_both)
+    )
+
+    /** A soft panel behind each section. */
+    const val PANEL_NONE = 0
+    const val PANEL_GLASS = 1
+    const val PANEL_TINT = 2
+    const val PANEL_OUTLINE = 3
+    val SECTION_PANEL = Choice(
+        "look_section_panel", PANEL_NONE,
+        intArrayOf(R.string.panel_none, R.string.panel_glass, R.string.panel_tint, R.string.panel_outline)
+    )
+
     const val CLOCK_FOLLOW_TV = 0
     const val CLOCK_24 = 1
     const val CLOCK_12 = 2
@@ -491,6 +509,11 @@ object Look {
     val FINE_DIM_OTHERS = Level("fine_dim_others", 10, 90, 5, R.string.fine_percent, { 45 })
     /** How fast cards move as you go, from slow and smooth to quick. */
     val FINE_SPEED = Level("fine_speed", 40, 250, 10, R.string.fine_percent, { 100 })
+    /** How strong the panel behind each section is. */
+    val FINE_PANEL = Level("fine_panel", 5, 80, 5, R.string.fine_percent, { 30 })
+    /** How round the panel behind each section is. */
+    val FINE_PANEL_CORNERS = Level("fine_panel_corners", 0, 40, 2, R.string.fine_number, { 18 })
+
     /** How bright the shine across a card is. */
     val FINE_SHINE = Level("fine_shine", 10, 100, 5, R.string.fine_percent, { 60 })
 
@@ -553,6 +576,7 @@ object Look {
     fun allFine(): List<Level> = listOf(
         FINE_CARD_SIZE, FINE_CORNERS, FINE_GAP, FINE_ZOOM, FINE_ROW_GAP, FINE_TEXT, FINE_CLOCK,
         FINE_GLOW, FINE_DIM_OTHERS, FINE_SPEED, FINE_SHINE, Backdrop.FINE_DIM, Ambient.FINE_DARK,
+        FINE_PANEL, FINE_PANEL_CORNERS,
     )
 
     fun dp(context: Context, value: Float): Float = value * context.resources.displayMetrics.density

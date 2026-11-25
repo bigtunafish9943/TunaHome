@@ -292,6 +292,13 @@ class HomeActivity : BaseActivity() {
         choice(R.string.set_focus_shadow, Look.FOCUS_SHADOW)
         choice(R.string.set_text_size, Look.TEXT_SIZE)
         choice(R.string.set_section_position, Look.SECTION_POSITION)
+        choice(R.string.set_section_panel, Look.SECTION_PANEL)
+        choice(R.string.set_clock_face, Look.CLOCK_FACE)
+        labels.add(getString(R.string.quick_fine))
+        actions.add {
+            startActivity(Intent(this, SettingsActivity::class.java)
+                .putExtra(SettingsActivity.EXTRA_PAGE, SettingsActivity.FINE))
+        }
         labels.add(getString(R.string.quick_everything))
         actions.add {
             startActivity(Intent(this, SettingsActivity::class.java))
@@ -878,6 +885,26 @@ class HomeActivity : BaseActivity() {
         }
     }
 
+    /** The soft panel behind a section, if one is chosen. */
+    private fun dressSection(view: View) {
+        val panel = Look.SECTION_PANEL.get(this)
+        if (panel == Look.PANEL_NONE) return
+        val strength = Look.FINE_PANEL.get(this) / 100f
+        val drawable = android.graphics.drawable.GradientDrawable().apply {
+            cornerRadius = Look.dp(this@HomeActivity, Look.FINE_PANEL_CORNERS.get(this@HomeActivity).toFloat())
+            when (panel) {
+                Look.PANEL_GLASS -> setColor(android.graphics.Color.argb(Math.round(255 * strength), 0, 0, 0))
+                Look.PANEL_TINT -> setColor(themeColor(R.attr.tsAccent) and 0x00FFFFFF or (Math.round(255 * strength * 0.6f) shl 24))
+                else -> setStroke(Math.round(Look.dp(this@HomeActivity, 1.5f)),
+                    android.graphics.Color.argb(Math.round(255 * strength * 1.5f).coerceAtMost(255), 255, 255, 255))
+            }
+        }
+        view.background = drawable
+        val pad = Math.round(Look.dp(this, 10f))
+        view.setPadding(pad, pad / 2, pad, pad / 2)
+        (view.layoutParams as? ViewGroup.MarginLayoutParams)?.let { it.bottomMargin = pad }
+    }
+
     /** The app the viewer is on, if they're on one. */
     private fun focusedApp(): AppEntry? {
         val view = currentFocus ?: return null
@@ -1004,6 +1031,20 @@ class HomeActivity : BaseActivity() {
             }
         }
         clock.setTextSize(TypedValue.COMPLEX_UNIT_PX, clock.textSize * Look.clockScale(this))
+        // A clock with hands, beside the numbers or instead of them
+        val face = findViewById<View>(R.id.clockFace)
+        val faceStyle = Look.CLOCK_FACE.get(this)
+        if (faceStyle != Look.FACE_DIGITAL && Look.CLOCK.get(this) != Look.CLOCK_HIDDEN) {
+            face.visibility = View.VISIBLE
+            val side = Math.round(Look.dp(this, 44f) * Look.clockScale(this))
+            face.layoutParams = face.layoutParams.apply {
+                width = side
+                height = side
+            }
+            if (faceStyle == Look.FACE_HANDS) {
+                clock.visibility = View.GONE
+            }
+        }
         Look.clockFont(this)?.let { id -> Fonts.typeface(this, id, 300)?.let { clock.typeface = it } }
 
         val date = findViewById<TextClock>(R.id.date)
@@ -1075,6 +1116,7 @@ class HomeActivity : BaseActivity() {
                 continue
             }
             val view = layoutInflater.inflate(R.layout.item_section, holder, false)
+            dressSection(view)
             val title = view.findViewById<TextView>(R.id.sectionTitle)
             val name = row.name(this)
             title.text = if (titles == Look.TITLES_CAPS) name.uppercase(Locale.getDefault()) else name
