@@ -85,11 +85,20 @@ class SideMenu(private val activity: Activity) {
         returnTo = activity.currentFocus
         panel.visibility = View.VISIBLE
         items.descendantFocusability = ViewGroup.FOCUS_AFTER_DESCENDANTS
-        views.forEach {
-            it.findViewById<View>(R.id.menuLabel).visibility = View.VISIBLE
-            it.animate().alpha(1f).setDuration(150).start()
+        val slide = Look.ANIMATIONS.get(activity) != Look.ANIM_OFF
+        views.forEachIndexed { i, view ->
+            view.findViewById<View>(R.id.menuLabel).visibility = View.VISIBLE
+            if (slide) {
+                // Entries slide in one after another
+                view.translationX = -Look.dp(activity, 24f)
+                view.animate().alpha(1f).translationX(0f).setStartDelay(i * 18L).setDuration(220)
+                    .setInterpolator(android.view.animation.DecelerateInterpolator(2f)).start()
+            } else {
+                view.alpha = 1f
+            }
         }
-        shade.animate().alpha(1f).setDuration(200).start()
+        shade.animate().alpha(1f).setDuration(if (slide) 240L else 0L).start()
+        Sounds.play(activity, Sounds.SELECT)
         val at = entries.indexOfFirst { it.sectionId != null && it.sectionId == sectionId }
         (views.getOrNull(at) ?: views.first()).requestFocus()
     }

@@ -242,6 +242,36 @@ object Look {
 
     val DIM_OTHERS = Switch("look_dim_others", false)
 
+    /** How the app you move to grows: gently, with a little bounce, quickly, or at once. */
+    const val MOTION_SMOOTH = 0
+    const val MOTION_BOUNCY = 1
+    const val MOTION_SNAPPY = 2
+    const val MOTION_INSTANT = 3
+    val FOCUS_MOTION = Choice(
+        "look_focus_motion", MOTION_BOUNCY, intArrayOf(
+            R.string.motion_smooth, R.string.motion_bouncy, R.string.motion_snappy, R.string.motion_instant,
+        )
+    )
+
+    /** What lights up behind the app you're on. */
+    const val SHADOW_NONE = 0
+    const val SHADOW_LIFT = 1
+    const val SHADOW_GLOW = 2
+    const val SHADOW_GLOW_WHITE = 3
+    val FOCUS_SHADOW = Choice(
+        "look_focus_shadow", SHADOW_GLOW, intArrayOf(
+            R.string.shadow_none, R.string.shadow_lift, R.string.shadow_glow, R.string.shadow_glow_white,
+        )
+    )
+
+    /** Sections gliding in when the home screen appears, the side menu sliding open... */
+    const val ANIM_FULL = 0
+    const val ANIM_LESS = 1
+    const val ANIM_OFF = 2
+    val ANIMATIONS = Choice(
+        "look_animations", ANIM_FULL, intArrayOf(R.string.anim_full, R.string.anim_less, R.string.anim_off)
+    )
+
     // ------------------------------------------------------------------ rows
 
     const val TITLES_NORMAL = 0

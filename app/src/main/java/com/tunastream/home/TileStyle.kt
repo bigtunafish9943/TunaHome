@@ -17,6 +17,10 @@ class TileStyle(context: Context, sizeOverride: Int = -1) {
     val dimOthers = Look.DIM_OTHERS.get(context)
     val scroll = Look.ROW_SCROLL.get(context)
     val doublePress = Look.DOUBLE_PRESS.get(context)
+    val motion = Look.FOCUS_MOTION.get(context)
+    val shadow = Look.FOCUS_SHADOW.get(context)
+    val glowColour = if (shadow == Look.SHADOW_GLOW_WHITE) Color.WHITE else context.themeColor(R.attr.tsAccent)
+    val lift = Look.dp(context, 14f)
     /** Icons fill the whole card, edge to edge, cut to its rounded corners. */
     val fullBleed = Look.fullBleed(context)
     val iconSize: Int

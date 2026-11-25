@@ -449,14 +449,38 @@ class AppAdapter(
             if (tiles.style == Look.TILE_ICON_NAME && !moving) {
                 label.visibility = View.GONE
             }
-            itemView.alpha = if (tiles.dimOthers && !focused && !moving) 0.55f else 1f
+            val lit = focused || moving
+            val alpha = if (tiles.dimOthers && !lit) 0.55f else 1f
             val scale = if (moving) maxOf(tiles.zoom, 1.1f) + 0.08f else if (focused) tiles.zoom else 1f
-            if (animate) {
-                itemView.animate().scaleX(scale).scaleY(scale).setDuration(120).start()
+            // The glow or shadow behind the card you're on (Android 9 and later colour it)
+            val depth = if (lit && tiles.shadow != Look.SHADOW_NONE) tiles.lift else 0f
+            val rise = if (lit && tiles.shadow == Look.SHADOW_LIFT) -tiles.lift / 3 else 0f
+            if (android.os.Build.VERSION.SDK_INT >= 28 && tiles.shadow != Look.SHADOW_NONE) {
+                val colour = if (tiles.shadow == Look.SHADOW_LIFT) Color.BLACK else tiles.glowColour
+                card.outlineSpotShadowColor = colour
+                card.outlineAmbientShadowColor = colour
+            }
+            if (animate && tiles.motion != Look.MOTION_INSTANT) {
+                val (time, ease) = when (tiles.motion) {
+                    Look.MOTION_BOUNCY -> (if (lit) 260L else 160L) to
+                        (if (lit) android.view.animation.OvershootInterpolator(2.2f) else android.view.animation.DecelerateInterpolator())
+                    Look.MOTION_SNAPPY -> 90L to android.view.animation.DecelerateInterpolator()
+                    else -> 200L to android.view.animation.DecelerateInterpolator(1.5f)
+                }
+                itemView.animate().scaleX(scale).scaleY(scale).alpha(alpha).translationY(rise)
+                    .setDuration(time).setInterpolator(ease).start()
+                card.animate().translationZ(depth).setDuration(time).start()
+                if (focused && !moving) {
+                    Sounds.play(itemView.context, Sounds.MOVE)
+                }
             } else {
                 itemView.animate().cancel()
+                card.animate().cancel()
                 itemView.scaleX = scale
                 itemView.scaleY = scale
+                itemView.alpha = alpha
+                itemView.translationY = rise
+                card.translationZ = depth
             }
         }
     }

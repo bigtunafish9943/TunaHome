@@ -544,6 +544,43 @@
     <string name="search_no_voice">Voice search isn\'t available on this TV. Type instead.</string>
     <string name="set_show_search">Search button</string>
 
+    <!-- Sounds and motion -->
+    <string name="page_sounds">Sounds and motion</string>
+    <string name="snd_set">Sounds</string>
+    <string name="snd_off">Off</string>
+    <string name="snd_android">Android\'s own click</string>
+    <string name="snd_soft">Soft</string>
+    <string name="snd_tick">Tick</string>
+    <string name="snd_pop">Pop</string>
+    <string name="snd_wood">Wood</string>
+    <string name="snd_glass">Glass</string>
+    <string name="snd_bubble">Bubble</string>
+    <string name="snd_water">Water drop</string>
+    <string name="snd_retro">Retro game</string>
+    <string name="snd_chime">Chime</string>
+    <string name="snd_volume">Volume</string>
+    <string name="snd_quiet">Quiet</string>
+    <string name="snd_medium">Medium</string>
+    <string name="snd_loud">Loud</string>
+    <string name="snd_on_move">When moving between apps</string>
+    <string name="snd_on_move_on">A light sound each move, a fuller one on select</string>
+    <string name="snd_on_move_off">Only on select</string>
+    <string name="heading_motion">Motion</string>
+    <string name="set_animations">Animations</string>
+    <string name="anim_full">Full: sections glide in, menus slide open</string>
+    <string name="anim_less">Less: quick and subtle</string>
+    <string name="anim_off">Off</string>
+    <string name="set_focus_motion">How the app you\'re on grows</string>
+    <string name="motion_smooth">Smoothly</string>
+    <string name="motion_bouncy">With a little bounce</string>
+    <string name="motion_snappy">Quickly</string>
+    <string name="motion_instant">At once</string>
+    <string name="set_focus_shadow">Behind the app you\'re on</string>
+    <string name="shadow_none">Nothing</string>
+    <string name="shadow_lift">A shadow, as if lifted</string>
+    <string name="shadow_glow">A glow in the highlight colour</string>
+    <string name="shadow_glow_white">A white glow</string>
+
     <!-- Shortcuts -->
     <string name="page_shortcuts">Shortcuts</string>
     <string name="shortcuts_none_short">None yet</string>

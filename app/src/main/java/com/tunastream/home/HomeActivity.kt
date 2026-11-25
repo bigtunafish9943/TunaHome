@@ -191,6 +191,27 @@ class HomeActivity : BaseActivity() {
         super.onStart()
         backdrop.start()
         watchNetwork()
+        arrive()
+    }
+
+    /** Sections glide up into place, one after another, as the home screen appears. */
+    private fun arrive() {
+        val mode = Look.ANIMATIONS.get(this)
+        if (mode == Look.ANIM_OFF) {
+            return
+        }
+        val rise = Look.dp(this, if (mode == Look.ANIM_FULL) 28f else 12f)
+        var delay = 0L
+        val views = listOf<View>(findViewById(R.id.topBar)) + sections.map { it.view }.filter { it.visibility == View.VISIBLE }
+        for (view in views) {
+            view.animate().cancel()
+            view.alpha = 0f
+            view.translationY = rise
+            view.animate().alpha(1f).translationY(0f).setStartDelay(delay)
+                .setDuration(if (mode == Look.ANIM_FULL) 420L else 220L)
+                .setInterpolator(android.view.animation.DecelerateInterpolator(2f)).start()
+            delay += if (mode == Look.ANIM_FULL) 55L else 20L
+        }
     }
 
     /** Another app is in front: let go of the video player so that app can use the decoder. */

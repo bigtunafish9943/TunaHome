@@ -76,6 +76,7 @@ class SettingsActivity : BaseActivity() {
             TOP_BAR -> topBarPage()
             WEATHER -> weatherPage()
             SHORTCUTS -> shortcutsPage()
+            SOUNDS -> soundsPage()
             APPS -> appsPage()
             HOME_BUTTON -> homeButtonPage()
             UPDATES -> updatesPage()
@@ -161,6 +162,7 @@ class SettingsActivity : BaseActivity() {
         pageRow(TEXT, Fonts.name(this, Look.font(this)) + " · " + Look.TEXT_SIZE.name(this))
         pageRow(PICTURES, IconPacks.currentName(this) + " · " + cardSizeName(-1))
         pageRow(TOP_BAR, Look.CLOCK.name(this))
+        pageRow(SOUNDS, Sounds.SET.name(this) + " · " + Look.ANIMATIONS.name(this))
         Hotkeys.all(this).size.let { n ->
             pageRow(SHORTCUTS, if (n == 0) getString(R.string.shortcuts_none_short)
                 else resources.getQuantityString(R.plurals.shortcuts_count, n, n))
@@ -699,6 +701,8 @@ class SettingsActivity : BaseActivity() {
         choice(R.string.set_tile_names, Look.TILE_NAMES)
         heading(R.string.heading_selected)
         choice(R.string.set_focus_zoom, Look.FOCUS_ZOOM)
+        choice(R.string.set_focus_motion, Look.FOCUS_MOTION)
+        choice(R.string.set_focus_shadow, Look.FOCUS_SHADOW)
         choice(R.string.set_focus_outline, Look.FOCUS_OUTLINE)
         switch(R.string.set_dim_others, Look.DIM_OTHERS)
         row(R.string.set_app_picture, getString(R.string.set_app_picture_summary)) {
@@ -732,6 +736,31 @@ class SettingsActivity : BaseActivity() {
             }
             .setNegativeButton(R.string.close, null)
             .show()
+    }
+
+    // ------------------------------------------------------------------ sounds and motion
+
+    private fun soundsPage() {
+        row(R.string.snd_set, Sounds.SET.name(this)) {
+            chooseOne(getString(R.string.snd_set), Sounds.SET.names.map { getString(it) }, Sounds.SET.get(this)) {
+                Sounds.SET.set(this, it)
+                // Play the one chosen, to hear it
+                Sounds.play(this, Sounds.SELECT)
+                changed()
+            }
+        }
+        if (Sounds.SET.get(this) != Sounds.SET_OFF) {
+            choice(R.string.snd_volume, Sounds.VOLUME) {
+                Sounds.play(this, Sounds.SELECT)
+                changed()
+            }
+            switch(R.string.snd_on_move, Sounds.ON_MOVE, R.string.snd_on_move_on, R.string.snd_on_move_off)
+        }
+        heading(R.string.heading_motion)
+        choice(R.string.set_animations, Look.ANIMATIONS)
+        choice(R.string.set_focus_motion, Look.FOCUS_MOTION)
+        choice(R.string.set_focus_shadow, Look.FOCUS_SHADOW)
+        choice(R.string.set_focus_zoom, Look.FOCUS_ZOOM)
     }
 
     // ------------------------------------------------------------------ top of the screen
@@ -1367,6 +1396,7 @@ class SettingsActivity : BaseActivity() {
         const val TOP_BAR = "top_bar"
         const val WEATHER = "weather"
         const val SHORTCUTS = "shortcuts"
+        const val SOUNDS = "sounds"
         const val APPS = "apps"
         const val HOME_BUTTON = "home_button"
         const val UPDATES = "updates"
@@ -1380,6 +1410,7 @@ class SettingsActivity : BaseActivity() {
             TOP_BAR -> R.string.page_top_bar
             WEATHER -> R.string.page_weather
             SHORTCUTS -> R.string.page_shortcuts
+            SOUNDS -> R.string.page_sounds
             APPS -> R.string.page_apps
             HOME_BUTTON -> R.string.page_home_button
             UPDATES -> R.string.page_updates
