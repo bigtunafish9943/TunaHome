@@ -27,6 +27,11 @@ abstract class BaseActivity : Activity() {
         Look.styleText(findViewById<View>(android.R.id.content))
     }
 
+    /** Takes the current look as this screen's own, for changes it shows by itself (fine tuning). */
+    protected fun acceptLook() {
+        lookStamp = Look.stamp(this)
+    }
+
     /** Whether this screen was built with a theme or look that has since changed. */
     protected fun outOfDate(): Boolean =
         TunaTheme.current(this) != themeId || Look.stamp(this) != lookStamp

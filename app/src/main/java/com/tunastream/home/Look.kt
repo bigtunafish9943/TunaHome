@@ -18,14 +18,56 @@ object Look {
 
     /** A setting with a fixed list of named options. */
     class Choice(val key: String, val default: Int, val names: IntArray) {
+        /** The finely tuned value that stands in for this choice, if there is one ([Level]). */
+        var fine: String? = null
+
         fun get(context: Context): Int =
             Prefs.of(context).getInt(key, default).coerceIn(0, names.size - 1)
 
+        /** Picking one of the named options puts aside any finely tuned value. */
         fun set(context: Context, value: Int) {
-            Prefs.of(context).edit().putInt(key, value).putInt(STAMP, stamp(context) + 1).apply()
+            val edit = Prefs.of(context).edit().putInt(key, value).putInt(STAMP, stamp(context) + 1)
+            fine?.let { edit.remove(it) }
+            edit.apply()
         }
 
         fun name(context: Context): String = context.getString(names[get(context)])
+    }
+
+    /**
+     * A setting tuned step by step with Left and Right: a whole number from [min] to [max]. Until
+     * it's tuned it follows [usual] (the named choice it stands in for, if [linked]).
+     */
+    class Level(
+        val key: String,
+        val min: Int,
+        val max: Int,
+        val step: Int,
+        /** "%1$d%%" or similar, to show the number. */
+        val format: Int,
+        private val usual: (Context) -> Int,
+        linked: Choice? = null,
+    ) {
+        init {
+            linked?.fine = key
+        }
+
+        fun isSet(context: Context): Boolean = Prefs.of(context).contains(key)
+
+        fun get(context: Context): Int =
+            (if (isSet(context)) Prefs.of(context).getInt(key, min) else usual(context)).coerceIn(min, max)
+
+        fun usual(context: Context): Int = usual.invoke(context).coerceIn(min, max)
+
+        fun set(context: Context, value: Int) {
+            Prefs.of(context).edit().putInt(key, value.coerceIn(min, max)).putInt(STAMP, stamp(context) + 1).apply()
+        }
+
+        fun clear(context: Context) {
+            Prefs.of(context).edit().remove(key).putInt(STAMP, stamp(context) + 1).apply()
+        }
+
+        fun name(context: Context, value: Int = get(context)): String = context.getString(format, value)
     }
 
     /** A setting that is on or off. */
@@ -428,8 +470,37 @@ object Look {
 
     // ------------------------------------------------------------------ working out the numbers
 
-    fun textScale(context: Context): Float = TEXT_SCALES[TEXT_SIZE.get(context)]
-    fun tileScale(context: Context): Float {
+    // ------------------------------------------------------------------ fine tuning
+
+    val FINE_CARD_SIZE = Level("fine_card_size", 40, 220, 5, R.string.fine_percent,
+        { Math.round(presetTileScale(it) * 100) }, CARD_SIZE)
+    val FINE_CORNERS = Level("fine_corners", 0, 60, 1, R.string.fine_number,
+        { Math.round(CORNER_DP[TILE_CORNERS.get(it)].coerceAtMost(60f)) }, TILE_CORNERS)
+    val FINE_GAP = Level("fine_gap", 0, 40, 1, R.string.fine_number, { Math.round(GAP_DP[TILE_GAP.get(it)]) }, TILE_GAP)
+    val FINE_ZOOM = Level("fine_zoom", 100, 140, 1, R.string.fine_percent,
+        { Math.round(ZOOMS[FOCUS_ZOOM.get(it)] * 100) }, FOCUS_ZOOM)
+    val FINE_ROW_GAP = Level("fine_row_gap", 0, 90, 2, R.string.fine_number,
+        { Math.round(ROW_GAP_DP[ROW_GAP.get(it)]) }, ROW_GAP)
+    val FINE_TEXT = Level("fine_text", 70, 170, 5, R.string.fine_percent,
+        { Math.round(TEXT_SCALES[TEXT_SIZE.get(it)] * 100) }, TEXT_SIZE)
+    val FINE_CLOCK = Level("fine_clock", 50, 250, 5, R.string.fine_percent,
+        { Math.round(CLOCK_SCALES[CLOCK_SIZE.get(it)] * 100) }, CLOCK_SIZE)
+    /** How big the glow or shadow behind the app you're on is. */
+    val FINE_GLOW = Level("fine_glow", 0, 40, 1, R.string.fine_number, { 14 })
+    /** How much the other apps fade when "dim the rest" is on. */
+    val FINE_DIM_OTHERS = Level("fine_dim_others", 10, 90, 5, R.string.fine_percent, { 45 })
+    /** How fast cards move as you go, from slow and smooth to quick. */
+    val FINE_SPEED = Level("fine_speed", 40, 250, 10, R.string.fine_percent, { 100 })
+    /** How bright the shine across a card is. */
+    val FINE_SHINE = Level("fine_shine", 10, 100, 5, R.string.fine_percent, { 60 })
+
+    fun textScale(context: Context): Float =
+        if (FINE_TEXT.isSet(context)) FINE_TEXT.get(context) / 100f else TEXT_SCALES[TEXT_SIZE.get(context)]
+
+    fun tileScale(context: Context): Float =
+        if (FINE_CARD_SIZE.isSet(context)) FINE_CARD_SIZE.get(context) / 100f else presetTileScale(context)
+
+    private fun presetTileScale(context: Context): Float {
         if (!Prefs.of(context).contains(CARD_SIZE.key) && Prefs.of(context).contains(TILE_SIZE.key)) {
             // Carry the old size over to the closest new one
             val old = TILE_SCALES[TILE_SIZE.get(context)]
@@ -437,11 +508,52 @@ object Look {
         }
         return CARD_SCALES[CARD_SIZE.get(context)]
     }
-    fun cornerDp(context: Context): Float = CORNER_DP[TILE_CORNERS.get(context)]
-    fun tileGapDp(context: Context): Float = GAP_DP[TILE_GAP.get(context)]
-    fun focusZoom(context: Context): Float = ZOOMS[FOCUS_ZOOM.get(context)]
-    fun rowGapDp(context: Context): Float = ROW_GAP_DP[ROW_GAP.get(context)]
-    fun clockScale(context: Context): Float = CLOCK_SCALES[CLOCK_SIZE.get(context)]
+    fun cornerDp(context: Context): Float =
+        if (FINE_CORNERS.isSet(context)) FINE_CORNERS.get(context).toFloat() else CORNER_DP[TILE_CORNERS.get(context)]
+    fun tileGapDp(context: Context): Float =
+        if (FINE_GAP.isSet(context)) FINE_GAP.get(context).toFloat() else GAP_DP[TILE_GAP.get(context)]
+    fun focusZoom(context: Context): Float =
+        if (FINE_ZOOM.isSet(context)) FINE_ZOOM.get(context) / 100f else ZOOMS[FOCUS_ZOOM.get(context)]
+    fun rowGapDp(context: Context): Float =
+        if (FINE_ROW_GAP.isSet(context)) FINE_ROW_GAP.get(context).toFloat() else ROW_GAP_DP[ROW_GAP.get(context)]
+    fun clockScale(context: Context): Float =
+        if (FINE_CLOCK.isSet(context)) FINE_CLOCK.get(context) / 100f else CLOCK_SCALES[CLOCK_SIZE.get(context)]
+
+    /**
+     * Ready-made styles for the app you're on: how much it grows, its glow and outline, the
+     * shine, how much the rest dim and how fast it all moves, set together.
+     */
+    val PRESETS = intArrayOf(
+        R.string.preset_calm, R.string.preset_classic, R.string.preset_bold, R.string.preset_neon, R.string.preset_cinema,
+    )
+
+    fun applyPreset(context: Context, which: Int) {
+        // zoom %, glow, shine %, speed %, dim others %, outline, glow kind, shine on, dim on
+        data class P(val zoom: Int, val glow: Int, val shine: Int, val speed: Int, val dim: Int,
+            val outline: Int, val shadow: Int, val shineOn: Boolean, val dimOn: Boolean)
+        val p = when (which) {
+            0 -> P(104, 8, 30, 80, 30, OUTLINE_NONE, SHADOW_LIFT, false, false)
+            2 -> P(118, 26, 80, 120, 40, OUTLINE_WHITE, SHADOW_GLOW_APP, true, true)
+            3 -> P(112, 34, 100, 110, 55, OUTLINE_APP, SHADOW_GLOW_APP, true, true)
+            4 -> P(108, 20, 40, 70, 65, OUTLINE_NONE, SHADOW_GLOW_WHITE, true, true)
+            else -> P(110, 14, 60, 100, 45, OUTLINE_ACCENT, SHADOW_GLOW, true, false)
+        }
+        FOCUS_OUTLINE.set(context, p.outline)
+        FOCUS_SHADOW.set(context, p.shadow)
+        SHINE.set(context, p.shineOn)
+        DIM_OTHERS.set(context, p.dimOn)
+        FINE_ZOOM.set(context, p.zoom)
+        FINE_GLOW.set(context, p.glow)
+        FINE_SHINE.set(context, p.shine)
+        FINE_SPEED.set(context, p.speed)
+        FINE_DIM_OTHERS.set(context, p.dim)
+    }
+
+    /** All the finely tuned settings, to put back to their usual values at once. */
+    fun allFine(): List<Level> = listOf(
+        FINE_CARD_SIZE, FINE_CORNERS, FINE_GAP, FINE_ZOOM, FINE_ROW_GAP, FINE_TEXT, FINE_CLOCK,
+        FINE_GLOW, FINE_DIM_OTHERS, FINE_SPEED, FINE_SHINE, Backdrop.FINE_DIM, Ambient.FINE_DARK,
+    )
 
     fun dp(context: Context, value: Float): Float = value * context.resources.displayMetrics.density
 

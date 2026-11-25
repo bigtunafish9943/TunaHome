@@ -27,7 +27,12 @@ class TileStyle(context: Context, sizeOverride: Int = -1, styleOverride: Int = -
     val newBadge = Look.NEW_BADGE.get(context)
     val shine = Look.SHINE.get(context) && Look.FOCUS_MOTION.get(context) != Look.MOTION_INSTANT
     val scrollNames = Look.SCROLL_NAMES.get(context)
-    val lift = Look.dp(context, 14f)
+    val lift = Look.dp(context, Look.FINE_GLOW.get(context).toFloat())
+    /** How see-through the other apps are when "dim the rest" is on. */
+    val dimAlpha = 1f - Look.FINE_DIM_OTHERS.get(context) / 100f
+    /** Animation times are multiplied by this (above 1 is slower). */
+    val motionScale = 100f / Look.FINE_SPEED.get(context)
+    val shineAlpha = Look.FINE_SHINE.get(context) / 100f
     /** Icons fill the whole card, edge to edge, cut to its rounded corners. */
     val fullBleed = Look.ICON_FILL.get(context) == Look.FILL_EDGE && style != Look.TILE_BANNER &&
         Look.ICON_TINT.get(context) == Look.TINT_NONE

@@ -260,7 +260,7 @@ class HomeActivity : BaseActivity() {
         val labels = ArrayList<String>()
         val actions = ArrayList<() -> Unit>()
         fun item(title: Int, value: String, action: () -> Unit) {
-            labels.add(getString(title) + ":  " + value)
+            labels.add(if (value.isEmpty()) getString(title) else getString(title) + ":  " + value)
             actions.add(action)
         }
         fun choice(title: Int, setting: Look.Choice) = item(title, setting.name(this)) {
@@ -282,6 +282,12 @@ class HomeActivity : BaseActivity() {
         choice(R.string.bg_dim, Backdrop.DIM)
         choice(R.string.set_tile_style, Look.TILE_STYLE)
         choice(R.string.set_card_size, Look.CARD_SIZE)
+        item(R.string.preset_title, "") {
+            chooseOne(getString(R.string.preset_title), Look.PRESETS.map { getString(it) }, -1) {
+                Look.applyPreset(this, it)
+                quickApplied()
+            }
+        }
         choice(R.string.set_focus_zoom, Look.FOCUS_ZOOM)
         choice(R.string.set_focus_shadow, Look.FOCUS_SHADOW)
         choice(R.string.set_text_size, Look.TEXT_SIZE)

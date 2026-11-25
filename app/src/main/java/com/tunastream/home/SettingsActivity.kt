@@ -139,6 +139,143 @@ class SettingsActivity : BaseActivity() {
         }
     }
 
+    // ------------------------------------------------------------------ fine tuning
+
+    /** A few of the viewer's apps drawn with the current settings, redrawn as they change. */
+    private var preview: androidx.recyclerview.widget.RecyclerView? = null
+
+    private fun previewApps(): List<AppEntry> {
+        val hidden = Prefs.hidden(this)
+        val visible = Apps.cached.filter { it.pkg !in hidden }
+        val favourites = Prefs.favourites(this).mapNotNull { pkg -> visible.firstOrNull { it.pkg == pkg } }
+        return (favourites + visible).distinctBy { it.pkg }.take(8)
+    }
+
+    private fun previewRow() {
+        if (collecting != null) return
+        val apps = previewApps()
+        if (apps.isEmpty()) return
+        val view = androidx.recyclerview.widget.RecyclerView(this)
+        view.layoutManager = androidx.recyclerview.widget.LinearLayoutManager(
+            this, androidx.recyclerview.widget.LinearLayoutManager.HORIZONTAL, false)
+        view.clipChildren = false
+        view.clipToPadding = false
+        view.itemAnimator = null
+        val pad = Math.round(Look.dp(this, 20f))
+        view.setPadding(pad / 2, pad, pad, pad)
+        view.layoutParams = LinearLayout.LayoutParams(
+            Math.round(Look.dp(this, 900f)), ViewGroup.LayoutParams.WRAP_CONTENT)
+        list.clipChildren = false
+        list.addView(view)
+        preview = view
+        refreshPreview()
+    }
+
+    private fun refreshPreview() {
+        val view = preview ?: return
+        val adapter = AppAdapter(TileStyle(this), 1, {}, {}, {})
+        adapter.canMove = false
+        adapter.submit(previewApps())
+        view.adapter = adapter
+    }
+
+    /**
+     * A number tuned with Left and Right, shown as a bar. Select puts it back to the usual.
+     * The preview at the top of the page follows straight away.
+     */
+    private fun slider(title: Int, level: Look.Level) {
+        val view = row(getString(title), sliderText(level)) {} ?: return
+        val summary = view.findViewById<TextView>(R.id.summary)
+        val track = android.widget.FrameLayout(this)
+        val fill = View(this)
+        val height = Math.round(Look.dp(this, 4f))
+        track.layoutParams = LinearLayout.LayoutParams(Math.round(Look.dp(this, 300f)), height).apply {
+            topMargin = Math.round(Look.dp(this@SettingsActivity, 8f))
+        }
+        track.background = android.graphics.drawable.GradientDrawable().apply {
+            cornerRadius = height / 2f
+            setColor(themeColor(R.attr.tsTextSecondary) and 0x00FFFFFF or 0x40000000)
+        }
+        fill.background = android.graphics.drawable.GradientDrawable().apply {
+            cornerRadius = height / 2f
+            setColor(themeColor(R.attr.tsAccent))
+        }
+        track.addView(fill, android.widget.FrameLayout.LayoutParams(0, height))
+        (view as LinearLayout).addView(track)
+        fun show() {
+            summary.text = sliderText(level)
+            val share = (level.get(this) - level.min).toFloat() / (level.max - level.min)
+            fill.layoutParams = fill.layoutParams.apply { width = Math.round(track.layoutParams.width * share) }
+        }
+        show()
+        view.setOnKeyListener { _, code, event ->
+            val direction = when (code) {
+                KeyEvent.KEYCODE_DPAD_LEFT -> -1
+                KeyEvent.KEYCODE_DPAD_RIGHT -> 1
+                else -> return@setOnKeyListener false
+            }
+            if (event.action == KeyEvent.ACTION_DOWN) {
+                // Holding the button speeds up
+                val steps = when {
+                    event.repeatCount > 12 -> 5
+                    event.repeatCount > 4 -> 2
+                    else -> 1
+                }
+                val before = level.get(this)
+                level.set(this, before + direction * level.step * steps)
+                if (level.get(this) != before) {
+                    acceptLook()
+                    Sounds.play(this, Sounds.MOVE)
+                    show()
+                    refreshPreview()
+                }
+            }
+            true
+        }
+        view.setOnClickListener {
+            level.clear(this)
+            acceptLook()
+            show()
+            refreshPreview()
+        }
+    }
+
+    private fun sliderText(level: Look.Level): String {
+        val now = level.name(this)
+        return if (level.isSet(this)) getString(R.string.fine_value_tuned, now, level.name(this, level.usual(this)))
+        else getString(R.string.fine_value_usual, now)
+    }
+
+    private fun finePage() {
+        previewRow()
+        row(R.string.preset_title, getString(R.string.preset_summary)) {
+            chooseOne(getString(R.string.preset_title), Look.PRESETS.map { getString(it) }, -1) {
+                Look.applyPreset(this, it)
+                changed()
+            }
+        }
+        heading(R.string.fine_cards)
+        slider(R.string.set_card_size, Look.FINE_CARD_SIZE)
+        slider(R.string.fine_corners, Look.FINE_CORNERS)
+        slider(R.string.fine_gap, Look.FINE_GAP)
+        heading(R.string.fine_selected)
+        slider(R.string.fine_zoom, Look.FINE_ZOOM)
+        slider(R.string.fine_glow, Look.FINE_GLOW)
+        slider(R.string.fine_shine, Look.FINE_SHINE)
+        slider(R.string.fine_speed, Look.FINE_SPEED)
+        slider(R.string.fine_dim_others, Look.FINE_DIM_OTHERS)
+        heading(R.string.fine_screen)
+        slider(R.string.fine_row_gap, Look.FINE_ROW_GAP)
+        slider(R.string.fine_text, Look.FINE_TEXT)
+        slider(R.string.fine_clock, Look.FINE_CLOCK)
+        slider(R.string.fine_bg_dim, Backdrop.FINE_DIM)
+        slider(R.string.fine_follow_dark, Ambient.FINE_DARK)
+        row(R.string.fine_reset, getString(R.string.fine_reset_summary)) {
+            Look.allFine().forEach { it.clear(this) }
+            changed()
+        }
+    }
+
     private fun buildPage(page: String) {
         when (page) {
             BACKGROUND -> backgroundPage()
@@ -155,14 +292,15 @@ class SettingsActivity : BaseActivity() {
             HOME_BUTTON -> homeButtonPage()
             UPDATES -> updatesPage()
             SEARCH -> searchPage()
+            FINE -> finePage()
             else -> mainPage()
         }
     }
 
-    private fun row(title: CharSequence, summary: CharSequence, action: () -> Unit) {
+    private fun row(title: CharSequence, summary: CharSequence, action: () -> Unit): View? {
         collecting?.let {
             it.add(Found(title.toString(), summary.toString(), collectingPage, collectedOnPage++))
-            return
+            return null
         }
         val view = layoutInflater.inflate(R.layout.item_setting, list, false)
         view.findViewById<TextView>(R.id.title).text = title
@@ -180,6 +318,7 @@ class SettingsActivity : BaseActivity() {
         Look.styleText(view)
         list.addView(view)
         rows.add(view)
+        return view
     }
 
     private fun row(title: Int, summary: CharSequence, action: () -> Unit) =
@@ -196,7 +335,10 @@ class SettingsActivity : BaseActivity() {
 
     /** A setting with named options. */
     private fun choice(title: Int, setting: Look.Choice, then: () -> Unit = ::changed) {
-        row(title, setting.name(this)) {
+        // Tuned step by step on the Fine tuning page: say so, until a named option is picked
+        val fine = Look.allFine().firstOrNull { it.key == setting.fine }?.takeIf { it.isSet(this) }
+        val summary = if (fine != null) getString(R.string.fine_tuned, fine.name(this)) else setting.name(this)
+        row(title, summary) {
             chooseOne(getString(title), setting.names.map { getString(it) }, setting.get(this)) {
                 setting.set(this, it)
                 then()
@@ -240,6 +382,10 @@ class SettingsActivity : BaseActivity() {
             getString(TunaTheme.nameOf(TunaTheme.current(this))) + " · " + Look.ACCENT.name(this)
         )
         pageRow(TEXT, Fonts.name(this, Look.font(this)) + " · " + Look.TEXT_SIZE.name(this))
+        Look.allFine().count { it.isSet(this) }.let { n ->
+            pageRow(FINE, if (n == 0) getString(R.string.fine_summary_none)
+                else resources.getQuantityString(R.plurals.fine_summary_count, n, n))
+        }
         pageRow(PICTURES, IconPacks.currentName(this) + " · " + cardSizeName(-1))
         pageRow(TOP_BAR, Look.CLOCK.name(this))
         pageRow(SOUNDS, Sounds.SET.name(this) + " · " + Look.ANIMATIONS.name(this))
@@ -823,6 +969,7 @@ class SettingsActivity : BaseActivity() {
     // ------------------------------------------------------------------ app pictures
 
     private fun picturesPage() {
+        previewRow()
         // One list: TV pictures, the apps' own icons, or any icon pack on the TV
         val packs = IconPacks.installed(this)
         val usingPictures = Look.TILE_STYLE.get(this) == Look.TILE_BANNER
@@ -1729,7 +1876,7 @@ class SettingsActivity : BaseActivity() {
         /** The pages a settings search looks through. */
         private val SEARCHABLE = listOf(
             "background", "sections", "colours", "text", "pictures", "top_bar", "sounds", "shortcuts",
-            "weather", "apps", "home_button", "layouts", "updates",
+            "weather", "apps", "home_button", "layouts", "updates", "fine",
         )
         private const val STATE_FOCUS = "focus"
 
@@ -1747,6 +1894,7 @@ class SettingsActivity : BaseActivity() {
         const val APPS = "apps"
         const val HOME_BUTTON = "home_button"
         const val UPDATES = "updates"
+        const val FINE = "fine"
 
         fun pageTitle(page: String): Int = when (page) {
             BACKGROUND -> R.string.page_background
@@ -1762,6 +1910,7 @@ class SettingsActivity : BaseActivity() {
             APPS -> R.string.page_apps
             HOME_BUTTON -> R.string.page_home_button
             UPDATES -> R.string.page_updates
+            FINE -> R.string.page_fine
             else -> R.string.settings
         }
 

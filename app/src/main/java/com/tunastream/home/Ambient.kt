@@ -28,6 +28,9 @@ class Ambient(private val view: ImageView) {
             "bg_follow", OFF, intArrayOf(R.string.off, R.string.follow_picture, R.string.follow_blurred)
         )
 
+        /** How much the app's picture is darkened, so names stay readable. */
+        val FINE_DARK = Look.Level("fine_follow_dark", 0, 90, 5, R.string.fine_percent, { 55 })
+
         /** How long to stay on an app before its picture fades in, so moving quickly stays calm. */
         private const val DWELL_MS = 450L
     }
@@ -42,7 +45,7 @@ class Ambient(private val view: ImageView) {
         get() = mode != OFF
 
     init {
-        view.setColorFilter(Color.argb(0x8C, 0, 0, 0), PorterDuff.Mode.SRC_ATOP)
+        view.setColorFilter(Color.argb(Math.round(FINE_DARK.get(view.context) * 2.55f), 0, 0, 0), PorterDuff.Mode.SRC_ATOP)
     }
 
     /** The app you're on now; null when you're not on an app. */

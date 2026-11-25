@@ -32,6 +32,7 @@ The app id is `com.tunastream.home`.
 - **Web links as cards.** Add a website, a YouTube channel or any app link to Favourites or a section of your own; it shows the picture of the app that opens it, or one you choose.
 - **Sleep timer** from the side menu or a shortcut: the TV goes to sleep after 15 minutes to 3 hours, with a warning a minute before. Needs the Home button setting.
 - **For you:** the apps you usually open at this time of day, learnt as you use TunaHome (nothing leaves the TV).
+- **Fine tuning:** card size, corners, spacing, how much the app you're on grows, its glow, the shine, movement speed, text and clock size, background darkness and more, each adjusted step by step with Left and Right while a row of your own apps shows the result live. Ready-made styles (Calm, Classic, Bold, Neon, Cinema) set them all at once.
 - **Quick changes** from the side menu, an app's menu or a shortcut: theme, highlight colour, background, cards, text size and more, changed over the home screen itself so you see each one straight away.
 - **Each section its own card style:** TV pictures in one, icons in another.
 - **Starts instantly after a restart:** a copy of your apps and their pictures is kept on the TV, shown at once while the full list loads.

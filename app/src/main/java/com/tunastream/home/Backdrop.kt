@@ -135,6 +135,10 @@ class Backdrop(
         /** The background drifts a little as you scroll down the sections, for a sense of depth. */
         val DRIFT = Look.Switch("bg_drift", false)
 
+        /** How dark the background is made, step by step. */
+        val FINE_DIM = Look.Level("fine_bg_dim", 0, 90, 5, R.string.fine_percent,
+            { Math.round(DIM_ALPHA[DIM.get(it)] * 100) }, DIM)
+
         val SHUFFLE = Look.Switch("bg_shuffle", true)
         val SHOW_CAPTION = Look.Switch("bg_caption", false)
         val PLAY_VIDEOS = Look.Switch("bg_play_videos", true)
@@ -203,7 +207,7 @@ class Backdrop(
         running = true
         val showing = ++generation
         val source = SOURCE.get(context)
-        shade.alpha = DIM_ALPHA[DIM.get(context)]
+        shade.alpha = if (FINE_DIM.isSet(context)) FINE_DIM.get(context) / 100f else DIM_ALPHA[DIM.get(context)]
         shade.visibility = if (source == SOURCE_THEME) View.GONE else View.VISIBLE
         applyFit()
         applyFilter()

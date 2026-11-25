@@ -494,7 +494,9 @@ class AppAdapter(
             shine.animate().cancel()
             shine.translationX = start
             shine.visibility = View.VISIBLE
-            shine.animate().translationX(width + shine.width * 0.6f).setStartDelay(80).setDuration(650)
+            shine.alpha = tiles.shineAlpha
+            shine.animate().translationX(width + shine.width * 0.6f).setStartDelay(80)
+                .setDuration(Math.round(650 * tiles.motionScale).toLong())
                 .setInterpolator(android.view.animation.AccelerateDecelerateInterpolator())
                 .withEndAction { shine.visibility = View.INVISIBLE }
                 .start()
@@ -530,7 +532,7 @@ class AppAdapter(
                 shine.animate().cancel()
                 shine.visibility = View.INVISIBLE
             }
-            val alpha = if (tiles.dimOthers && !lit) 0.55f else 1f
+            val alpha = if (tiles.dimOthers && !lit) tiles.dimAlpha else 1f
             var scale = if (moving) maxOf(tiles.zoom, 1.1f) + 0.08f else if (focused) tiles.zoom else 1f
             if (big) {
                 // A big card grows half as much, or it would cover its neighbours
@@ -550,12 +552,13 @@ class AppAdapter(
                 card.outlineAmbientShadowColor = colour
             }
             if (animate && tiles.motion != Look.MOTION_INSTANT) {
-                val (time, ease) = when (tiles.motion) {
+                val (baseTime, ease) = when (tiles.motion) {
                     Look.MOTION_BOUNCY -> (if (lit) 260L else 160L) to
                         (if (lit) android.view.animation.OvershootInterpolator(2.2f) else android.view.animation.DecelerateInterpolator())
                     Look.MOTION_SNAPPY -> 90L to android.view.animation.DecelerateInterpolator()
                     else -> 200L to android.view.animation.DecelerateInterpolator(1.5f)
                 }
+                val time = Math.round(baseTime * tiles.motionScale).toLong()
                 // Drawn by the graphics chip as one layer while it moves
                 itemView.animate().scaleX(scale).scaleY(scale).alpha(alpha).translationY(rise)
                     .setDuration(time).setInterpolator(ease).withLayer().start()
