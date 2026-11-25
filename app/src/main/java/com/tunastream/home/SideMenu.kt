@@ -107,10 +107,26 @@ class SideMenu(private val activity: Activity) {
         returnTo = null
     }
 
-    /** Keys while the menu is open: Right and Back close it. */
+    /**
+     * Keys while the menu is open. Up and down move through its entries (stopping at the ends)
+     * and never leave it; Left does nothing; Right and Back close it.
+     */
     fun key(event: KeyEvent): Boolean {
         if (!isOpen) {
             return false
+        }
+        val down = event.action == KeyEvent.ACTION_DOWN
+        when (event.keyCode) {
+            KeyEvent.KEYCODE_DPAD_UP, KeyEvent.KEYCODE_DPAD_DOWN -> {
+                if (down) {
+                    val at = views.indexOf(activity.currentFocus).let { if (it < 0) 0 else it }
+                    val next = (if (event.keyCode == KeyEvent.KEYCODE_DPAD_UP) at - 1 else at + 1)
+                        .coerceIn(0, views.size - 1)
+                    views[next].requestFocus()
+                }
+                return true
+            }
+            KeyEvent.KEYCODE_DPAD_LEFT -> return true
         }
         if (event.keyCode == KeyEvent.KEYCODE_DPAD_RIGHT || event.keyCode == KeyEvent.KEYCODE_BACK ||
             event.keyCode == KeyEvent.KEYCODE_BUTTON_B || event.keyCode == KeyEvent.KEYCODE_ESCAPE
