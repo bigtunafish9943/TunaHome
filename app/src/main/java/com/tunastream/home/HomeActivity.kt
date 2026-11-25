@@ -18,6 +18,7 @@ import android.provider.Settings
 import android.text.format.DateFormat
 import android.util.TypedValue
 import android.view.View
+import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.ScrollView
@@ -103,9 +104,10 @@ class HomeActivity : BaseActivity() {
         buildSections()
         fadeWhenIdle.clear()
         listOf(R.id.sections, R.id.appsHint, R.id.brand, R.id.networkIcon, R.id.checkUpdate,
-            R.id.openTvSettings, R.id.openSettings, R.id.sideMenu).forEach { fadeWhenIdle.add(findViewById(it)) }
+            R.id.openTvSettings, R.id.openSettings, R.id.sideMenu, R.id.vpnIcon).forEach { fadeWhenIdle.add(findViewById(it)) }
         if (!Look.IDLE_CLOCK.get(this)) {
             fadeWhenIdle.add(findViewById(R.id.clockBox))
+            fadeWhenIdle.add(findViewById(R.id.weatherBox))
         }
 
         // Apps installed, removed or updated while TunaHome is open
@@ -157,7 +159,87 @@ class HomeActivity : BaseActivity() {
         super.onStop()
     }
 
+    // The weather is checked when the home screen shows and every half hour while it stays up
+    private val weatherHandler = Handler(Looper.getMainLooper())
+    private val weatherTick: Runnable = object : Runnable {
+        override fun run() {
+            Weather.refresh(this@HomeActivity) { showWeather() }
+            weatherHandler.postDelayed(this, 30L * 60 * 1000)
+        }
+    }
+
+    /** Puts the weather beside or under the clock, in the chosen detail, picture and size. */
+    private fun showWeather() {
+        val box = findViewById<LinearLayout>(R.id.weatherBox)
+        val now = Weather.current
+        if (!Weather.SHOW.get(this) || Weather.place(this) == null || now == null) {
+            box.visibility = View.GONE
+            return
+        }
+        val icon = findViewById<ImageView>(R.id.weatherIcon)
+        val temp = findViewById<TextView>(R.id.weatherTemp)
+        val detail = findViewById<TextView>(R.id.weatherDetail)
+        temp.text = getString(R.string.wx_degrees, now.temperature)
+        val condition = getString(Weather.condition(now.code))
+        val parts = ArrayList<String>()
+        when (Weather.DETAIL.get(this)) {
+            Weather.DETAIL_CONDITION -> parts.add(condition)
+            Weather.DETAIL_HIGH_LOW -> {
+                parts.add(condition)
+                parts.add(getString(R.string.wx_high_low, now.high, now.low))
+            }
+            Weather.DETAIL_ALL -> {
+                parts.add(condition)
+                parts.add(getString(R.string.wx_high_low, now.high, now.low))
+                parts.add(getString(R.string.wx_feels, now.feelsLike))
+                if (now.humidity >= 0) parts.add(getString(R.string.wx_humidity, now.humidity))
+                if (now.wind >= 0) parts.add(getString(
+                    if (Weather.UNITS.get(this) == Weather.UNITS_F) R.string.wx_wind_mph else R.string.wx_wind_kmh, now.wind))
+            }
+        }
+        detail.text = parts.joinToString(" · ")
+        detail.visibility = if (parts.isEmpty()) View.GONE else View.VISIBLE
+
+        val style = Weather.ICONS.get(this)
+        icon.visibility = if (style == Weather.ICONS_NONE) View.GONE else View.VISIBLE
+        icon.setImageResource(Weather.icon(now.code, now.day))
+        when (style) {
+            Weather.ICONS_WHITE -> icon.setColorFilter(android.graphics.Color.WHITE, android.graphics.PorterDuff.Mode.SRC_IN)
+            Weather.ICONS_ACCENT -> icon.setColorFilter(themeColor(R.attr.tsAccent), android.graphics.PorterDuff.Mode.SRC_IN)
+            else -> icon.clearColorFilter()
+        }
+
+        if (!weatherSized) {
+            weatherSized = true
+            val scale = Weather.scale(this)
+            icon.layoutParams = icon.layoutParams.apply {
+                width = Math.round(width * scale)
+                height = Math.round(height * scale)
+            }
+            temp.setTextSize(TypedValue.COMPLEX_UNIT_PX, temp.textSize * scale)
+            detail.setTextSize(TypedValue.COMPLEX_UNIT_PX, detail.textSize * maxOf(scale, 0.9f))
+            if (Weather.PLACE.get(this) == Weather.PLACE_UNDER) {
+                // Under the clock instead of beside it
+                (box.parent as ViewGroup).removeView(box)
+                findViewById<LinearLayout>(R.id.clockBox).addView(box)
+                (box.layoutParams as LinearLayout.LayoutParams).apply {
+                    marginStart = 0
+                    marginEnd = 0
+                    topMargin = Math.round(Look.dp(this@HomeActivity, 4f))
+                }
+            }
+        }
+        if (box.visibility != View.VISIBLE) {
+            box.alpha = 0f
+            box.visibility = View.VISIBLE
+            box.animate().alpha(1f).setDuration(400).start()
+        }
+    }
+
+    private var weatherSized = false
+
     override fun onPause() {
+        weatherHandler.removeCallbacks(weatherTick)
         // Leaving mid-move: keep the app where it was put
         sections.forEach { it.adapter.finishMove() }
         sideMenu.close(false)
@@ -250,13 +332,22 @@ class HomeActivity : BaseActivity() {
 
     private fun watchNetwork() {
         val icon = findViewById<ImageView>(R.id.networkIcon)
-        if (!Look.SHOW_NETWORK.get(this)) {
+        val vpn = findViewById<View>(R.id.vpnIcon)
+        val showNetwork = Look.SHOW_NETWORK.get(this)
+        val showVpn = Look.SHOW_VPN.get(this)
+        if (!showNetwork && !showVpn) {
             icon.visibility = View.GONE
+            vpn.visibility = View.GONE
             return
         }
         val manager = getSystemService(ConnectivityManager::class.java) ?: return
         fun update() {
             val caps = manager.activeNetwork?.let { manager.getNetworkCapabilities(it) }
+            vpn.visibility = if (showVpn && caps?.hasTransport(NetworkCapabilities.TRANSPORT_VPN) == true) View.VISIBLE else View.GONE
+            if (!showNetwork) {
+                icon.visibility = View.GONE
+                return
+            }
             val picture = when {
                 caps == null -> R.drawable.ic_net_none
                 caps.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET) -> R.drawable.ic_net_wired
@@ -292,6 +383,9 @@ class HomeActivity : BaseActivity() {
         super.onResume()
         // Back from watching something: its place in Watch Next has changed
         reloadWatchNext()
+        showWeather()
+        weatherHandler.removeCallbacks(weatherTick)
+        weatherTick.run()
         if (Prefs.appsChanged) {
             Prefs.appsChanged = false
             reload()

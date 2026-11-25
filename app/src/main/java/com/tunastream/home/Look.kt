@@ -311,6 +311,7 @@ object Look {
     )
 
     val SHOW_NETWORK = Switch("look_show_network", true)
+    val SHOW_VPN = Switch("look_show_vpn", true)
     val SHOW_UPDATE_BUTTON = Switch("look_show_update", true)
 
     // ------------------------------------------------------------------ idle

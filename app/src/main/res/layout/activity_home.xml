@@ -84,6 +84,19 @@
                     android:layout_height="1dp"
                     android:layout_weight="1" />
 
+                <!-- Shown only while a VPN is on -->
+                <ImageView
+                    android:id="@+id/vpnIcon"
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:layout_marginEnd="10dp"
+                    android:alpha="0.85"
+                    android:contentDescription="@string/vpn_on"
+                    android:focusable="false"
+                    android:src="@drawable/ic_vpn"
+                    android:tint="?attr/tsText"
+                    android:visibility="gone" />
+
                 <ImageView
                     android:id="@+id/networkIcon"
                     android:layout_width="22dp"
@@ -112,6 +125,51 @@
                     style="@style/IconButton"
                     android:contentDescription="@string/tunahome_settings"
                     android:src="@drawable/ic_settings" />
+
+                <!-- The weather: its picture, the temperature, and a line of detail -->
+                <LinearLayout
+                    android:id="@+id/weatherBox"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="10dp"
+                    android:layout_marginEnd="6dp"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
+                    android:visibility="gone">
+
+                    <ImageView
+                        android:id="@+id/weatherIcon"
+                        android:layout_width="30dp"
+                        android:layout_height="30dp"
+                        android:contentDescription="@null" />
+
+                    <LinearLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="8dp"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:id="@+id/weatherTemp"
+                            style="@style/Shadowed"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:fontFamily="sans-serif-light"
+                            android:includeFontPadding="false"
+                            android:textColor="?attr/tsText"
+                            android:textSize="22sp" />
+
+                        <TextView
+                            android:id="@+id/weatherDetail"
+                            style="@style/Shadowed"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="1dp"
+                            android:maxLines="1"
+                            android:textColor="?attr/tsTextSecondary"
+                            android:textSize="12sp" />
+                    </LinearLayout>
+                </LinearLayout>
 
                 <LinearLayout
                     android:id="@+id/clockBox"

@@ -73,6 +73,7 @@ class SettingsActivity : BaseActivity() {
             TEXT -> textPage()
             PICTURES -> picturesPage()
             TOP_BAR -> topBarPage()
+            WEATHER -> weatherPage()
             APPS -> appsPage()
             HOME_BUTTON -> homeButtonPage()
             UPDATES -> updatesPage()
@@ -158,6 +159,11 @@ class SettingsActivity : BaseActivity() {
         pageRow(TEXT, Fonts.name(this, Look.font(this)) + " · " + Look.TEXT_SIZE.name(this))
         pageRow(PICTURES, IconPacks.currentName(this) + " · " + cardSizeName(-1))
         pageRow(TOP_BAR, Look.CLOCK.name(this))
+        pageRow(
+            WEATHER,
+            if (!Weather.SHOW.get(this)) getString(R.string.off)
+            else Weather.place(this)?.name ?: getString(R.string.wx_place_none)
+        )
         val hidden = Prefs.hidden(this).size
         pageRow(
             APPS,
@@ -719,11 +725,86 @@ class SettingsActivity : BaseActivity() {
         choice(R.string.set_clock_size, Look.CLOCK_SIZE)
         choice(R.string.set_date, Look.DATE)
         switch(R.string.set_show_network, Look.SHOW_NETWORK, R.string.shown, R.string.hidden)
+        switch(R.string.set_show_vpn, Look.SHOW_VPN, R.string.vpn_shown, R.string.hidden)
         switch(R.string.set_show_update, Look.SHOW_UPDATE_BUTTON, R.string.shown, R.string.hidden)
         switch(R.string.set_show_tv_settings, Look.SHOW_TV_SETTINGS_BUTTON, R.string.shown, R.string.hidden)
         row(R.string.set_settings_button, getString(R.string.set_settings_button_summary)) {
             Toast.makeText(this, R.string.set_settings_button_summary, Toast.LENGTH_LONG).show()
         }
+    }
+
+    // ------------------------------------------------------------------ weather
+
+    private fun weatherPage() {
+        switch(R.string.wx_show, Weather.SHOW, R.string.shown, R.string.hidden)
+        val place = Weather.place(this)
+        row(R.string.wx_location, place?.name ?: getString(R.string.wx_place_none)) { chooseWeatherPlace() }
+        if (!Weather.SHOW.get(this)) {
+            return
+        }
+        choice(R.string.wx_units, Weather.UNITS) { Weather.forget(); changed() }
+        choice(R.string.wx_detail, Weather.DETAIL)
+        choice(R.string.wx_icons, Weather.ICONS)
+        choice(R.string.wx_size, Weather.SIZE)
+        choice(R.string.wx_place, Weather.PLACE)
+        if (place != null) {
+            row(R.string.wx_update, Weather.status.ifEmpty { getString(R.string.wx_update_summary) }) {
+                Toast.makeText(this, R.string.wx_updating, Toast.LENGTH_SHORT).show()
+                Weather.refresh(this, force = true) { build() }
+                // Failures don't call back: show the status after a moment either way
+                list.postDelayed({ if (!isDestroyed) build() }, 4000)
+            }
+        }
+        row(R.string.wx_credit, getString(R.string.wx_credit_summary)) {}
+    }
+
+    private fun chooseWeatherPlace() {
+        val options = arrayListOf(getString(R.string.wx_search), getString(R.string.wx_from_internet))
+        if (Weather.place(this) != null) {
+            options.add(getString(R.string.wx_remove_place))
+        }
+        chooseOne(getString(R.string.wx_location), options, -1) { which ->
+            when (which) {
+                0 -> askForText(R.string.wx_search, "") { text -> searchWeatherPlace(text) }
+                1 -> inBackgroundPlace(R.string.wx_from_internet_failed) { Weather.fromInternetAddress()?.let { listOf(it) } ?: emptyList() }
+                else -> {
+                    Weather.setPlace(this, null)
+                    changed()
+                }
+            }
+        }
+    }
+
+    private fun searchWeatherPlace(text: String) {
+        inBackgroundPlace(R.string.wx_search_none) { Weather.search(text) }
+    }
+
+    /** Finds places off the main thread; one is used straight away, several are offered. */
+    private fun inBackgroundPlace(failure: Int, find: () -> List<Weather.Place>) {
+        Toast.makeText(this, R.string.wx_finding, Toast.LENGTH_SHORT).show()
+        thread(name = "TunaHome weather place") {
+            val found = try {
+                find()
+            } catch (e: Exception) {
+                emptyList()
+            }
+            runOnUiThread {
+                if (isDestroyed) {
+                    return@runOnUiThread
+                }
+                when {
+                    found.isEmpty() -> Toast.makeText(this, failure, Toast.LENGTH_LONG).show()
+                    found.size == 1 -> usePlace(found[0])
+                    else -> chooseOne(getString(R.string.wx_which), found.map { it.name }, -1) { usePlace(found[it]) }
+                }
+            }
+        }
+    }
+
+    private fun usePlace(place: Weather.Place) {
+        Weather.setPlace(this, place)
+        Weather.refresh(this, force = true) { build() }
+        changed()
     }
 
     // ------------------------------------------------------------------ apps
@@ -1091,6 +1172,7 @@ class SettingsActivity : BaseActivity() {
         const val TEXT = "text"
         const val PICTURES = "pictures"
         const val TOP_BAR = "top_bar"
+        const val WEATHER = "weather"
         const val APPS = "apps"
         const val HOME_BUTTON = "home_button"
         const val UPDATES = "updates"
@@ -1102,6 +1184,7 @@ class SettingsActivity : BaseActivity() {
             TEXT -> R.string.page_text
             PICTURES -> R.string.page_pictures
             TOP_BAR -> R.string.page_top_bar
+            WEATHER -> R.string.page_weather
             APPS -> R.string.page_apps
             HOME_BUTTON -> R.string.page_home_button
             UPDATES -> R.string.page_updates

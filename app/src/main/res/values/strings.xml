@@ -457,6 +457,58 @@
     <string name="idle_clock_on">Stays on screen</string>
     <string name="idle_clock_off">Fades too</string>
 
+    <!-- Weather -->
+    <string name="page_weather">Weather</string>
+    <string name="wx_show">Weather</string>
+    <string name="wx_location">Location</string>
+    <string name="wx_place_none">Not set. Choose a town to see the weather.</string>
+    <string name="wx_search">Search for a town</string>
+    <string name="wx_from_internet">Find it from the TV\'s internet address</string>
+    <string name="wx_from_internet_failed">Couldn\'t work out where the TV is. Search for your town instead.</string>
+    <string name="wx_remove_place">Remove the location</string>
+    <string name="wx_search_none">No towns found with that name. Check the spelling, or try a bigger town nearby.</string>
+    <string name="wx_finding">Looking it up…</string>
+    <string name="wx_which">Which one?</string>
+    <string name="wx_units">Units</string>
+    <string name="wx_units_c">Celsius (°C, km/h)</string>
+    <string name="wx_units_f">Fahrenheit (°F, mph)</string>
+    <string name="wx_detail">Show</string>
+    <string name="wx_detail_temp">The temperature</string>
+    <string name="wx_detail_condition">Temperature and conditions</string>
+    <string name="wx_detail_high_low">Temperature, conditions, high and low</string>
+    <string name="wx_detail_all">Everything: also feels like, humidity and wind</string>
+    <string name="wx_icons">Weather picture</string>
+    <string name="wx_icons_colour">In colour</string>
+    <string name="wx_icons_white">White</string>
+    <string name="wx_icons_accent">Highlight colour</string>
+    <string name="wx_icons_none">None</string>
+    <string name="wx_size">Size</string>
+    <string name="wx_place">Where</string>
+    <string name="wx_place_beside">Beside the clock</string>
+    <string name="wx_place_under">Under the clock</string>
+    <string name="wx_update">Update now</string>
+    <string name="wx_update_summary">The weather updates by itself every half hour.</string>
+    <string name="wx_updating">Updating the weather…</string>
+    <string name="wx_status_ok">Weather for %1$s is up to date.</string>
+    <string name="wx_status_failed">Couldn\'t get the weather: %1$s</string>
+    <string name="wx_credit">Where the weather comes from</string>
+    <string name="wx_credit_summary">Open-Meteo (open-meteo.com), free, no account. Only the location is sent.</string>
+    <string name="wx_degrees">%1$d°</string>
+    <string name="wx_high_low">%1$d° / %2$d°</string>
+    <string name="wx_feels">feels %1$d°</string>
+    <string name="wx_humidity">%1$d%% humidity</string>
+    <string name="wx_wind_mph">%1$d mph</string>
+    <string name="wx_wind_kmh">%1$d km/h</string>
+    <string name="wx_clear">Clear</string>
+    <string name="wx_mostly_clear">Mostly clear</string>
+    <string name="wx_partly_cloudy">Partly cloudy</string>
+    <string name="wx_cloudy">Cloudy</string>
+    <string name="wx_fog">Fog</string>
+    <string name="wx_drizzle">Drizzle</string>
+    <string name="wx_rain">Rain</string>
+    <string name="wx_snow">Snow</string>
+    <string name="wx_storm">Thunderstorms</string>
+
     <!-- Watch Next -->
     <string name="watch_next">Watch Next</string>
     <string name="watch_next_play">Carry on watching</string>
@@ -469,6 +521,9 @@
 
     <!-- Network -->
     <string name="set_show_network">Network icon</string>
+    <string name="set_show_vpn">VPN icon</string>
+    <string name="vpn_shown">Shown while a VPN is on</string>
+    <string name="vpn_on">VPN is on</string>
 
     <!-- App lock -->
     <string name="heading_lock">App lock</string>
