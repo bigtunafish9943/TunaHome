@@ -457,6 +457,11 @@
     <string name="idle_clock_on">Stays on screen</string>
     <string name="idle_clock_off">Fades too</string>
 
+    <!-- Watch Next -->
+    <string name="watch_next">Watch Next</string>
+    <string name="watch_next_play">Carry on watching</string>
+    <string name="watch_next_open_app">Open %1$s</string>
+
     <!-- Recently opened -->
     <string name="recent">Recently opened</string>
     <string name="recent_clear">Clear the list</string>

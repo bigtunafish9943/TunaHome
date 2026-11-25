@@ -45,6 +45,9 @@ class AppAdapter(
     val isMoving: Boolean
         get() = movingPkg != null
 
+    /** False for sections in an order of their own (Watch Next, Recently opened). */
+    var canMove = true
+
     /** Called when an app is picked up, so the home screen can say how to move it. */
     var onMoveStart: (() -> Unit)? = null
 
@@ -241,7 +244,7 @@ class AppAdapter(
 
     /** Select on an app: open it, unless a second press quickly follows, which picks it up. */
     private fun pressed(app: AppEntry) {
-        if (!tiles.doublePress) {
+        if (!tiles.doublePress || !canMove) {
             onOpen(app)
             return
         }
@@ -346,6 +349,7 @@ class AppAdapter(
         private val label: TextView = view.findViewById(R.id.label)
         private val cardLabel: TextView = view.findViewById(R.id.cardLabel)
         private val lockBadge: View = view.findViewById(R.id.lockBadge)
+        private val progress: View = view.findViewById(R.id.progress)
         private var entry: AppEntry? = null
 
         private val moving: Boolean
@@ -409,7 +413,15 @@ class AppAdapter(
             icon.setImageDrawable(if (showBanner) null else app.own ?: app.icon)
             icon.visibility = if (showBanner) View.GONE else View.VISIBLE
             cardLabel.visibility = if (tiles.style == Look.TILE_ICON_NAME) View.VISIBLE else View.GONE
-            lockBadge.visibility = if (AppLock.isLocked(itemView.context, app.pkg)) View.VISIBLE else View.GONE
+            lockBadge.visibility = if (AppLock.isLocked(itemView.context, app.appPkg)) View.VISIBLE else View.GONE
+            if (app.progress >= 0f) {
+                progress.visibility = View.VISIBLE
+                progress.layoutParams = progress.layoutParams.apply {
+                    width = Math.max(1, Math.round(tiles.width * app.progress))
+                }
+            } else {
+                progress.visibility = View.GONE
+            }
             showFocus(itemView.isFocused, false)
         }
 

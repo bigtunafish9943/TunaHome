@@ -3,6 +3,8 @@
 
     <!-- Checking for and downloading updates from GitHub -->
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- Reading Android TV's Watch Next list (an ordinary permission, granted at install) -->
+    <uses-permission android:name="com.android.providers.tv.permission.READ_EPG_DATA" />
     <!-- The network icon beside the clock: Wi-Fi, wired or not connected -->
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <!-- Installing an update after you agree to it -->

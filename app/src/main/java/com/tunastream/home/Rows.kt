@@ -13,6 +13,7 @@ object Rows {
     const val TV = "tv"
     const val MOBILE = "mobile"
     const val RECENT = "recent"
+    const val WATCH_NEXT = "watchnext"
     const val CUSTOM = "custom"
 
     private const val KEY = "rows"
@@ -40,6 +41,7 @@ object Rows {
                 TV -> R.string.tv_apps
                 MOBILE -> R.string.mobile_apps
                 RECENT -> R.string.recent
+                WATCH_NEXT -> R.string.watch_next
                 else -> R.string.row_untitled
             }
         )
@@ -79,6 +81,11 @@ object Rows {
             if (rows.none { it.kind == kind }) {
                 rows.add(Row(kind, kind, null, true))
             }
+        }
+        // Watch Next came later: shown under Favourites (it hides itself while empty)
+        if (rows.none { it.kind == WATCH_NEXT }) {
+            val at = rows.indexOfFirst { it.kind == FAVOURITES }
+            rows.add(if (at >= 0) at + 1 else 0, Row(WATCH_NEXT, WATCH_NEXT, null, true))
         }
         // Recently opened came later: it starts hidden, under Favourites
         if (rows.none { it.kind == RECENT }) {

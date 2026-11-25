@@ -19,7 +19,14 @@ class AppEntry(
     val tv: Boolean,
     /** A picture the viewer chose for this app; shown instead of its own in every style. */
     val own: Drawable? = null,
-)
+    /** The app it belongs to: itself, or for a Watch Next card the app that plays it. */
+    val appPkg: String = pkg,
+    /** How far through a Watch Next show you are, 0 to 1; below 0 for none. */
+    val progress: Float = -1f,
+) {
+    val isWatchNext: Boolean
+        get() = pkg.startsWith("watchnext:")
+}
 
 object Apps {
     /**

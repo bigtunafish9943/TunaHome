@@ -56,6 +56,15 @@
             android:src="@drawable/ic_lock"
             android:visibility="gone" />
 
+        <!-- How far through a Watch Next show you are -->
+        <View
+            android:id="@+id/progress"
+            android:layout_width="0dp"
+            android:layout_height="4dp"
+            android:layout_gravity="bottom|start"
+            android:background="?attr/tsAccent"
+            android:visibility="gone" />
+
         <View
             android:id="@+id/ring"
             android:layout_width="match_parent"

@@ -51,6 +51,8 @@ class HomeActivity : BaseActivity() {
     private val sections = ArrayList<Section>()
 
     private var apps: List<AppEntry> = emptyList()
+    private var watchNext: List<AppEntry> = emptyList()
+    private var loadingWatchNext = false
     private var loaded = false
     private var loading = false
     private var loadAgain = false
@@ -288,6 +290,8 @@ class HomeActivity : BaseActivity() {
 
     override fun onResume() {
         super.onResume()
+        // Back from watching something: its place in Watch Next has changed
+        reloadWatchNext()
         if (Prefs.appsChanged) {
             Prefs.appsChanged = false
             reload()
@@ -336,6 +340,7 @@ class HomeActivity : BaseActivity() {
                 Rows.TV -> R.drawable.ic_tv
                 Rows.MOBILE -> R.drawable.ic_phone
                 Rows.RECENT -> R.drawable.ic_history
+                Rows.WATCH_NEXT -> R.drawable.ic_play
                 else -> R.drawable.ic_folder
             }
             entries.add(SideMenu.Entry(icon, section.row.name(this), section.row.id) { goToSection(section) })
@@ -524,6 +529,7 @@ class HomeActivity : BaseActivity() {
                 lines > 1 -> GridLayoutManager(this, lines, GridLayoutManager.HORIZONTAL, false)
                 else -> LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false)
             }
+            adapter.canMove = row.kind != Rows.RECENT && row.kind != Rows.WATCH_NEXT
             adapter.onMoveStart = {
                 Toast.makeText(this, R.string.move_hint, Toast.LENGTH_SHORT).show()
             }
@@ -557,6 +563,34 @@ class HomeActivity : BaseActivity() {
         val place = HashMap<String, Int>()
         order.forEachIndexed { index, pkg -> place[pkg] = index }
         return apps.sortedBy { place[it.pkg] ?: Int.MAX_VALUE }
+    }
+
+    // ------------------------------------------------------------------ Watch Next
+
+    private fun reloadWatchNext() {
+        if (loadingWatchNext || sections.none { it.row.kind == Rows.WATCH_NEXT }) {
+            return
+        }
+        loadingWatchNext = true
+        thread(name = "TunaHome Watch Next") {
+            val found = try {
+                WatchNext.load(applicationContext)
+            } catch (e: Throwable) {
+                emptyList()
+            }
+            runOnUiThread {
+                loadingWatchNext = false
+                if (isDestroyed) {
+                    return@runOnUiThread
+                }
+                watchNext = found
+                sections.filter { it.row.kind == Rows.WATCH_NEXT }.forEach { it.show(found) }
+                applyGaps()
+                if (!sideMenu.isOpen) {
+                    refreshMenu()
+                }
+            }
+        }
     }
 
     // ------------------------------------------------------------------ the list of apps
@@ -603,6 +637,7 @@ class HomeActivity : BaseActivity() {
                 Rows.TV -> ordered(visible.filter { it.tv }, Prefs.order(this, section.row.id))
                 Rows.MOBILE -> ordered(visible.filter { !it.tv }, Prefs.order(this, section.row.id))
                 Rows.RECENT -> Prefs.recent(this).mapNotNull { byPackage[it] }
+                Rows.WATCH_NEXT -> watchNext
                 else -> (rows[section.row.id]?.apps ?: section.row.apps).mapNotNull { byPackage[it] }
             }
             section.show(list)
@@ -668,7 +703,7 @@ class HomeActivity : BaseActivity() {
     }
 
     private fun open(app: AppEntry) {
-        if (AppLock.isLocked(this, app.pkg)) {
+        if (AppLock.isLocked(this, app.appPkg)) {
             AppLock.ask(this, app.label) { launch(app) }
         } else {
             launch(app)
@@ -678,8 +713,10 @@ class HomeActivity : BaseActivity() {
     private fun launch(app: AppEntry) {
         try {
             startActivity(app.launch)
-            Prefs.setLastOpened(this, app.pkg)
-            Prefs.addRecent(this, app.pkg)
+            if (!app.isWatchNext) {
+                Prefs.setLastOpened(this, app.pkg)
+                Prefs.addRecent(this, app.pkg)
+            }
         } catch (e: Exception) {
             Toast.makeText(this, getString(R.string.open_failed, app.label), Toast.LENGTH_LONG).show()
             reload()
@@ -689,6 +726,10 @@ class HomeActivity : BaseActivity() {
     // ------------------------------------------------------------------ an app's menu
 
     private fun showMenu(app: AppEntry, row: Rows.Row) {
+        if (app.isWatchNext) {
+            watchNextMenu(app)
+            return
+        }
         val section = sections.firstOrNull { it.row.id == row.id }
         val favourites = Prefs.favourites(this)
         val labels = ArrayList<String>()
@@ -776,6 +817,26 @@ class HomeActivity : BaseActivity() {
         AlertDialog.Builder(this)
             .setTitle(app.label)
             .setItems(labels.toTypedArray()) { _, which -> actions[which]() }
+            .show()
+    }
+
+    /** A Watch Next card belongs to its app: offer to open it, or that app's info. */
+    private fun watchNextMenu(item: AppEntry) {
+        val appName = apps.firstOrNull { it.pkg == item.appPkg }?.label ?: item.appPkg
+        val labels = arrayOf(getString(R.string.watch_next_play), getString(R.string.watch_next_open_app, appName),
+            getString(R.string.menu_app_info))
+        AlertDialog.Builder(this)
+            .setTitle(item.label)
+            .setItems(labels) { _, which ->
+                when (which) {
+                    0 -> open(item)
+                    1 -> apps.firstOrNull { it.pkg == item.appPkg }?.let { open(it) }
+                        ?: Toast.makeText(this, getString(R.string.open_failed, appName), Toast.LENGTH_LONG).show()
+                    else -> startOrExplain(
+                        Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:" + item.appPkg))
+                    )
+                }
+            }
             .show()
     }
 
