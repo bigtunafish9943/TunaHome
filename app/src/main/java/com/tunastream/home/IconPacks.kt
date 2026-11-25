@@ -21,6 +21,12 @@ object IconPacks {
         Intent(Intent.ACTION_MAIN).addCategory("com.anddoes.launcher.THEME"),
         Intent(Intent.ACTION_MAIN).addCategory("com.teslacoilsw.launcher.THEME"),
         Intent(Intent.ACTION_MAIN).addCategory("com.fede.launcher.THEME_ICONPACK"),
+        Intent("org.adw.ActivityStarter.THEMES"),
+        Intent("com.dlto.atom.launcher.THEME"),
+        Intent("ch.deletescape.lawnchair.ICONPACK"),
+        Intent("app.lawnchair.icons.THEMED_ICON"),
+        Intent("net.oneplus.launcher.icons.ACTION_PICK_ICON"),
+        Intent("com.novalauncher.category.CUSTOM_ICON_PICKER"),
     )
 
     class Pack(val pkg: String, val name: String)
@@ -58,6 +64,12 @@ object IconPacks {
                 if (!found.containsKey(pkg)) {
                     found[pkg] = Pack(pkg, info.loadLabel(pm).toString())
                 }
+            }
+        }
+        // Packs fetched through TunaHome, even if they don't announce themselves as above
+        for (offer in IconPackStore.CATALOGUE) {
+            if (!found.containsKey(offer.pkg) && IconPackStore.isInstalled(context, offer.pkg)) {
+                found[offer.pkg] = Pack(offer.pkg, offer.name)
             }
         }
         return found.values.sortedBy { it.name.lowercase() }

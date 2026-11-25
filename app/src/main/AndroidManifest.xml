@@ -49,6 +49,40 @@
             <action android:name="android.intent.action.MAIN" />
             <category android:name="com.fede.launcher.THEME_ICONPACK" />
         </intent>
+        <intent>
+            <action android:name="org.adw.ActivityStarter.THEMES" />
+        </intent>
+        <intent>
+            <action android:name="com.dlto.atom.launcher.THEME" />
+        </intent>
+        <intent>
+            <action android:name="ch.deletescape.lawnchair.ICONPACK" />
+        </intent>
+        <intent>
+            <action android:name="app.lawnchair.icons.THEMED_ICON" />
+        </intent>
+        <intent>
+            <action android:name="net.oneplus.launcher.icons.ACTION_PICK_ICON" />
+        </intent>
+        <intent>
+            <action android:name="com.novalauncher.category.CUSTOM_ICON_PICKER" />
+        </intent>
+        <!-- The icon packs TunaHome can download, so it can see them once installed -->
+        <package android:name="com.donnnno.arcticons" />
+        <package android:name="com.donnnno.arcticons.light" />
+        <package android:name="com.donnnno.arcticons.daynight" />
+        <package android:name="com.donnnno.arcticons.you" />
+        <package android:name="website.leifs.delta.foss" />
+        <package android:name="dev.appstract.iconpack" />
+        <package android:name="org.baitmooth.snow" />
+        <package android:name="me.x2gd4.dollphone" />
+        <package android:name="de.moooon.acrylicons" />
+        <package android:name="org.xphnx.ameixa" />
+        <package android:name="org.xphnx.ameixamonochrome" />
+        <package android:name="com.mookie.circo" />
+        <package android:name="me.iacn.mbestyle" />
+        <package android:name="com.kn.paper_foss_theme" />
+        <package android:name="org.materialos.icons" />
         <!-- Offering Aerial Views in the Play Store when no wallpaper app is installed -->
         <intent>
             <action android:name="android.intent.action.VIEW" />
