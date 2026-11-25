@@ -496,7 +496,39 @@ class HomeActivity : BaseActivity() {
             swallowKeyUp = false
             return true
         }
+        if (event.action == KeyEvent.ACTION_DOWN && Look.CONTROLLER_JUMPS.get(this) && jump(event.keyCode)) {
+            return true
+        }
         return super.dispatchKeyEvent(event)
+    }
+
+    /**
+     * Controller shoulder buttons (and Page up, Page down, Home and End on a keyboard): a section
+     * up or down, or the first or last app of this one.
+     */
+    private fun jump(code: Int): Boolean {
+        val shown = sections.filter { it.view.visibility == View.VISIBLE && it.adapter.appCount > 0 }
+        if (shown.isEmpty()) {
+            return false
+        }
+        val focused = currentFocus
+        val here = shown.indexOfFirst { it.list === focused?.parent }
+        when (code) {
+            KeyEvent.KEYCODE_BUTTON_L1, KeyEvent.KEYCODE_PAGE_UP ->
+                goToSection(shown[maxOf(0, here - 1)])
+            KeyEvent.KEYCODE_BUTTON_R1, KeyEvent.KEYCODE_PAGE_DOWN ->
+                goToSection(shown[if (here < 0) 0 else minOf(here + 1, shown.size - 1)])
+            KeyEvent.KEYCODE_BUTTON_L2, KeyEvent.KEYCODE_MOVE_HOME,
+            KeyEvent.KEYCODE_BUTTON_R2, KeyEvent.KEYCODE_MOVE_END -> {
+                val section = shown.getOrNull(here) ?: return false
+                val first = code == KeyEvent.KEYCODE_BUTTON_L2 || code == KeyEvent.KEYCODE_MOVE_HOME
+                val position = section.adapter.positionOfApp(if (first) 0 else section.adapter.appCount - 1)
+                section.list.scrollToPosition(position)
+                section.list.post { section.list.layoutManager?.findViewByPosition(position)?.requestFocus() }
+            }
+            else -> return false
+        }
+        return true
     }
 
     // ------------------------------------------------------------------ network icon
@@ -632,6 +664,19 @@ class HomeActivity : BaseActivity() {
             entries.add(SideMenu.Entry(R.drawable.ic_net_wifi, getString(R.string.menu_network), null) {
                 openSetting(Settings.ACTION_WIFI_SETTINGS)
             })
+            entries.add(SideMenu.Entry(R.drawable.ic_bluetooth, getString(R.string.menu_bluetooth), null) {
+                openSetting(Settings.ACTION_BLUETOOTH_SETTINGS)
+            })
+            entries.add(SideMenu.Entry(R.drawable.ic_screensaver, getString(R.string.menu_screensaver), null) {
+                openSetting(Settings.ACTION_DREAM_SETTINGS)
+            })
+            // Switch between saved layouts (left out while TunaHome settings are locked)
+            val layouts = Layouts.saved(this)
+            if (layouts.isNotEmpty() && !AppLock.settingsLocked(this)) {
+                entries.add(SideMenu.Entry(R.drawable.ic_layouts, getString(R.string.menu_layouts), null) {
+                    chooseOne(getString(R.string.menu_layouts), layouts, -1) { which -> useLayout(layouts[which]) }
+                })
+            }
             entries.add(SideMenu.Entry(R.drawable.ic_apps, getString(R.string.menu_installed_apps), null) {
                 openSetting(Settings.ACTION_APPLICATION_SETTINGS)
             })
@@ -640,6 +685,22 @@ class HomeActivity : BaseActivity() {
             })
         }
         sideMenu.setEntries(entries)
+    }
+
+    /** Puts a saved layout in place and starts the home screen again with it. */
+    private fun useLayout(name: String) {
+        thread(name = "TunaHome layout") {
+            val worked = try {
+                Layouts.load(applicationContext, name)
+                true
+            } catch (e: Exception) {
+                false
+            }
+            runOnUiThread {
+                if (worked) Layouts.restart(this)
+                else Toast.makeText(this, R.string.layout_failed, Toast.LENGTH_LONG).show()
+            }
+        }
     }
 
     /** A page of the TV's own settings, or the TV's settings if this TV doesn't have that page. */

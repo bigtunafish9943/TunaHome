@@ -332,6 +332,18 @@ class SettingsActivity : BaseActivity() {
         if (Look.IDLE.get(this) != 0) {
             switch(R.string.set_idle_clock, Look.IDLE_CLOCK, R.string.idle_clock_on, R.string.idle_clock_off)
         }
+
+        heading(R.string.heading_screensaver)
+        row(
+            R.string.set_screensaver,
+            getString(if (Screensaver.isChosen(this)) R.string.screensaver_chosen else R.string.screensaver_how)
+        ) {
+            try {
+                startActivity(Intent(Settings.ACTION_DREAM_SETTINGS))
+            } catch (e: Exception) {
+                HomeActivity.openTvSettings(this)
+            }
+        }
     }
 
     private fun chooseBackground() {
@@ -495,6 +507,7 @@ class SettingsActivity : BaseActivity() {
         heading(R.string.heading_all_sections)
         choice(R.string.set_header_gap, Look.HEADER_GAP)
         switch(R.string.set_double_press, Look.DOUBLE_PRESS, R.string.double_press_on, R.string.off)
+        switch(R.string.set_controller_jumps, Look.CONTROLLER_JUMPS, R.string.controller_jumps_on, R.string.off)
         switch(R.string.set_remember_place, Look.REMEMBER_PLACE, R.string.remember_place_on, R.string.remember_place_off)
         heading(R.string.heading_side_menu)
         choice(R.string.set_side_menu, Look.SIDE_MENU)
@@ -794,6 +807,8 @@ class SettingsActivity : BaseActivity() {
         choice(R.string.set_tile_gap, Look.TILE_GAP)
         choice(R.string.set_tile_names, Look.TILE_NAMES)
         switch(R.string.set_new_badge, Look.NEW_BADGE, R.string.new_badge_on, R.string.off)
+        switch(R.string.set_shine, Look.SHINE, R.string.shine_on, R.string.off)
+        switch(R.string.set_scroll_names, Look.SCROLL_NAMES, R.string.scroll_names_on, R.string.off)
         heading(R.string.heading_selected)
         choice(R.string.set_focus_zoom, Look.FOCUS_ZOOM)
         choice(R.string.set_focus_motion, Look.FOCUS_MOTION)

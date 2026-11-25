@@ -72,7 +72,7 @@ class SearchActivity : BaseActivity() {
         update()
         thread(name = "TunaHome search") {
             val all = try {
-                Apps.load(applicationContext) + WatchNext.load(applicationContext)
+                Apps.load(applicationContext) + WatchNext.load(applicationContext) + PcGames.load(applicationContext)
             } catch (e: Throwable) {
                 emptyList()
             }

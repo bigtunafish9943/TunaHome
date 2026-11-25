@@ -12,7 +12,7 @@ The app id is `com.tunastream.home`.
 
 - **Sections of apps across the screen.** Favourites, TV apps and Mobile apps to begin with, plus sections of your own. Each section can show its apps on 1 to 5 lines, or as many lines as it takes so nothing scrolls sideways. Apps fill each line across before the next.
 - **Put apps where you want them.** Press select twice quickly on an app (or hold select and choose Move), then use the D-pad to move it (up and down too, in a section with more than one line) and press select to put it down.
-- **Side menu.** Press Left on the first app of a line to open a menu of your sections (choose one to jump to it) and shortcuts to TunaHome settings, TV settings, network, installed apps and About this TV. Right or Back closes it. When closed it can show its icons down the left, or nothing.
+- **Side menu.** Press Left on the first app of a line to open a menu of your sections (choose one to jump to it) and shortcuts to search, TunaHome settings, TV settings, network, Bluetooth, screen saver, your saved layouts, installed apps and About this TV. Right or Back closes it. When closed it can show its icons down the left, or nothing.
 - **An app's menu.** Hold select on an app (or press Menu on a remote, or X or Y on a controller) to move it, add it to favourites or one of your sections, change its icon, hide it, open its app info, or uninstall it.
 - **Update, TV settings and TunaHome settings** are small buttons beside the clock.
 - **Updates itself** from this repo's releases. An update is installed only if it matches the checksum GitHub publishes and is signed with the same key as the TunaHome you have.
@@ -28,6 +28,9 @@ The app id is `com.tunastream.home`.
 - **Sideloaded apps, Games, Video and TV, and Music and audio** sections (hidden to begin with), filled automatically from what each app says it is, or else its name.
 - **The section you're on glides into place**, near the top or in the middle of the screen, as you move up and down.
 - **"New"** on apps installed in the last three days until you open them.
+- **Screen saver.** TunaHome can be the TV's screen saver: your background (Aerial Views too) with the time, moving corner to corner every few minutes. Choose it in the TV's screen saver settings.
+- **Controller shoulder buttons:** L1 and R1 jump a section up or down, L2 and R2 to the first or last app.
+- **A shine** sweeps across the card you move onto, and long names scroll along.
 - **PC games** from [TunaReceive](https://github.com/bigtunafish9943/TunaReceive), with box art, most recently played first; select one to start it. Needs a TunaReceive that shares its games list; without TunaReceive the section simply doesn't show.
 - **Goes back to where you were:** moving up or down into a section lands on the app you were on there last.
 

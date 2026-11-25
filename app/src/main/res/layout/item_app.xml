@@ -86,6 +86,14 @@
             android:background="?attr/tsAccent"
             android:visibility="gone" />
 
+        <!-- The light that sweeps across as you move onto the card -->
+        <View
+            android:id="@+id/shine"
+            android:layout_width="40dp"
+            android:layout_height="match_parent"
+            android:background="@drawable/shine_bg"
+            android:visibility="invisible" />
+
         <View
             android:id="@+id/ring"
             android:layout_width="match_parent"

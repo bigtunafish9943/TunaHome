@@ -880,4 +880,18 @@
     <string name="follow_blurred">Its TV picture, blurred</string>
     <string name="bg_drift">Background moves as you scroll</string>
     <string name="drift_on">A little, for depth</string>
+    <string name="screensaver_name">TunaHome</string>
+    <string name="heading_screensaver">Screen saver</string>
+    <string name="set_screensaver">TunaHome as the screen saver</string>
+    <string name="screensaver_chosen">On: your background and the time when the TV has been left alone</string>
+    <string name="screensaver_how">Opens the TV\'s screen saver settings: choose TunaHome there</string>
+    <string name="set_controller_jumps">Controller shoulder buttons</string>
+    <string name="controller_jumps_on">L1 and R1 jump a section, L2 and R2 to the first or last app</string>
+    <string name="set_shine">Shine as you move onto an app</string>
+    <string name="shine_on">A soft light sweeps across the card</string>
+    <string name="set_scroll_names">Long names</string>
+    <string name="scroll_names_on">Scroll along while you\'re on the app</string>
+    <string name="menu_bluetooth">Bluetooth</string>
+    <string name="menu_screensaver">Screen saver</string>
+    <string name="menu_layouts">Layouts</string>
 </resources>

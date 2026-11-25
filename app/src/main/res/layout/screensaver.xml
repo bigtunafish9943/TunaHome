@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- TunaHome's screen saver: the home screen's background, with the time drifting slowly around -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/saverRoot"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <ImageView
+        android:id="@+id/backdropImage"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:contentDescription="@null"
+        android:importantForAccessibility="no"
+        android:scaleType="centerCrop" />
+
+    <androidx.media3.ui.PlayerView
+        android:id="@+id/backdropVideo"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:descendantFocusability="blocksDescendants"
+        android:focusable="false"
+        android:importantForAccessibility="no"
+        android:visibility="gone"
+        app:resize_mode="zoom"
+        app:shutter_background_color="@android:color/transparent"
+        app:surface_type="texture_view"
+        app:use_controller="false" />
+
+    <View
+        android:id="@+id/backdropShade"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:alpha="0.3"
+        android:background="#FF000000"
+        android:visibility="gone" />
+
+    <TextView
+        android:id="@+id/backdropCaption"
+        style="@style/Shadowed"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|start"
+        android:layout_marginStart="48dp"
+        android:layout_marginBottom="27dp"
+        android:alpha="0.8"
+        android:maxWidth="560dp"
+        android:textColor="?attr/tsTextSecondary"
+        android:textSize="13sp"
+        android:visibility="gone" />
+
+    <LinearLayout
+        android:id="@+id/saverClock"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|end"
+        android:layout_marginEnd="48dp"
+        android:layout_marginBottom="40dp"
+        android:gravity="end"
+        android:orientation="vertical">
+
+        <TextClock
+            android:id="@+id/clock"
+            style="@style/Shadowed"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:fontFamily="sans-serif-light"
+            android:format12Hour="h:mm"
+            android:format24Hour="HH:mm"
+            android:includeFontPadding="false"
+            android:textColor="?attr/tsText"
+            android:textSize="64sp" />
+
+        <TextClock
+            android:id="@+id/date"
+            style="@style/Shadowed"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:format12Hour="EEEE d MMMM"
+            android:format24Hour="EEEE d MMMM"
+            android:textColor="?attr/tsTextSecondary"
+            android:textSize="18sp" />
+    </LinearLayout>
+</FrameLayout>

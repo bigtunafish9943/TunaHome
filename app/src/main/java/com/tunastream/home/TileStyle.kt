@@ -24,6 +24,8 @@ class TileStyle(context: Context, sizeOverride: Int = -1) {
     val glowApp = shadow == Look.SHADOW_GLOW_APP
     val outlineApp = Look.FOCUS_OUTLINE.get(context) == Look.OUTLINE_APP
     val newBadge = Look.NEW_BADGE.get(context)
+    val shine = Look.SHINE.get(context) && Look.FOCUS_MOTION.get(context) != Look.MOTION_INSTANT
+    val scrollNames = Look.SCROLL_NAMES.get(context)
     val lift = Look.dp(context, 14f)
     /** Icons fill the whole card, edge to edge, cut to its rounded corners. */
     val fullBleed = Look.fullBleed(context)

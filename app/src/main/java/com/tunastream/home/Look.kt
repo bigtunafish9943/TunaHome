@@ -283,6 +283,18 @@ object Look {
         )
     )
 
+    /** A soft light sweeps across a card as you move onto it. */
+    val SHINE = Switch("look_shine", true)
+
+    /** A name too long for its card scrolls along while you're on it. */
+    val SCROLL_NAMES = Switch("look_scroll_names", true)
+
+    /**
+     * Controller shoulder buttons: L1 and R1 jump a section up or down, L2 and R2 to the first
+     * or last app of the section (unless a shortcut uses them).
+     */
+    val CONTROLLER_JUMPS = Switch("look_controller_jumps", true)
+
     /** A small "New" on apps installed in the last few days that haven't been opened yet. */
     val NEW_BADGE = Switch("look_new_badge", true)
 

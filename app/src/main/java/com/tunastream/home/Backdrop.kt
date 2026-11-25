@@ -1,7 +1,6 @@
 package com.tunastream.home
 
 import android.annotation.SuppressLint
-import android.app.Activity
 import android.content.ComponentName
 import android.content.Context
 import android.graphics.Bitmap
@@ -38,7 +37,7 @@ import kotlin.concurrent.thread
  */
 @OptIn(UnstableApi::class)
 class Backdrop(
-    private val activity: Activity,
+    private val activity: Context,
     private val image: ImageView,
     private val video: PlayerView,
     private val shade: View,

@@ -359,6 +359,23 @@ class AppAdapter(
         }
         val label = view.findViewById<TextView>(R.id.label)
         label.layoutParams = label.layoutParams.apply { width = cardWidth }
+        // Tilted, twice the card's height so it crosses corner to corner
+        view.findViewById<View>(R.id.shine).apply {
+            layoutParams = (layoutParams as FrameLayout.LayoutParams).apply {
+                width = maxOf(cardWidth / 3, Math.round(Look.dp(context, 24f)))
+                height = cardHeight * 2
+                gravity = Gravity.CENTER_VERTICAL or Gravity.START
+            }
+            rotation = 18f
+        }
+        if (tiles.scrollNames) {
+            // Long names scroll along while you're on the app
+            for (name in listOf(label, view.findViewById<TextView>(R.id.cardLabel))) {
+                name.setSingleLine(true)
+                name.ellipsize = android.text.TextUtils.TruncateAt.MARQUEE
+                name.marqueeRepeatLimit = -1
+            }
+        }
         if (tiles.darkCard && !tiles.fullBleed) {
             view.findViewById<TextView>(R.id.cardLabel).setTextColor(Color.rgb(0x15, 0x1A, 0x22))
         }
@@ -380,6 +397,7 @@ class AppAdapter(
         private val cardLabel: TextView = view.findViewById(R.id.cardLabel)
         private val lockBadge: View = view.findViewById(R.id.lockBadge)
         private val newBadge: View = view.findViewById(R.id.newBadge)
+        private val shine: View = view.findViewById(R.id.shine)
         private val progress: View = view.findViewById(R.id.progress)
         private var entry: AppEntry? = null
 
@@ -469,6 +487,19 @@ class AppAdapter(
             showFocus(itemView.isFocused, true)
         }
 
+        /** One sweep of light across the card, left to right. */
+        private fun sweep() {
+            val width = card.width.toFloat()
+            val start = -shine.width * 1.6f
+            shine.animate().cancel()
+            shine.translationX = start
+            shine.visibility = View.VISIBLE
+            shine.animate().translationX(width + shine.width * 0.6f).setStartDelay(80).setDuration(650)
+                .setInterpolator(android.view.animation.AccelerateDecelerateInterpolator())
+                .withEndAction { shine.visibility = View.INVISIBLE }
+                .start()
+        }
+
         private fun showFocus(focused: Boolean, animate: Boolean) {
             val name = entry?.label ?: ""
             // Arrows either side of the name show that the D-pad now moves the app
@@ -489,6 +520,16 @@ class AppAdapter(
                 label.visibility = View.GONE
             }
             val lit = focused || moving
+            if (tiles.scrollNames) {
+                label.isSelected = focused
+                cardLabel.isSelected = focused
+            }
+            if (animate && focused && !moving && tiles.shine && card.width > 0) {
+                sweep()
+            } else if (!focused) {
+                shine.animate().cancel()
+                shine.visibility = View.INVISIBLE
+            }
             val alpha = if (tiles.dimOthers && !lit) 0.55f else 1f
             var scale = if (moving) maxOf(tiles.zoom, 1.1f) + 0.08f else if (focused) tiles.zoom else 1f
             if (big) {
