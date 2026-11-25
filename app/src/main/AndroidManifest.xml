@@ -69,9 +69,18 @@
         <intent>
             <action android:name="com.novalauncher.category.CUSTOM_ICON_PICKER" />
         </intent>
-        <!-- The icon packs TunaHome can download, so it can see them once installed -->
+        <!-- To picture a web link by the app that opens it -->
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:scheme="https" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:scheme="http" />
+        </intent>
         <!-- TunaReceive shares the games on your PC -->
         <package android:name="com.tunastream.receive" />
+        <!-- The icon packs TunaHome can download, so it can see them once installed -->
         <package android:name="com.donnnno.arcticons" />
         <package android:name="com.donnnno.arcticons.light" />
         <package android:name="com.donnnno.arcticons.daynight" />

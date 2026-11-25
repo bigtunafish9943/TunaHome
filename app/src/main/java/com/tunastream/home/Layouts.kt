@@ -177,6 +177,48 @@ object Layouts {
         return fileName
     }
 
+    /** A copy of the setup in Downloads once a day, the last three kept, for a reinstall or a new TV. */
+    val AUTO_BACKUP = Look.Switch("layouts_auto_backup", true)
+    private const val AUTO_NAME = "Automatic backup"
+    private const val AUTO_KEEP = 3
+
+    fun autoBackupIfDue(context: Context) {
+        if (!AUTO_BACKUP.get(context)) return
+        val prefs = Prefs.of(context)
+        val now = System.currentTimeMillis()
+        if (now - prefs.getLong("auto_backup_at", 0) < 24L * 60 * 60 * 1000) return
+        prefs.edit().putLong("auto_backup_at", now).apply()
+        val app = context.applicationContext
+        kotlin.concurrent.thread(name = "TunaHome backup") {
+            try {
+                export(app, AUTO_NAME)
+                prune(app)
+            } catch (e: Exception) {
+                // Tried again tomorrow
+            }
+        }
+    }
+
+    /** Removes all but the newest automatic backups (only TunaHome's own files are seen). */
+    private fun prune(context: Context) {
+        if (Build.VERSION.SDK_INT < 29) return
+        val old = ArrayList<Uri>()
+        context.contentResolver.query(
+            MediaStore.Downloads.EXTERNAL_CONTENT_URI,
+            arrayOf(MediaStore.MediaColumns._ID),
+            "${MediaStore.MediaColumns.DISPLAY_NAME} LIKE 'TunaHome $AUTO_NAME %.zip'", null,
+            "${MediaStore.MediaColumns.DATE_ADDED} DESC"
+        )?.use { c ->
+            var n = 0
+            while (c.moveToNext()) {
+                if (++n > AUTO_KEEP) {
+                    old.add(Uri.withAppendedPath(MediaStore.Downloads.EXTERNAL_CONTENT_URI, c.getLong(0).toString()))
+                }
+            }
+        }
+        old.forEach { context.contentResolver.delete(it, null, null) }
+    }
+
     /** Layouts this TunaHome exported to Downloads, newest first (name, address). */
     fun exported(context: Context): List<Pair<String, Uri>> {
         if (Build.VERSION.SDK_INT < 29) return emptyList()

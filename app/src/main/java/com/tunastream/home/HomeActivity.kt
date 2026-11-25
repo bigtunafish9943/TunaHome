@@ -107,6 +107,7 @@ class HomeActivity : BaseActivity() {
                 idleHandler.removeCallbacks(goIdle)
                 enterIdle()
             }
+            HotkeyActions.SLEEP_TIMER -> chooseSleep()
         }
     }
 
@@ -362,11 +363,11 @@ class HomeActivity : BaseActivity() {
     private fun showSystemInfo(): Boolean {
         val view = findViewById<TextView>(R.id.systemInfo)
         val mode = Look.SYSTEM_INFO.get(this)
-        if (mode == Look.INFO_HIDDEN) {
-            view.visibility = View.GONE
-            return false
-        }
         val parts = ArrayList<String>()
+        val sleepLeft = SleepTimer.minutesLeft()
+        if (sleepLeft > 0) {
+            parts.add(getString(R.string.sleep_in, sleepLeft))
+        }
         if (mode == Look.INFO_STORAGE || mode == Look.INFO_BOTH) {
             try {
                 val stat = android.os.StatFs(android.os.Environment.getDataDirectory().path)
@@ -388,7 +389,7 @@ class HomeActivity : BaseActivity() {
         }
         view.text = parts.joinToString("   ")
         view.visibility = if (parts.isEmpty()) View.GONE else View.VISIBLE
-        return true
+        return mode != Look.INFO_HIDDEN || sleepLeft > 0
     }
 
     // Watch Next changes while you watch on another device, or as shows are added: look again
@@ -596,6 +597,7 @@ class HomeActivity : BaseActivity() {
         if (ambient.enabled) {
             ambient.focused(focusedApp())
         }
+        Layouts.autoBackupIfDue(this)
         if (Prefs.appsChanged) {
             Prefs.appsChanged = false
             reload()
@@ -667,6 +669,13 @@ class HomeActivity : BaseActivity() {
             entries.add(SideMenu.Entry(R.drawable.ic_bluetooth, getString(R.string.menu_bluetooth), null) {
                 openSetting(Settings.ACTION_BLUETOOTH_SETTINGS)
             })
+            SleepTimer.minutesLeft().let { left ->
+                entries.add(SideMenu.Entry(
+                    R.drawable.ic_timer,
+                    if (left > 0) getString(R.string.sleep_menu_left, left) else getString(R.string.sleep_title),
+                    null,
+                ) { chooseSleep() })
+            }
             entries.add(SideMenu.Entry(R.drawable.ic_screensaver, getString(R.string.menu_screensaver), null) {
                 openSetting(Settings.ACTION_DREAM_SETTINGS)
             })
@@ -685,6 +694,14 @@ class HomeActivity : BaseActivity() {
             })
         }
         sideMenu.setEntries(entries)
+    }
+
+    /** Sets the sleep timer; the time left shows beside the clock. */
+    private fun chooseSleep() {
+        SleepTimer.choose(this) {
+            weatherHandler.removeCallbacks(infoTick)
+            infoTick.run()
+        }
     }
 
     /** Puts a saved layout in place and starts the home screen again with it. */
@@ -1117,7 +1134,8 @@ class HomeActivity : BaseActivity() {
         val byPackage = HashMap<String, AppEntry>()
         visible.filter { it.pkg !in inFolder }.forEach { byPackage[it.pkg] = it }
         folderCards.forEach { byPackage[it.pkg] = it }
-        val loose = visible.filter { it.pkg !in inFolder }
+        // Links only go where the viewer puts them, not in the sections that gather apps by kind
+        val loose = visible.filter { it.pkg !in inFolder && !it.isLink }
         // Custom rows may have been changed from another screen: read them fresh
         val rows = Rows.load(this).associateBy { it.id }
         // A folder sits in the section that names it; TV apps holds the rest
@@ -1419,6 +1437,41 @@ class HomeActivity : BaseActivity() {
                 .putExtra(SettingsActivity.EXTRA_SECTION, row.id))
         }
 
+        if (row.kind == Rows.FAVOURITES || row.custom) {
+            labels.add(getString(R.string.link_add_here))
+            actions.add { addLink { key -> putInSection(key, row) } }
+        }
+
+        if (app.isLink) {
+            labels.add(getString(R.string.link_change))
+            actions.add {
+                askForText(R.string.link_address, Links.address(this, app.pkg) ?: "", url = true) { address ->
+                    if (address.isNotBlank()) {
+                        Links.change(this, app.pkg, address)
+                        Prefs.appsChanged = false
+                        reload()
+                    }
+                }
+            }
+            labels.add(getString(R.string.link_delete))
+            actions.add {
+                AlertDialog.Builder(this)
+                    .setTitle(getString(R.string.link_delete_title, app.label))
+                    .setPositiveButton(R.string.link_delete) { _, _ ->
+                        Links.remove(this, app.pkg)
+                        Prefs.appsChanged = false
+                        reload()
+                    }
+                    .setNegativeButton(R.string.cancel, null)
+                    .show()
+            }
+            AlertDialog.Builder(this)
+                .setTitle(app.label)
+                .setItems(labels.toTypedArray()) { _, which -> actions[which]() }
+                .show()
+            return
+        }
+
         labels.add(getString(R.string.menu_hide))
         actions.add {
             val hidden = Prefs.hidden(this)
@@ -1446,6 +1499,19 @@ class HomeActivity : BaseActivity() {
             .setTitle(app.label)
             .setItems(labels.toTypedArray()) { _, which -> actions[which]() }
             .show()
+    }
+
+    /** Puts a new card at the end of Favourites or a section of the viewer's own. */
+    private fun putInSection(key: String, row: Rows.Row) {
+        if (row.kind == Rows.FAVOURITES) {
+            val favourites = Prefs.favourites(this)
+            favourites.add(key)
+            Prefs.setFavourites(this, favourites)
+        } else {
+            Rows.update(this, row.id, restyle = false) { it.apps.add(key) }
+        }
+        Prefs.appsChanged = false
+        reload()
     }
 
     /** A Watch Next card belongs to its app: offer to open it, or that app's info. */

@@ -28,7 +28,10 @@ The app id is `com.tunastream.home`.
 - **Sideloaded apps, Games, Video and TV, and Music and audio** sections (hidden to begin with), filled automatically from what each app says it is, or else its name.
 - **The section you're on glides into place**, near the top or in the middle of the screen, as you move up and down.
 - **"New"** on apps installed in the last three days until you open them.
-- **Screen saver.** TunaHome can be the TV's screen saver: your background (Aerial Views too) with the time, moving corner to corner every few minutes. Choose it in the TV's screen saver settings.
+- **Screen saver.** TunaHome can be the TV's screen saver: your background (Aerial Views too) with the time, moving corner to corner every few minutes. It also shows the weather and what's playing, if those are switched on. Choose it in the TV's screen saver settings.
+- **Web links as cards.** Add a website, a YouTube channel or any app link to Favourites or a section of your own; it shows the picture of the app that opens it, or one you choose.
+- **Sleep timer** from the side menu or a shortcut: the TV goes to sleep after 15 minutes to 3 hours, with a warning a minute before. Needs the Home button setting.
+- **Automatic backup** of your setup to Downloads once a day, the last three kept, ready to bring back from Layouts.
 - **Controller shoulder buttons:** L1 and R1 jump a section up or down, L2 and R2 to the first or last app.
 - **A shine** sweeps across the card you move onto, and long names scroll along.
 - **PC games** from [TunaReceive](https://github.com/bigtunafish9943/TunaReceive), with box art, most recently played first; select one to start it. Needs a TunaReceive that shares its games list; without TunaReceive the section simply doesn't show.

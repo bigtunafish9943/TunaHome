@@ -23,6 +23,50 @@ class Screensaver : DreamService() {
     private val main = Handler(Looper.getMainLooper())
     private var corner = 0
 
+    // The weather and what's playing, looked at again every half minute
+    private val extras: Runnable = object : Runnable {
+        override fun run() {
+            showExtras()
+            Weather.refresh(this@Screensaver) { showExtras() }
+            main.postDelayed(this, 30_000L)
+        }
+    }
+
+    private fun showExtras() {
+        val box = findViewById<View>(R.id.saverWeatherBox) ?: return
+        val now = Weather.current
+        if (Weather.SHOW.get(this) && Weather.place(this) != null && now != null) {
+            findViewById<ImageView>(R.id.saverWeatherIcon).setImageResource(Weather.icon(now.code, now.day))
+            findViewById<TextView>(R.id.saverWeather).text =
+                getString(R.string.wx_degrees, now.temperature) + "  " + getString(Weather.condition(now.code))
+            box.visibility = View.VISIBLE
+        } else {
+            box.visibility = View.GONE
+        }
+        val music = findViewById<TextView>(R.id.saverMusic)
+        val playing = playing()
+        music.text = playing ?: ""
+        music.visibility = if (playing == null) View.GONE else View.VISIBLE
+    }
+
+    /** "♪ Song · Artist" for whatever is playing, if TunaHome may see it. */
+    private fun playing(): String? {
+        if (!NowPlaying.allowed(this)) return null
+        return try {
+            val manager = getSystemService(android.media.session.MediaSessionManager::class.java) ?: return null
+            val controller = manager.getActiveSessions(NowPlaying.component(this)).firstOrNull {
+                it.playbackState?.state == android.media.session.PlaybackState.STATE_PLAYING
+            } ?: return null
+            val meta = controller.metadata ?: return null
+            val title = meta.getString(android.media.MediaMetadata.METADATA_KEY_TITLE) ?: return null
+            val artist = meta.getString(android.media.MediaMetadata.METADATA_KEY_ARTIST)
+                ?: meta.getString(android.media.MediaMetadata.METADATA_KEY_ALBUM_ARTIST)
+            "♪  " + if (artist.isNullOrBlank()) title else "$title · $artist"
+        } catch (e: Exception) {
+            null
+        }
+    }
+
     private val move: Runnable = object : Runnable {
         override fun run() {
             moveClock(true)
@@ -62,16 +106,20 @@ class Screensaver : DreamService() {
         moveClock(false)
         main.removeCallbacks(move)
         main.postDelayed(move, MOVE_EVERY_MS)
+        main.removeCallbacks(extras)
+        extras.run()
     }
 
     override fun onDreamingStopped() {
         main.removeCallbacks(move)
+        main.removeCallbacks(extras)
         backdrop?.stop()
         super.onDreamingStopped()
     }
 
     override fun onDetachedFromWindow() {
         main.removeCallbacks(move)
+        main.removeCallbacks(extras)
         backdrop?.stop()
         backdrop = null
         super.onDetachedFromWindow()

@@ -6,7 +6,7 @@ import android.widget.Toast
 /** Opening an app the same way from everywhere: the PIN if it's locked, then Recently opened. */
 object Launch {
     fun open(activity: Activity, app: AppEntry, failed: () -> Unit = {}) {
-        if (AppLock.isLocked(activity, app.appPkg)) {
+        if (AppLock.isLocked(activity, app.appPkg) || AppLock.isLocked(activity, app.pkg)) {
             AppLock.ask(activity, app.label) { start(activity, app, failed) }
         } else {
             start(activity, app, failed)

@@ -43,6 +43,9 @@ class AppEntry(
     val isInsideApp: Boolean
         get() = isWatchNext || isPcGame
 
+    val isLink: Boolean
+        get() = pkg.startsWith(Links.PREFIX)
+
     val isFolder: Boolean
         get() = pkg.startsWith(Folders.PREFIX)
 }
@@ -226,6 +229,12 @@ object Apps {
             }
         }
         IconPacks.covered = if (pack != null) packHits to found.size else null
+        // The viewer's own links, after the count of apps the pack covers
+        try {
+            Links.entries(context, names).forEach { found[it.pkg] = it }
+        } catch (e: Exception) {
+            // Left out
+        }
         return found.values.sortedBy { it.label.lowercase() }.also {
             cached = it
             cachedStamp = stampAtStart

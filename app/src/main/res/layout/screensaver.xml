@@ -80,5 +80,45 @@
             android:format24Hour="EEEE d MMMM"
             android:textColor="?attr/tsTextSecondary"
             android:textSize="18sp" />
+
+        <!-- The weather, when it's switched on in TunaHome -->
+        <LinearLayout
+            android:id="@+id/saverWeatherBox"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:visibility="gone">
+
+            <ImageView
+                android:id="@+id/saverWeatherIcon"
+                android:layout_width="26dp"
+                android:layout_height="26dp"
+                android:layout_marginEnd="8dp"
+                android:contentDescription="@null" />
+
+            <TextView
+                android:id="@+id/saverWeather"
+                style="@style/Shadowed"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textColor="?attr/tsText"
+                android:textSize="18sp" />
+        </LinearLayout>
+
+        <!-- What's playing, when TunaHome is allowed to see it -->
+        <TextView
+            android:id="@+id/saverMusic"
+            style="@style/Shadowed"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:maxWidth="520dp"
+            android:maxLines="1"
+            android:ellipsize="end"
+            android:textColor="?attr/tsTextSecondary"
+            android:textSize="15sp"
+            android:visibility="gone" />
     </LinearLayout>
 </FrameLayout>

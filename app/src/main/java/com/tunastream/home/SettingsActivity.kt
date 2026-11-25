@@ -569,6 +569,20 @@ class SettingsActivity : BaseActivity() {
             }
         }
 
+        if (section.kind == Rows.FAVOURITES || section.custom) {
+            labels.add(getString(R.string.link_add_here))
+            actions.add {
+                addLink { key ->
+                    if (section.kind == Rows.FAVOURITES) {
+                        Prefs.setFavourites(this, Prefs.favourites(this).apply { add(key) })
+                    } else {
+                        Rows.update(this, id) { it.apps.add(key) }
+                    }
+                    changed()
+                }
+            }
+        }
+
         if (!section.ownOrder) {
             labels.add(getString(R.string.section_sort, getString(Rows.SORT_NAMES[section.sort])))
             actions.add {
@@ -862,6 +876,7 @@ class SettingsActivity : BaseActivity() {
             row(name, getString(R.string.layout_entry_summary)) { layoutMenu(name) }
         }
         heading(R.string.heading_backup)
+        switch(R.string.set_auto_backup, Layouts.AUTO_BACKUP, R.string.auto_backup_on, R.string.off)
         row(R.string.layout_export, getString(R.string.layout_export_summary)) {
             work(R.string.layout_failed, { exportedName = Layouts.export(it, "backup") }) {
                 Toast.makeText(this, getString(R.string.layout_exported, exportedName), Toast.LENGTH_LONG).show()

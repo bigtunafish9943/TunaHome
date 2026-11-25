@@ -894,4 +894,24 @@
     <string name="menu_bluetooth">Bluetooth</string>
     <string name="menu_screensaver">Screen saver</string>
     <string name="menu_layouts">Layouts</string>
+    <string name="link_address">Web address or app link</string>
+    <string name="link_name">Name for this link</string>
+    <string name="link_add_here">Add a web link here</string>
+    <string name="link_change">Change its address</string>
+    <string name="link_delete">Delete link</string>
+    <string name="link_delete_title">Delete the link \"%1$s\"?</string>
+    <string name="sleep_title">Sleep timer</string>
+    <string name="sleep_title_left">Sleep timer: %1$d min left</string>
+    <string name="sleep_off">Off</string>
+    <string name="sleep_set">The TV will go to sleep in %1$s</string>
+    <string name="sleep_warning">TunaHome: the TV goes to sleep in a minute</string>
+    <string name="sleep_in">Sleep in %1$d min</string>
+    <string name="sleep_menu_left">Sleep in %1$d min</string>
+    <string name="act_sleep_timer">Sleep timer</string>
+    <string name="set_auto_backup">Automatic backup</string>
+    <string name="auto_backup_on">Once a day to Downloads, the last 3 kept</string>
+    <plurals name="sleep_minutes">
+        <item quantity="one">%1$d minute</item>
+        <item quantity="other">%1$d minutes</item>
+    </plurals>
 </resources>
