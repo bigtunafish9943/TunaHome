@@ -93,15 +93,6 @@ class Backdrop(
             Look.touch(context)
         }
 
-        /** One of the viewer's own videos or pictures, on the TV or on the web. */
-        class Own(val uri: String, val isVideo: Boolean) {
-            /** A short name for lists: the end of its address. */
-            fun shortName(): String {
-                val path = Uri.parse(uri).lastPathSegment ?: uri
-                return Uri.decode(path).substringAfterLast('/').substringAfterLast(':')
-            }
-        }
-
         /** The viewer's own videos and pictures, in order. */
         fun videos(context: Context): List<Own> =
             (Prefs.of(context).getString(VIDEOS, "") ?: "").split('\n').filter { it.isNotBlank() }.map { line ->
@@ -120,6 +111,15 @@ class Backdrop(
         fun looksLikePicture(address: String): Boolean {
             val path = address.substringBefore('?').lowercase()
             return listOf(".jpg", ".jpeg", ".png", ".webp", ".gif", ".bmp").any { path.endsWith(it) }
+        }
+    }
+
+    /** One of the viewer's own videos or pictures, on the TV or on the web. */
+    class Own(val uri: String, val isVideo: Boolean) {
+        /** A short name for lists: the end of its address. */
+        fun shortName(): String {
+            val path = Uri.parse(uri).lastPathSegment ?: uri
+            return Uri.decode(path).substringAfterLast('/').substringAfterLast(':')
         }
     }
 
