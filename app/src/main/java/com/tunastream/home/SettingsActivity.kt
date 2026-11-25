@@ -719,7 +719,7 @@ class SettingsActivity : BaseActivity() {
                 }
                 AlertDialog.Builder(this)
                     .setTitle(offer.name)
-                    .setMessage(getString(R.string.pack_confirm, getString(offer.about)))
+                    .setMessage(getString(R.string.pack_confirm, getString(offer.about), offer.source.label))
                     .setPositiveButton(R.string.pack_download) { _, _ -> IconPackStore.get(this, offer) }
                     .setNegativeButton(R.string.cancel, null)
                     .show()

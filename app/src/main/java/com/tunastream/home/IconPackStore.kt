@@ -32,13 +32,16 @@ import kotlin.concurrent.thread
  */
 object IconPackStore {
     private const val TAG = "TunaHome"
-    private const val API = "https://f-droid.org/api/v1/packages/"
-    private const val REPO = "https://f-droid.org/repo/"
+    /** Where a pack comes from: F-Droid itself, or IzzyOnDroid, the best-known F-Droid add-on repo. */
+    enum class Source(val api: String, val repo: String, val label: String) {
+        FDROID("https://f-droid.org/api/v1/packages/", "https://f-droid.org/repo/", "F-Droid"),
+        IZZY("https://apt.izzysoft.de/fdroid/api/v1/packages/", "https://apt.izzysoft.de/fdroid/repo/", "IzzyOnDroid"),
+    }
     private const val MAX_BYTES = 200L * 1024 * 1024
     private const val ACTION_RESULT = "com.tunastream.home.ICON_PACK_INSTALL_RESULT"
     private const val EXTRA_PACK = "pack"
 
-    class Offer(val pkg: String, val name: String, val about: Int)
+    class Offer(val pkg: String, val name: String, val about: Int, val source: Source = Source.FDROID)
 
     val CATALOGUE = listOf(
         Offer("com.donnnno.arcticons", "Arcticons", R.string.pack_arcticons),
@@ -56,6 +59,9 @@ object IconPackStore {
         Offer("me.iacn.mbestyle", "MBE Style", R.string.pack_mbe),
         Offer("com.kn.paper_foss_theme", "Paper", R.string.pack_paper),
         Offer("org.materialos.icons", "MaterialOS", R.string.pack_materialos),
+        Offer("com.froxot.cuscon.foss", "Cuscon", R.string.pack_cuscon),
+        Offer("app.lawnchair.lawnicons", "Lawnicons", R.string.pack_lawnicons, Source.IZZY),
+        Offer("k4ustu3h.monocons.izzy", "Monocons", R.string.pack_monocons, Source.IZZY),
     )
 
     /** The pack just installed through TunaHome, to switch to once Android has finished. */
@@ -123,7 +129,7 @@ object IconPackStore {
             var failure: String? = null
             var file: File? = null
             try {
-                file = download(app, offer.pkg, cancelled) { bytes ->
+                file = download(app, offer, cancelled) { bytes ->
                     ui.post {
                         if (progress.isShowing) {
                             progress.setMessage(activity.getString(R.string.bg_copied_mb, (bytes / (1024 * 1024)).toInt()))
@@ -165,8 +171,9 @@ object IconPackStore {
     }
 
     /** Finds the version F-Droid recommends, downloads it, and checks it is the right app. */
-    private fun download(context: Context, pkg: String, cancelled: BooleanArray, progress: (Long) -> Unit): File? {
-        val info = JSONObject(readText(API + pkg))
+    private fun download(context: Context, offer: Offer, cancelled: BooleanArray, progress: (Long) -> Unit): File? {
+        val pkg = offer.pkg
+        val info = JSONObject(readText(offer.source.api + pkg))
         val code = info.optLong("suggestedVersionCode", 0)
         if (code <= 0) {
             throw IOException(context.getString(R.string.pack_not_found))
@@ -176,7 +183,7 @@ object IconPackStore {
         dir.listFiles()?.forEach { it.delete() }
         val out = File(dir, "${pkg}_$code.apk")
 
-        val conn = open(REPO + "${pkg}_$code.apk")
+        val conn = open(offer.source.repo + "${pkg}_$code.apk")
         try {
             conn.inputStream.use { input ->
                 FileOutputStream(out).use { output ->
@@ -280,7 +287,7 @@ object IconPackStore {
         if (conn.responseCode != HttpURLConnection.HTTP_OK) {
             val code = conn.responseCode
             conn.disconnect()
-            throw IOException("F-Droid answered $code")
+            throw IOException("The app store answered $code")
         }
         return conn
     }

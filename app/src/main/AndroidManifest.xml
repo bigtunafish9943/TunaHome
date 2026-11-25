@@ -85,6 +85,9 @@
         <package android:name="me.iacn.mbestyle" />
         <package android:name="com.kn.paper_foss_theme" />
         <package android:name="org.materialos.icons" />
+        <package android:name="com.froxot.cuscon.foss" />
+        <package android:name="app.lawnchair.lawnicons" />
+        <package android:name="k4ustu3h.monocons.izzy" />
         <!-- Voice search, and searching everything with the TV's own search -->
         <intent>
             <action android:name="android.speech.action.RECOGNIZE_SPEECH" />

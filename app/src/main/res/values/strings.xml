@@ -281,10 +281,10 @@
     <string name="icon_pack_none_installed">None installed</string>
     <string name="icon_pack_how">Icon packs are apps that redraw every app\'s icon in one style. Install one made for phone launchers (most work, such as those for Nova Launcher), then choose it here. Set Icon style to \"Icon\" to see them on every app.</string>
     <string name="pack_get">Get icon packs</string>
-    <string name="pack_get_summary">Free icon packs, downloaded from F-Droid and installed for you.</string>
+    <string name="pack_get_summary">Free, open-source icon packs from F-Droid and IzzyOnDroid, installed for you.</string>
     <string name="pack_entry">%1$s: %2$s</string>
     <string name="pack_entry_installed">%1$s (on the TV): %2$s</string>
-    <string name="pack_confirm">%1$s\n\nFree and open source, from F-Droid. TunaHome downloads it, then Android asks you to confirm the install. Once it\'s installed, TunaHome switches to it.\n\nIcon packs are made for phones, so some TV apps may keep their own icon.</string>
+    <string name="pack_confirm">%1$s\n\nFree and open source, from %2$s. TunaHome downloads it, then Android asks you to confirm the install. Once it\'s installed, TunaHome switches to it.\n\nIcon packs are made for phones, so some TV apps may not have an icon in the pack.</string>
     <string name="pack_download">Download and install</string>
     <string name="pack_downloading">Downloading %1$s</string>
     <string name="pack_permission_title">Allow TunaHome to install the icon pack</string>
@@ -315,6 +315,9 @@
     <string name="pack_mbe">playful, chunky icons</string>
     <string name="pack_paper">flat icons in the Paper style</string>
     <string name="pack_materialos">Material Design icons</string>
+    <string name="pack_cuscon">colourful icons with a touch of variety</string>
+    <string name="pack_lawnicons">clean one-colour outline icons, made by the Lawnchair team</string>
+    <string name="pack_monocons">one-colour brand logos</string>
     <string name="picture_title">Icon for %1$s</string>
     <string name="picture_from_tv">Choose an image on the TV</string>
     <string name="picture_address">Use an image from a web address</string>
