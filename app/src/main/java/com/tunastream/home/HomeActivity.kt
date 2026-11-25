@@ -196,6 +196,18 @@ class HomeActivity : BaseActivity() {
         if (Apps.cached.isNotEmpty()) {
             apps = Apps.cached
             loaded = true
+        } else {
+            // Just after the TV starts: the copy kept on storage, while the real list loads
+            thread(name = "TunaHome kept apps") {
+                val kept = AppsOnDisk.read(applicationContext)
+                runOnUiThread {
+                    if (kept != null && !loaded && !isDestroyed) {
+                        apps = kept
+                        loaded = true
+                        show()
+                    }
+                }
+            }
         }
         show()
         if (!Apps.cacheFresh(this) || Prefs.appsChanged) {
@@ -965,7 +977,7 @@ class HomeActivity : BaseActivity() {
             val list = view.findViewById<SectionList>(R.id.sectionApps)
             list.remember = Look.REMEMBER_PLACE.get(this)
             val lines = row.lines
-            val sectionTiles = if (row.cardSize >= 0) TileStyle(this, row.cardSize) else tiles
+            val sectionTiles = if (row.cardSize >= 0 || row.style >= 0) TileStyle(this, row.cardSize, row.style) else tiles
             val adapter = AppAdapter(
                 sectionTiles, lines, ::open, { app -> showMenu(app, row) }, { order -> saveOrder(row, order) }
             )
@@ -1105,6 +1117,10 @@ class HomeActivity : BaseActivity() {
                 Apps.load(applicationContext, themeColor(R.attr.tsAccent))
             } catch (e: Exception) {
                 emptyList()
+            }
+            if (found.isNotEmpty()) {
+                // Kept for the next time the TV starts (only written when something changed)
+                thread(name = "TunaHome keep apps") { AppsOnDisk.save(applicationContext, found) }
             }
             runOnUiThread {
                 loading = false

@@ -19,7 +19,7 @@ The app id is `com.tunastream.home`.
 
 - **Idle mode.** After a few minutes with no button pressed, everything but the background (and the clock, if you like) fades away. Any button brings it back.
 - **Recently opened** section, newest first (switch it on in Sections), and a **network icon** beside the clock.
-- **App lock.** A PIN on chosen apps and, if you like, on TunaHome settings. It's a child lock, not security: it only stops apps being opened from TunaHome.
+- **App lock.** A PIN on chosen apps and, if you like, on TunaHome settings, plus **locked hours** (bedtime, say) when every app needs it. It's a child lock, not security: it only stops apps being opened from TunaHome.
 - **Open an app when the TV wakes up**, such as TunaReceive. Needs the Home button setting (below), because Android only lets that kind of app open things by itself.
 - **Free icon packs** from F-Droid, downloaded and installed from inside TunaHome (Android asks you to confirm).
 - **Watch Next, Now playing, weather, search with voice, folders and shortcut keys** (double, triple or four presses, or two buttons together).
@@ -31,6 +31,8 @@ The app id is `com.tunastream.home`.
 - **Screen saver.** TunaHome can be the TV's screen saver: your background (Aerial Views too) with the time, moving corner to corner every few minutes. It also shows the weather and what's playing, if those are switched on. Choose it in the TV's screen saver settings.
 - **Web links as cards.** Add a website, a YouTube channel or any app link to Favourites or a section of your own; it shows the picture of the app that opens it, or one you choose.
 - **Sleep timer** from the side menu or a shortcut: the TV goes to sleep after 15 minutes to 3 hours, with a warning a minute before. Needs the Home button setting.
+- **Each section its own card style:** TV pictures in one, icons in another.
+- **Starts instantly after a restart:** a copy of your apps and their pictures is kept on the TV, shown at once while the full list loads.
 - **Automatic backup** of your setup to Downloads once a day, the last three kept, ready to bring back from Layouts.
 - **Controller shoulder buttons:** L1 and R1 jump a section up or down, L2 and R2 to the first or last app.
 - **A shine** sweeps across the card you move onto, and long names scroll along.

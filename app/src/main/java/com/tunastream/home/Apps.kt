@@ -145,7 +145,10 @@ object Apps {
         val missing = Look.PACK_MISSING.get(context)
         val found = LinkedHashMap<String, AppEntry>()
         var packHits = 0
-        val fullBleed = Look.fullBleed(context)
+        // Edge-to-edge icons, also when only some sections show icons
+        val fullBleed = Look.fullBleed(context) || (
+            Look.ICON_FILL.get(context) == Look.FILL_EDGE && Look.ICON_TINT.get(context) == Look.TINT_NONE &&
+                Rows.load(context).any { it.style == Look.TILE_ICON || it.style == Look.TILE_ICON_NAME })
         val tint = Look.iconTint(context, accent)
         val names = Prefs.appNames(context)
         val wide = Look.TILE_STYLE.get(context) == Look.TILE_BANNER

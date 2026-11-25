@@ -23,6 +23,8 @@ object AppLock {
     private const val SALT = "lock_pin_salt"
     private const val LOCKED = "lock_apps"
     private const val SETTINGS = "lock_settings"
+    private const val FROM = "lock_hours_from"
+    private const val TO = "lock_hours_to"
 
     fun hasPin(context: Context): Boolean = Prefs.of(context).getString(HASH, null) != null
 
@@ -44,13 +46,45 @@ object AppLock {
 
     /** Takes the PIN away, and with it every lock. */
     fun removePin(context: Context) {
-        Prefs.of(context).edit().remove(HASH).remove(SALT).remove(LOCKED).remove(SETTINGS).apply()
+        Prefs.of(context).edit().remove(HASH).remove(SALT).remove(LOCKED).remove(SETTINGS)
+            .remove(FROM).remove(TO).apply()
     }
 
     fun locked(context: Context): MutableSet<String> =
         HashSet(Prefs.of(context).getStringSet(LOCKED, emptySet()) ?: emptySet())
 
-    fun isLocked(context: Context, pkg: String): Boolean = hasPin(context) && pkg in locked(context)
+    fun isLocked(context: Context, pkg: String): Boolean =
+        hasPin(context) && (pkg in locked(context) || inLockedHours(context))
+
+    // ------------------------------------------------------------------ locked hours
+
+    /** The hours every app needs the PIN (bedtime, school time): start and end hour, or null. */
+    fun lockedHours(context: Context): Pair<Int, Int>? {
+        val prefs = Prefs.of(context)
+        val from = prefs.getInt(FROM, -1)
+        val to = prefs.getInt(TO, -1)
+        return if (from in 0..23 && to in 0..23 && from != to) from to to else null
+    }
+
+    fun setLockedHours(context: Context, hours: Pair<Int, Int>?) {
+        Prefs.of(context).edit().putInt(FROM, hours?.first ?: -1).putInt(TO, hours?.second ?: -1).apply()
+    }
+
+    /** Whether it's now within the locked hours (which may run past midnight). */
+    fun inLockedHours(context: Context): Boolean {
+        val (from, to) = lockedHours(context) ?: return false
+        val hour = java.util.Calendar.getInstance().get(java.util.Calendar.HOUR_OF_DAY)
+        return if (from < to) hour in from until to else hour >= from || hour < to
+    }
+
+    /** "9 pm" or "21:00", as the TV shows times. */
+    fun hourName(context: Context, hour: Int): String {
+        val calendar = java.util.Calendar.getInstance().apply {
+            set(java.util.Calendar.HOUR_OF_DAY, hour)
+            set(java.util.Calendar.MINUTE, 0)
+        }
+        return android.text.format.DateFormat.getTimeFormat(context).format(calendar.time)
+    }
 
     fun setLocked(context: Context, pkg: String, lock: Boolean) {
         val set = locked(context)

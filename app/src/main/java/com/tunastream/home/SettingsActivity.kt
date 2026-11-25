@@ -596,6 +596,17 @@ class SettingsActivity : BaseActivity() {
             }
         }
 
+        if (section.kind != Rows.NOW_PLAYING) {
+            val styles = listOf(getString(R.string.section_style_same)) + Look.TILE_STYLE.names.map { getString(it) }
+            labels.add(getString(R.string.section_style, styles[section.style + 1]))
+            actions.add {
+                chooseOne(getString(R.string.section_style_title, section.name(this)), styles, section.style + 1) { which ->
+                    Rows.update(this, id) { it.style = which - 1 }
+                    changed()
+                }
+            }
+        }
+
         if (section.kind != Rows.NOW_PLAYING && section.lines == 1) {
             labels.add(getString(R.string.section_spotlight, getString(if (section.spotlight) R.string.on else R.string.off)))
             actions.add {
@@ -1247,6 +1258,32 @@ class SettingsActivity : BaseActivity() {
 
     // ------------------------------------------------------------------ apps
 
+    /** Every app needs the PIN between two hours: off, or a start then an end. */
+    private fun chooseLockedHours() {
+        val hourNames = (0..23).map { AppLock.hourName(this, it) }
+        val current = AppLock.lockedHours(this)
+        chooseOne(getString(R.string.lock_hours), listOf(getString(R.string.lock_hours_off), getString(R.string.lock_hours_set)),
+            if (current == null) 0 else 1) { which ->
+            if (which == 0) {
+                AppLock.setLockedHours(this, null)
+                Look.touch(this)
+                build()
+                return@chooseOne
+            }
+            chooseOne(getString(R.string.lock_hours_from), hourNames, current?.first ?: 21) { from ->
+                chooseOne(getString(R.string.lock_hours_to), hourNames, current?.second ?: 7) { to ->
+                    if (from == to) {
+                        Toast.makeText(this, R.string.lock_hours_same, Toast.LENGTH_LONG).show()
+                    } else {
+                        AppLock.setLockedHours(this, from to to)
+                        Look.touch(this)
+                        build()
+                    }
+                }
+            }
+        }
+    }
+
     private fun appsPage() {
         val hiddenCount = Prefs.hidden(this).size
         row(
@@ -1267,6 +1304,12 @@ class SettingsActivity : BaseActivity() {
                 if (locked == 0) getString(R.string.lock_apps_none)
                 else resources.getQuantityString(R.plurals.lock_apps_count, locked, locked)
             ) { AppLock.ask(this, getString(R.string.lock_apps)) { chooseLocked() } }
+            val hours = AppLock.lockedHours(this)
+            row(
+                R.string.lock_hours,
+                if (hours == null) getString(R.string.lock_hours_off)
+                else getString(R.string.lock_hours_on, AppLock.hourName(this, hours.first), AppLock.hourName(this, hours.second))
+            ) { AppLock.ask(this, getString(R.string.lock_hours)) { chooseLockedHours() } }
             val settingsLocked = AppLock.settingsLocked(this)
             row(
                 R.string.lock_settings,

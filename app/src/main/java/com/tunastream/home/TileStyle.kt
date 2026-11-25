@@ -7,8 +7,9 @@ import android.graphics.drawable.GradientDrawable
 /**
  * How app tiles look, worked out once from the viewer's settings when the home screen is built.
  */
-class TileStyle(context: Context, sizeOverride: Int = -1) {
-    val style = Look.TILE_STYLE.get(context)
+class TileStyle(context: Context, sizeOverride: Int = -1, styleOverride: Int = -1) {
+    /** TV pictures, icons, or icons with names: a section can have its own. */
+    val style = if (styleOverride >= 0) styleOverride else Look.TILE_STYLE.get(context)
     val width: Int
     val height: Int
     val gap: Int
@@ -28,7 +29,8 @@ class TileStyle(context: Context, sizeOverride: Int = -1) {
     val scrollNames = Look.SCROLL_NAMES.get(context)
     val lift = Look.dp(context, 14f)
     /** Icons fill the whole card, edge to edge, cut to its rounded corners. */
-    val fullBleed = Look.fullBleed(context)
+    val fullBleed = Look.ICON_FILL.get(context) == Look.FILL_EDGE && style != Look.TILE_BANNER &&
+        Look.ICON_TINT.get(context) == Look.TINT_NONE
     val iconSize: Int
     private val corner: Float
     private val cardColour: Int

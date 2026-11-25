@@ -54,6 +54,8 @@ object Rows {
         var sort: Int = SORT_OWN,
         /** The first app shown twice the size (single-line sections only). */
         var spotlight: Boolean = false,
+        /** Its own card style (one of Look's TILE_ styles), or -1 for the one set for every card. */
+        var style: Int = -1,
     ) {
         fun name(context: Context): String = title ?: context.getString(
             when (kind) {
@@ -101,6 +103,7 @@ object Rows {
                             o.optInt("card_size", -1),
                             o.optInt("sort", SORT_OWN).coerceIn(SORT_OWN, SORT_UPDATED),
                             o.optBoolean("spotlight", false),
+                            o.optInt("style", -1).coerceIn(-1, Look.TILE_ICON_NAME),
                         )
                     )
                 }
@@ -163,6 +166,7 @@ object Rows {
             o.put("card_size", row.cardSize)
             o.put("sort", row.sort)
             o.put("spotlight", row.spotlight)
+            o.put("style", row.style)
             if (row.custom) {
                 o.put("apps", JSONArray(row.apps))
             }

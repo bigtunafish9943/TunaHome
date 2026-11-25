@@ -914,4 +914,14 @@
         <item quantity="one">%1$d minute</item>
         <item quantity="other">%1$d minutes</item>
     </plurals>
+    <string name="section_style">Card style: %1$s</string>
+    <string name="section_style_same">The same as every card</string>
+    <string name="section_style_title">Card style for %1$s</string>
+    <string name="lock_hours">Locked hours</string>
+    <string name="lock_hours_off">Off</string>
+    <string name="lock_hours_on">Every app needs the PIN from %1$s to %2$s</string>
+    <string name="lock_hours_set">Choose the hours</string>
+    <string name="lock_hours_from">Every app locked from</string>
+    <string name="lock_hours_to">Until</string>
+    <string name="lock_hours_same">The start and the end can\'t be the same hour</string>
 </resources>
