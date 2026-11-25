@@ -210,6 +210,23 @@ object Look {
     // ------------------------------------------------------------------ top of the screen
 
     val SHOW_BRAND = Switch("look_show_brand", true)
+
+    const val BRAND_BOTH = 0
+    const val BRAND_LOGO = 1
+    const val BRAND_NAME = 2
+    val BRAND_PARTS = Choice(
+        "look_brand_parts", BRAND_BOTH,
+        intArrayOf(R.string.brand_both, R.string.brand_logo_only, R.string.brand_name_only)
+    )
+    /** Half the original size to begin with: the home screen is about the apps. */
+    val BRAND_SIZE = Choice(
+        "look_brand_size", 1, intArrayOf(
+            R.string.brand_size_smallest, R.string.brand_size_small,
+            R.string.brand_size_medium, R.string.brand_size_full,
+        )
+    )
+    private val BRAND_SCALES = floatArrayOf(0.35f, 0.5f, 0.75f, 1f)
+    fun brandScale(context: Context): Float = BRAND_SCALES[BRAND_SIZE.get(context)]
     val SHOW_VERSION = Switch("look_show_version", true)
 
     const val CLOCK_FOLLOW_TV = 0

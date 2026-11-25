@@ -300,11 +300,7 @@ class HomeActivity : BaseActivity() {
     // ------------------------------------------------------------------ top of the screen
 
     private fun setUpTopBar() {
-        findViewById<View>(R.id.brand).visibility = if (Look.SHOW_BRAND.get(this)) View.VISIBLE else View.GONE
-        findViewById<TextView>(R.id.brandVersion).apply {
-            text = getString(R.string.version, BuildConfig.VERSION_NAME)
-            visibility = if (Look.SHOW_VERSION.get(this@HomeActivity)) View.VISIBLE else View.GONE
-        }
+        setUpBrand()
 
         val update = findViewById<View>(R.id.checkUpdate)
         update.visibility = if (Look.SHOW_UPDATE_BUTTON.get(this)) View.VISIBLE else View.GONE
@@ -357,6 +353,36 @@ class HomeActivity : BaseActivity() {
             date.format12Hour = pattern
             date.format24Hour = pattern
             date.visibility = View.VISIBLE
+        }
+    }
+
+    /** The fish and the name: shown or not, which parts, and how big. */
+    private fun setUpBrand() {
+        findViewById<View>(R.id.brand).visibility = if (Look.SHOW_BRAND.get(this)) View.VISIBLE else View.GONE
+        val parts = Look.BRAND_PARTS.get(this)
+        val logo = findViewById<ImageView>(R.id.brandLogo)
+        val text = findViewById<View>(R.id.brandText)
+        logo.visibility = if (parts == Look.BRAND_NAME) View.GONE else View.VISIBLE
+        text.visibility = if (parts == Look.BRAND_LOGO) View.GONE else View.VISIBLE
+        if (parts == Look.BRAND_NAME) {
+            (text.layoutParams as LinearLayout.LayoutParams).marginStart = 0
+        }
+        val version = findViewById<TextView>(R.id.brandVersion)
+        version.text = getString(R.string.version, BuildConfig.VERSION_NAME)
+        version.visibility = if (Look.SHOW_VERSION.get(this)) View.VISIBLE else View.GONE
+
+        val scale = Look.brandScale(this)
+        if (scale != 1f) {
+            logo.layoutParams = logo.layoutParams.apply { height = Math.round(height * scale) }
+            (text.layoutParams as LinearLayout.LayoutParams).apply {
+                marginStart = Math.round(marginStart * scale)
+            }
+            for (id in intArrayOf(R.id.brandTuna, R.id.brandWord)) {
+                val word = findViewById<TextView>(id)
+                word.setTextSize(TypedValue.COMPLEX_UNIT_PX, word.textSize * scale)
+            }
+            // The version stays readable even when the rest is small
+            version.setTextSize(TypedValue.COMPLEX_UNIT_PX, version.textSize * maxOf(scale, 0.8f))
         }
     }
 

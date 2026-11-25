@@ -10,6 +10,7 @@
     android:orientation="horizontal">
 
     <ImageView
+        android:id="@+id/brandLogo"
         android:layout_width="wrap_content"
         android:layout_height="46dp"
         android:adjustViewBounds="true"
@@ -18,6 +19,7 @@
         android:src="@drawable/ts_logo_mark" />
 
     <LinearLayout
+        android:id="@+id/brandText"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginStart="12dp"
@@ -29,6 +31,7 @@
             android:orientation="horizontal">
 
             <TextView
+                android:id="@+id/brandTuna"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:includeFontPadding="false"
@@ -39,6 +42,7 @@
                 android:textStyle="bold" />
 
             <TextView
+                android:id="@+id/brandWord"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:fontFamily="sans-serif-medium"

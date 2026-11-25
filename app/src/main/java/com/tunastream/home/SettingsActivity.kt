@@ -672,7 +672,13 @@ class SettingsActivity : BaseActivity() {
 
     private fun topBarPage() {
         switch(R.string.set_show_brand, Look.SHOW_BRAND, R.string.shown, R.string.hidden)
-        switch(R.string.set_show_version, Look.SHOW_VERSION, R.string.shown, R.string.hidden)
+        if (Look.SHOW_BRAND.get(this)) {
+            choice(R.string.set_brand_parts, Look.BRAND_PARTS)
+            choice(R.string.set_brand_size, Look.BRAND_SIZE)
+            if (Look.BRAND_PARTS.get(this) != Look.BRAND_LOGO) {
+                switch(R.string.set_show_version, Look.SHOW_VERSION, R.string.shown, R.string.hidden)
+            }
+        }
         choice(R.string.set_clock, Look.CLOCK)
         choice(R.string.set_clock_size, Look.CLOCK_SIZE)
         choice(R.string.set_date, Look.DATE)

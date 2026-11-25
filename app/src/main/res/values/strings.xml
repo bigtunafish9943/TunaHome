@@ -359,6 +359,15 @@
     <!-- Top of the screen -->
     <string name="set_show_brand">Name and logo</string>
     <string name="set_show_version">Version under the name</string>
+    <string name="set_brand_parts">Show</string>
+    <string name="brand_both">The logo and the name</string>
+    <string name="brand_logo_only">The logo only</string>
+    <string name="brand_name_only">The name only</string>
+    <string name="set_brand_size">Name and logo size</string>
+    <string name="brand_size_smallest">Smallest</string>
+    <string name="brand_size_small">Small (half size)</string>
+    <string name="brand_size_medium">Medium</string>
+    <string name="brand_size_full">Full size</string>
     <string name="set_clock">Clock</string>
     <string name="clock_follow">As the TV is set</string>
     <string name="clock_24">24-hour</string>
