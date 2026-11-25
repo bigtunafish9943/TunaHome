@@ -8,6 +8,7 @@ import android.view.View
 import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
+import kotlin.concurrent.thread
 
 /** TunaHome's own settings: a short list of rows that each say what they are set to. */
 class SettingsActivity : BaseActivity() {
@@ -53,6 +54,7 @@ class SettingsActivity : BaseActivity() {
                     focusIndex = index
                 }
             }
+            Look.styleText(view)
             list.addView(view)
             rows.add(view)
         }
@@ -74,6 +76,29 @@ class SettingsActivity : BaseActivity() {
         ) {
             TunaTheme.setSeasonal(this, !seasonal)
             refresh()
+        }
+
+        // Wallpaper, text and picture size
+        row(
+            getString(R.string.set_wallpaper),
+            getString(
+                if (Pictures.hasWallpaper(this)) R.string.set_wallpaper_set
+                else R.string.set_wallpaper_none
+            )
+        ) { chooseWallpaper() }
+
+        row(getString(R.string.set_font), getString(Look.FONT_NAMES[Look.font(this)])) {
+            chooseOne(R.string.set_font, Look.FONT_NAMES, Look.font(this)) { Look.setFont(this, it) }
+        }
+        row(getString(R.string.set_text_size), getString(Look.TEXT_NAMES[Look.textSize(this)])) {
+            chooseOne(R.string.set_text_size, Look.TEXT_NAMES, Look.textSize(this)) {
+                Look.setTextSize(this, it)
+            }
+        }
+        row(getString(R.string.set_tile_size), getString(Look.TILE_NAMES[Look.tileSize(this)])) {
+            chooseOne(R.string.set_tile_size, Look.TILE_NAMES, Look.tileSize(this)) {
+                Look.setTileSize(this, it)
+            }
         }
 
         // Apps
@@ -123,9 +148,9 @@ class SettingsActivity : BaseActivity() {
         focus?.requestFocus()
     }
 
-    /** After a theme setting changed: rebuild the whole screen if the colours changed. */
+    /** After a setting changed: rebuild the whole screen if its colours or text changed. */
     private fun refresh() {
-        if (TunaTheme.current(this) != themeId) {
+        if (outOfDate()) {
             recreate()
         } else {
             build()
@@ -144,6 +169,71 @@ class SettingsActivity : BaseActivity() {
             }
             .setNegativeButton(R.string.cancel, null)
             .show()
+    }
+
+    /** A short list of named options with the current one marked; picking one applies it. */
+    private fun chooseOne(title: Int, names: IntArray, current: Int, pick: (Int) -> Unit) {
+        AlertDialog.Builder(this)
+            .setTitle(title)
+            .setSingleChoiceItems(Array(names.size) { getString(names[it]) }, current) { dialog, which ->
+                pick(which)
+                dialog.dismiss()
+                refresh()
+            }
+            .setNegativeButton(R.string.cancel, null)
+            .show()
+    }
+
+    private fun chooseWallpaper() {
+        val labels = ArrayList<String>()
+        labels.add(getString(R.string.wallpaper_choose))
+        if (Pictures.hasWallpaper(this)) {
+            labels.add(getString(R.string.wallpaper_remove))
+        }
+        AlertDialog.Builder(this)
+            .setTitle(R.string.set_wallpaper)
+            .setItems(labels.toTypedArray()) { _, which ->
+                if (which == 0) {
+                    try {
+                        @Suppress("DEPRECATION")
+                        startActivityForResult(Pictures.pickerIntent(), REQUEST_WALLPAPER)
+                    } catch (e: Exception) {
+                        AlertDialog.Builder(this)
+                            .setMessage(R.string.wallpaper_no_picker)
+                            .setPositiveButton(android.R.string.ok, null)
+                            .show()
+                    }
+                } else {
+                    Pictures.removeWallpaper(this)
+                    build()
+                }
+            }
+            .show()
+    }
+
+    @Deprecated("Deprecated in Java")
+    @Suppress("OVERRIDE_DEPRECATION", "DEPRECATION")
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        val uri = data?.data
+        if (requestCode != REQUEST_WALLPAPER || resultCode != RESULT_OK || uri == null) {
+            return
+        }
+        thread(name = "TunaHome wallpaper") {
+            val saved = try {
+                Pictures.saveWallpaper(applicationContext, uri)
+            } catch (e: Throwable) {
+                false
+            }
+            runOnUiThread {
+                if (!isDestroyed) {
+                    if (!saved) {
+                        Toast.makeText(this, R.string.wallpaper_failed, Toast.LENGTH_LONG).show()
+                    }
+                    build()
+                }
+            }
+        }
     }
 
     private fun chooseHidden() {
@@ -193,5 +283,6 @@ class SettingsActivity : BaseActivity() {
 
     companion object {
         private const val STATE_FOCUS = "focus"
+        private const val REQUEST_WALLPAPER = 2
     }
 }

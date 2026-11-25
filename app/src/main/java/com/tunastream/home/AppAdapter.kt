@@ -9,11 +9,10 @@ import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 
 /**
- * A row or grid of apps. Select opens an app. Holding select, or pressing Menu on a remote or
- * X / Y on a controller, opens the app's menu.
+ * A row of apps. The app you are on is kept at the start of the row. Select opens an app.
+ * Holding select, or pressing Menu on a remote or X / Y on a controller, opens the app's menu.
  */
 class AppAdapter(
-    private val grid: Boolean,
     private val onOpen: (AppEntry) -> Unit,
     private val onMenu: (AppEntry) -> Unit,
 ) : RecyclerView.Adapter<AppAdapter.Holder>() {
@@ -38,12 +37,19 @@ class AppAdapter(
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): Holder {
         val view = LayoutInflater.from(parent.context).inflate(R.layout.item_app, parent, false)
-        if (grid) {
-            // In the grid each tile fills its column
+        // The viewer's chosen picture size and text style
+        val scale = Look.tileScale(parent.context)
+        if (scale != 1f) {
+            val res = parent.resources
             view.layoutParams = view.layoutParams.apply {
-                width = ViewGroup.LayoutParams.MATCH_PARENT
+                width = Math.round(res.getDimension(R.dimen.tile_width) * scale)
+            }
+            val card = view.findViewById<View>(R.id.card)
+            card.layoutParams = card.layoutParams.apply {
+                height = Math.round(res.getDimension(R.dimen.tile_height) * scale)
             }
         }
+        Look.styleText(view)
         return Holder(view)
     }
 
@@ -57,15 +63,23 @@ class AppAdapter(
         private val icon: ImageView = view.findViewById(R.id.icon)
         private val ring: View = view.findViewById(R.id.ring)
         private val label: TextView = view.findViewById(R.id.label)
-        private val textFocused = view.context.themeColor(R.attr.tsText)
-        private val textResting = view.context.themeColor(R.attr.tsTextSecondary)
         private var entry: AppEntry? = null
 
         init {
             // Round the banner's corners to match the card
             card.clipToOutline = true
 
-            view.setOnFocusChangeListener { v, focused -> showFocus(v, focused, true) }
+            view.setOnFocusChangeListener { v, focused ->
+                showFocus(v, focused, true)
+                if (focused) {
+                    // Slide the row so this app sits at its start, like the row's title
+                    val row = v.parent as? RecyclerView
+                    if (row != null) {
+                        val gap = (v.layoutParams as ViewGroup.MarginLayoutParams).leftMargin
+                        row.smoothScrollBy(v.left - gap - row.paddingLeft, 0)
+                    }
+                }
+            }
             view.setOnClickListener { entry?.let(onOpen) }
             view.setOnLongClickListener {
                 entry?.let(onMenu)
@@ -98,8 +112,8 @@ class AppAdapter(
 
         private fun showFocus(view: View, focused: Boolean, animate: Boolean) {
             ring.visibility = if (focused) View.VISIBLE else View.INVISIBLE
-            label.setTextColor(if (focused) textFocused else textResting)
-            val scale = if (focused) 1.08f else 1f
+            label.visibility = if (focused) View.VISIBLE else View.INVISIBLE
+            val scale = if (focused) 1.1f else 1f
             if (animate) {
                 view.animate().scaleX(scale).scaleY(scale).setDuration(120).start()
             } else {

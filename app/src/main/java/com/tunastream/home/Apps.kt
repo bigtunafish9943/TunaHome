@@ -3,6 +3,7 @@ package com.tunastream.home
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.Drawable
 
 /** One app on the home screen. Apps made for TV have a banner; the rest show their icon. */
@@ -12,6 +13,8 @@ class AppEntry(
     val launch: Intent,
     val banner: Drawable?,
     val icon: Drawable?,
+    /** Made for TV, as opposed to a phone or tablet app that happens to be installed. */
+    val tv: Boolean,
 )
 
 object Apps {
@@ -42,7 +45,15 @@ object Apps {
                     .addFlags(
                         Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED
                     )
-                val banner: Drawable? = try {
+                // A picture the viewer chose for this app wins over the app's own
+                val own = try {
+                    Pictures.loadTile(context, pkg)
+                } catch (e: Exception) {
+                    null
+                }
+                val banner: Drawable? = if (own != null) {
+                    BitmapDrawable(context.resources, own)
+                } else try {
                     activity.loadBanner(pm)
                 } catch (e: Exception) {
                     null
@@ -57,7 +68,10 @@ object Apps {
                 } catch (e: Exception) {
                     pkg
                 }
-                found[pkg] = AppEntry(pkg, label, launch, banner, icon)
+                found[pkg] = AppEntry(
+                    pkg, label, launch, banner, icon,
+                    category == Intent.CATEGORY_LEANBACK_LAUNCHER
+                )
             }
         }
         return found.values.sortedBy { it.label.lowercase() }

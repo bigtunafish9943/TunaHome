@@ -10,6 +10,7 @@ object Prefs {
     private const val HIDDEN = "hidden"
     private const val PHONE_APPS = "show_phone_apps"
     private const val REPLACE_STOCK = "replace_stock"
+    private const val WALLPAPER_STAMP = "wallpaper_stamp"
 
     /** Set when a setting that changes the list of apps was touched, so Home rebuilds it. */
     @Volatile
@@ -46,5 +47,12 @@ object Prefs {
 
     fun setReplaceStock(context: Context, replace: Boolean) {
         of(context).edit().putBoolean(REPLACE_STOCK, replace).apply()
+    }
+
+    /** When the wallpaper was last changed; 0 when there is none. */
+    fun wallpaperStamp(context: Context): Long = of(context).getLong(WALLPAPER_STAMP, 0)
+
+    fun setWallpaperStamp(context: Context, stamp: Long) {
+        of(context).edit().putLong(WALLPAPER_STAMP, stamp).apply()
     }
 }

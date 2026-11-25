@@ -10,12 +10,18 @@ The app id is `com.tunastream.home`.
 
 ## What it does
 
-- **Favourites and all apps.** Every app on the TV in one grid, sorted by name, with a row of favourites above it in the order you choose.
-- **An app's menu.** Hold select on an app (or press Menu on a remote, or X or Y on a controller) to add it to favourites, move it, hide it, open its app info, or uninstall it.
-- **Apps not made for TV are shown too**, with their icon instead of a banner. You can hide any app, or all apps not made for TV, in TunaHome settings.
-- **Nine themes**, named as in TunaStream: Deep Sea, Reef, Kelp, Midnight, Gold, Halloween, Autumn, Winter and Summer. With seasonal themes on, Halloween shows in October, Autumn in November, Winter from December to 15 January, and Summer from 21 June to the end of August.
+- **Rows of apps that run the width of the screen.** Favourites first, in the order you choose, then apps made for TV, then mobile apps. The app you are on is enlarged and its name appears under it.
+- **An app's menu.** Hold select on an app (or press Menu on a remote, or X or Y on a controller) to add it to favourites, move it, change its picture, hide it, open its app info, or uninstall it.
+- **Update, TV settings and TunaHome settings** are small buttons beside the clock.
+- **Make it yours**, in TunaHome settings:
+  - **Wallpaper:** any picture on the TV, behind the home screen. Without one, the theme's colours show.
+  - **Theme:** nine colour themes, named as in TunaStream: Deep Sea, Reef, Kelp, Midnight, Gold, Halloween, Autumn, Winter and Summer. With seasonal themes on, Halloween shows in October, Autumn in November, Winter from December to 15 January, and Summer from 21 June to the end of August.
+  - **Text style and text size.**
+  - **App picture size**, and your own picture for any app from its menu.
 - **Remote and controller.** Everything works with the D-pad and select. Back returns to the top of the home screen.
-- **Updates itself** from this repo's releases. An update is installed only if it matches the checksum GitHub publishes and is signed with the same key as the TunaHome you have.
+- **Updates itself** from this repo's releases, from the Update button or when the home screen opens. An update is installed only if it matches the checksum GitHub publishes and is signed with the same key as the TunaHome you have.
+
+Choosing a picture needs an app on the TV that can browse files, such as a file manager.
 
 ## Making the Home button open TunaHome
 

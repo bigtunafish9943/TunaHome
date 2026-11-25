@@ -21,28 +21,41 @@
         <item name="android:windowBackground">@drawable/dialog_bg</item>
     </style>
 
-    <style name="RowTitle">
+    <!-- Text that may sit on a picture -->
+    <style name="Shadowed">
+        <item name="android:shadowColor">#B3000000</item>
+        <item name="android:shadowRadius">5</item>
+        <item name="android:shadowDy">1</item>
+    </style>
+
+    <style name="RowTitle" parent="Shadowed">
         <item name="android:layout_width">wrap_content</item>
         <item name="android:layout_height">wrap_content</item>
         <item name="android:textColor">?attr/tsText</item>
         <item name="android:textSize">16sp</item>
         <item name="android:fontFamily">sans-serif-medium</item>
-        <item name="android:layout_marginTop">18dp</item>
-        <item name="android:layout_marginBottom">2dp</item>
+        <item name="android:layout_marginStart">@dimen/safe_side</item>
+        <item name="android:layout_marginTop">14dp</item>
     </style>
 
-    <style name="HeaderButton">
-        <item name="android:layout_width">wrap_content</item>
+    <!-- A row of apps that runs to both edges of the screen; its first tile lines up with the titles -->
+    <style name="AppRow">
+        <item name="android:layout_width">match_parent</item>
         <item name="android:layout_height">wrap_content</item>
-        <item name="android:background">@drawable/button_bg</item>
-        <item name="android:textColor">@color/button_text</item>
-        <item name="android:textSize">13sp</item>
-        <item name="android:fontFamily">sans-serif-medium</item>
-        <item name="android:paddingStart">16dp</item>
-        <item name="android:paddingEnd">16dp</item>
-        <item name="android:paddingTop">8dp</item>
-        <item name="android:paddingBottom">8dp</item>
-        <item name="android:layout_marginEnd">10dp</item>
+        <item name="android:paddingStart">40dp</item>
+        <item name="android:paddingEnd">40dp</item>
+        <item name="android:clipChildren">false</item>
+        <item name="android:clipToPadding">false</item>
+        <item name="android:descendantFocusability">afterDescendants</item>
+    </style>
+
+    <style name="IconButton">
+        <item name="android:layout_width">36dp</item>
+        <item name="android:layout_height">36dp</item>
+        <item name="android:padding">8dp</item>
+        <item name="android:layout_marginEnd">8dp</item>
+        <item name="android:background">@drawable/icon_button_bg</item>
+        <item name="android:tint">@color/button_text</item>
         <item name="android:focusable">true</item>
         <item name="android:clickable">true</item>
     </style>

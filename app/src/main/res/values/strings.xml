@@ -7,8 +7,9 @@
 
     <!-- Home screen -->
     <string name="favourites">Favourites</string>
-    <string name="favourites_hint">Hold select on an app to add it here.</string>
-    <string name="all_apps">All apps</string>
+    <string name="tv_apps">TV apps</string>
+    <string name="mobile_apps">Mobile apps</string>
+    <string name="favourites_hint">Hold select on an app to add it to favourites, hide it or uninstall it.</string>
     <string name="loading_apps">Finding your apps…</string>
     <string name="no_apps">No apps to show. Hidden apps can be shown again in TunaHome settings.</string>
     <string name="tv_settings">TV settings</string>
@@ -21,6 +22,8 @@
     <string name="menu_remove_favourite">Remove from favourites</string>
     <string name="menu_move_left">Move left</string>
     <string name="menu_move_right">Move right</string>
+    <string name="menu_change_picture">Change its picture</string>
+    <string name="menu_own_picture">Use its own picture again</string>
     <string name="menu_hide">Hide from TunaHome</string>
     <string name="menu_app_info">App info</string>
     <string name="menu_uninstall">Uninstall</string>
@@ -41,8 +44,8 @@
     <string name="set_seasonal_on">On. Halloween in October, Autumn in November, Winter from December to 15 January, Summer from 21 June to the end of August.</string>
     <string name="set_seasonal_off">Off. Your chosen theme all year.</string>
 
-    <string name="set_phone_apps">Apps not made for TV</string>
-    <string name="set_phone_apps_on">Shown. Some may be awkward to use with a remote.</string>
+    <string name="set_phone_apps">Mobile apps</string>
+    <string name="set_phone_apps_on">Shown in their own row. These are apps not made for TV, so some may be awkward with a remote.</string>
     <string name="set_phone_apps_off">Hidden.</string>
     <string name="set_hidden">Hidden apps</string>
     <string name="set_hidden_none">None. Hold select on an app to hide it.</string>
@@ -51,6 +54,28 @@
         <item quantity="other">%1$d hidden. Choose which to show again.</item>
     </plurals>
     <string name="set_hidden_title">Tick the apps to keep hidden</string>
+
+    <string name="set_wallpaper">Wallpaper</string>
+    <string name="set_wallpaper_none">None. The theme\'s colours are showing.</string>
+    <string name="set_wallpaper_set">Your picture is showing behind the home screen.</string>
+    <string name="wallpaper_choose">Choose a picture</string>
+    <string name="wallpaper_remove">Remove the picture</string>
+    <string name="wallpaper_no_picker">This TV has no app for choosing a picture. Install a file manager, put the picture on the TV, then try again.</string>
+    <string name="wallpaper_failed">That picture couldn\'t be opened. Try a JPEG or PNG file.</string>
+
+    <string name="set_font">Text style</string>
+    <string name="font_standard">Standard</string>
+    <string name="font_light">Light</string>
+    <string name="font_condensed">Narrow</string>
+    <string name="font_serif">Serif</string>
+    <string name="font_mono">Typewriter</string>
+    <string name="font_casual">Handwritten</string>
+    <string name="set_text_size">Text size</string>
+    <string name="set_tile_size">App picture size</string>
+    <string name="size_small">Small</string>
+    <string name="size_medium">Medium</string>
+    <string name="size_large">Large</string>
+    <string name="size_largest">Largest</string>
 
     <string name="set_home_button">Home button</string>
     <string name="set_home_button_on">On. Pressing Home opens TunaHome.</string>
