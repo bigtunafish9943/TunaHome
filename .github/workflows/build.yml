@@ -22,6 +22,9 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          # The whole history and tags, so release notes can list every change since the last release
+          fetch-depth: 0
 
       - name: Java
         uses: actions/setup-java@v4
@@ -104,12 +107,21 @@ jobs:
         run: |
           set -uo pipefail
           tag="v0.1.${{ github.run_number }}"
+          # Release notes: every change since the last release, as written in its description.
+          # TunaHome shows these as "What's new" after it updates.
+          prev=$(git describe --tags --abbrev=0 --match 'v0.1.*' HEAD 2>/dev/null || true)
+          range=${prev:+$prev..}HEAD
+          [ -z "$prev" ] && range="-1"
+          git log $range --no-merges --format='### %s%n%n%b%n' \
+            | grep -v -E '^(Co-Authored-By|Claude-Session|Signed-off-by):' \
+            | cat -s > notes.md
+          [ -s notes.md ] || echo "Small fixes and improvements." > notes.md
           for attempt in 1 2 3 4 5; do
             if gh release view "$tag" > /dev/null 2>&1; then
               gh release upload "$tag" out/*.apk --clobber && exit 0
             elif gh release create "$tag" out/*.apk \
                 --title "TunaHome 0.1.${{ github.run_number }}" \
-                --target "$GITHUB_SHA" --generate-notes; then
+                --target "$GITHUB_SHA" --notes-file notes.md; then
               exit 0
             fi
             echo "Attempt $attempt failed; trying again shortly"

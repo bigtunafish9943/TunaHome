@@ -1014,6 +1014,9 @@ class SettingsActivity : BaseActivity() {
             Prefs.setAutoUpdateCheck(this, !auto)
             build()
         }
+        row(R.string.whats_new, getString(R.string.whats_new_summary, BuildConfig.VERSION_NAME)) {
+            ChangeLog.showCurrent(this)
+        }
         val problem = CrashLog.read(this)
         if (problem != null) {
             row(R.string.set_last_problem, problem.lineSequence().drop(1).firstOrNull() ?: "") {

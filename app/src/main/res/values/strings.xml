@@ -340,6 +340,12 @@
     <string name="menu_network">Network</string>
     <string name="menu_installed_apps">Installed apps</string>
     <string name="menu_about_tv">About this TV</string>
+    <string name="pick_from_pack">Choose from the icon pack</string>
+    <string name="pick_title">Icon for %1$s</string>
+    <string name="pick_search">Search the pack</string>
+    <string name="pick_loading">Opening the icon pack…</string>
+    <string name="pick_no_pack">Choose an icon pack first, in TunaHome settings, Icons.</string>
+    <string name="pick_reset">Let TunaHome choose</string>
     <string name="set_card_size">Card size</string>
     <string name="set_card_shape">Card shape</string>
     <string name="shape_auto">Automatic: wide for TV pictures, square for icons</string>
@@ -438,6 +444,10 @@
     <string name="set_auto_update">Check by itself</string>
     <string name="set_auto_update_on">On. TunaHome looks for an update every few hours and asks before installing it.</string>
     <string name="set_auto_update_off">Off. Use Check for updates, or the Update button.</string>
+    <string name="whats_new">What\'s new</string>
+    <string name="whats_new_summary">What changed in TunaHome %1$s.</string>
+    <string name="whats_new_title">What\'s new in TunaHome %1$s</string>
+    <string name="whats_new_unavailable">Couldn\'t reach GitHub for the notes. Check the TV\'s internet connection.</string>
     <string name="set_last_problem">Last problem</string>
     <string name="problem_clear">Clear it</string>
     <string name="set_about">About TunaHome</string>

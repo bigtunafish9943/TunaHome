@@ -400,6 +400,7 @@ class HomeActivity : BaseActivity() {
         }
         scheduleIdle()
         Updater.resumeIfWaiting(this)
+        ChangeLog.showIfUpdated(this)
         if (Prefs.autoUpdateCheck(this)) {
             Updater.check(this, false)
         }
@@ -956,10 +957,20 @@ class HomeActivity : BaseActivity() {
         if (Pictures.hasTile(this, app.pkg)) {
             labels.add(getString(R.string.menu_own_picture))
         }
+        // With an icon pack on, any of its drawings can be chosen for this app
+        val pack = IconPacks.chosen(this)
+        if (pack != null && Look.TILE_STYLE.get(this) != Look.TILE_BANNER) {
+            labels.add(0, getString(R.string.pick_from_pack))
+        }
+        val offset = if (labels[0] == getString(R.string.pick_from_pack)) 1 else 0
         AlertDialog.Builder(this)
             .setTitle(getString(R.string.picture_title, app.label))
-            .setItems(labels.toTypedArray()) { _, which ->
-                when (which) {
+            .setItems(labels.toTypedArray()) { _, chosen ->
+                if (offset == 1 && chosen == 0) {
+                    PackPicker.show(this, app) { reload() }
+                    return@setItems
+                }
+                when (chosen - offset) {
                     0 -> choosePicture(app)
                     1 -> askForText(R.string.picture_address, "https://", url = true) { address ->
                         if (!address.startsWith("http://") && !address.startsWith("https://")) {

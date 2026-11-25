@@ -46,7 +46,38 @@ object IconPacks {
         "com.cbs.ott" to "com.cbs.app",
         "com.android.tv.settings" to "com.android.settings",
         "com.google.android.katniss" to "com.google.android.googlequicksearchbox",
+        "com.google.android.youtube.tvunplugged" to "com.google.android.apps.youtube.unplugged",
+        "com.amazon.music.tv" to "com.amazon.mp3",
+        "com.apple.atve.androidtv.appletv" to "com.apple.atve.android.appletv",
+        "com.google.android.tvrecommendations" to "com.google.android.googlequicksearchbox",
+        "com.nvidia.tegrazone3" to "com.nvidia.geforcenow",
     )
+
+    /** Endings TV apps add to their names, which pack drawings don't have. */
+    private val TV_WORDS = listOf("androidtv", "fortv", "fortvs", "tv", "livingroom", "leanback")
+
+    private fun withoutTvWords(name: String): String {
+        var n = name
+        for (w in TV_WORDS) {
+            if (n.length > w.length + 2 && n.endsWith(w)) {
+                n = n.removeSuffix(w)
+            }
+        }
+        return n
+    }
+
+    // ------------------------------------------------------------------ choosing by hand
+
+    private fun pickedKey(pack: String, app: String) = "pack_pick_${pack}_$app"
+
+    /** The drawing the viewer picked from [pack] for [app], if they picked one. */
+    fun picked(context: Context, pack: String, app: String): String? =
+        Prefs.of(context).getString(pickedKey(pack, app), null)
+
+    fun pick(context: Context, pack: String, app: String, drawable: String?) {
+        Prefs.of(context).edit().putString(pickedKey(pack, app), drawable).apply()
+        Prefs.appsChanged = true
+    }
 
     /** How many apps the chosen pack had an icon for, the last time apps were loaded. */
     @Volatile
@@ -119,6 +150,10 @@ object IconPacks {
         private val byPackage = HashMap<String, String>()
         /** Every drawable the pack names, by its plain name, for matching on an app's name. */
         private val byName = HashMap<String, String>()
+
+        /** Every drawing in the pack, by name, for choosing by hand. */
+        val names: List<String>
+            get() = byName.values.distinct().sorted()
         private val res = try {
             context.packageManager.getResourcesForApplication(pkg)
         } catch (e: PackageManager.NameNotFoundException) {
@@ -173,13 +208,54 @@ object IconPacks {
          * phone version of a TV app, then by a drawable named the same as the app.
          */
         fun icon(appPkg: String, cls: String, label: String): Drawable? {
-            val res = res ?: return null
+            res ?: return null
+            val name = picked(context, pkg, appPkg) ?: match(appPkg, cls, label) ?: return null
+            return drawable(name)
+        }
+
+        /** The drawing that fits an app best, without asking: exact first, then by name. */
+        fun match(appPkg: String, cls: String, label: String): String? {
             val phone = TV_TO_PHONE[appPkg]
-            val name = byComponent["$appPkg/$cls"]
-                ?: byPackage[appPkg]
-                ?: phone?.let { byPackage[it] }
-                ?: plain(label).takeIf { it.length >= 3 }?.let { byName[it] }
-                ?: return null
+            byComponent["$appPkg/$cls"]?.let { return it }
+            byPackage[appPkg]?.let { return it }
+            phone?.let { byPackage[it] }?.let { return it }
+            val plainLabel = plain(label)
+            if (plainLabel.length < 3) {
+                return null
+            }
+            byName[plainLabel]?.let { return it }
+            // "Netflix" and a drawing "netflix_tv"; "YouTube for Android TV" and "youtube"
+            val bare = withoutTvWords(plainLabel)
+            byName[bare]?.let { return it }
+            if (bare.length >= 4) {
+                val starts = byName.keys.filter { withoutTvWords(it) == bare || it.startsWith(bare) }
+                if (starts.size == 1) {
+                    return byName[starts[0]]
+                }
+            }
+            return null
+        }
+
+        /** Drawings whose names are closest to [text], best first, for the chooser. */
+        fun suggest(text: String, limit: Int = 60): List<String> {
+            val wanted = withoutTvWords(plain(text))
+            if (wanted.isEmpty()) {
+                return names.take(limit)
+            }
+            return byName.entries.mapNotNull { (plainName, name) ->
+                val score = when {
+                    plainName == wanted -> 0
+                    plainName.startsWith(wanted) -> 1
+                    wanted.startsWith(plainName) && plainName.length >= 3 -> 2
+                    plainName.contains(wanted) -> 3
+                    else -> return@mapNotNull null
+                }
+                score to name
+            }.sortedWith(compareBy({ it.first }, { it.second })).map { it.second }.distinct().take(limit)
+        }
+
+        fun drawable(name: String): Drawable? {
+            val res = res ?: return null
             val id = res.getIdentifier(name, "drawable", pkg)
             if (id == 0) {
                 return null
