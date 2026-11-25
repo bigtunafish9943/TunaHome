@@ -726,6 +726,7 @@ class SettingsActivity : BaseActivity() {
         choice(R.string.set_date, Look.DATE)
         switch(R.string.set_show_network, Look.SHOW_NETWORK, R.string.shown, R.string.hidden)
         switch(R.string.set_show_vpn, Look.SHOW_VPN, R.string.vpn_shown, R.string.hidden)
+        switch(R.string.set_show_search, Look.SHOW_SEARCH_BUTTON, R.string.shown, R.string.hidden)
         switch(R.string.set_show_update, Look.SHOW_UPDATE_BUTTON, R.string.shown, R.string.hidden)
         switch(R.string.set_show_tv_settings, Look.SHOW_TV_SETTINGS_BUTTON, R.string.shown, R.string.hidden)
         row(R.string.set_settings_button, getString(R.string.set_settings_button_summary)) {

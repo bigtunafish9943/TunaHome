@@ -29,6 +29,10 @@ class AppEntry(
 }
 
 object Apps {
+    /** The last list loaded, for screens that want it straight away (search). */
+    @Volatile
+    var cached: List<AppEntry> = emptyList()
+
     /**
      * Every app that can be opened, one entry per app, sorted by name. Apps made for TV come
      * first so that an app with both a TV and a phone entry opens its TV one.
@@ -90,6 +94,6 @@ object Apps {
             }
         }
         IconPacks.covered = if (pack != null) packHits to found.size else null
-        return found.values.sortedBy { it.label.lowercase() }
+        return found.values.sortedBy { it.label.lowercase() }.also { cached = it }
     }
 }

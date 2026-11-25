@@ -509,6 +509,22 @@
     <string name="wx_snow">Snow</string>
     <string name="wx_storm">Thunderstorms</string>
 
+    <!-- Search -->
+    <string name="search">Search</string>
+    <string name="search_hint">Search for an app</string>
+    <string name="search_voice">Search by voice</string>
+    <string name="search_say">Say the name of an app</string>
+    <string name="search_start">Type, or press the microphone and speak.</string>
+    <string name="search_none">Nothing called \"%1$s\" on the TV. Search everywhere to look further.</string>
+    <plurals name="search_found">
+        <item quantity="one">%1$d found</item>
+        <item quantity="other">%1$d found</item>
+    </plurals>
+    <string name="search_everywhere">Search everywhere for \"%1$s\"</string>
+    <string name="search_everywhere_failed">This TV\'s own search couldn\'t be opened.</string>
+    <string name="search_no_voice">Voice search isn\'t available on this TV. Type instead.</string>
+    <string name="set_show_search">Search button</string>
+
     <!-- Watch Next -->
     <string name="watch_next">Watch Next</string>
     <string name="watch_next_play">Carry on watching</string>

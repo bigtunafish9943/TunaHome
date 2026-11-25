@@ -104,7 +104,7 @@ class HomeActivity : BaseActivity() {
         buildSections()
         fadeWhenIdle.clear()
         listOf(R.id.sections, R.id.appsHint, R.id.brand, R.id.networkIcon, R.id.checkUpdate,
-            R.id.openTvSettings, R.id.openSettings, R.id.sideMenu, R.id.vpnIcon).forEach { fadeWhenIdle.add(findViewById(it)) }
+            R.id.openTvSettings, R.id.openSettings, R.id.sideMenu, R.id.vpnIcon, R.id.openSearch).forEach { fadeWhenIdle.add(findViewById(it)) }
         if (!Look.IDLE_CLOCK.get(this)) {
             fadeWhenIdle.add(findViewById(R.id.clockBox))
             fadeWhenIdle.add(findViewById(R.id.weatherBox))
@@ -441,6 +441,7 @@ class HomeActivity : BaseActivity() {
         }
         if (Look.SIDE_MENU_SHORTCUTS.get(this)) {
             entries.add(SideMenu.Entry(0, "", null) {})
+            entries.add(SideMenu.Entry(R.drawable.ic_search, getString(R.string.search), null) { openSearch(false) })
             entries.add(SideMenu.Entry(R.drawable.ic_settings, getString(R.string.tunahome_settings), null) {
                 openTunaHomeSettings()
             })
@@ -476,6 +477,10 @@ class HomeActivity : BaseActivity() {
         }
     }
 
+    fun openSearch(voice: Boolean) {
+        startActivity(Intent(this, SearchActivity::class.java).putExtra(SearchActivity.EXTRA_VOICE, voice))
+    }
+
     private fun openTunaHomeSettings() {
         if (AppLock.settingsLocked(this)) {
             AppLock.ask(this, getString(R.string.tunahome_settings)) {
@@ -505,6 +510,10 @@ class HomeActivity : BaseActivity() {
 
     private fun setUpTopBar() {
         setUpBrand()
+
+        val search = findViewById<View>(R.id.openSearch)
+        search.visibility = if (Look.SHOW_SEARCH_BUTTON.get(this)) View.VISIBLE else View.GONE
+        search.setOnClickListener { openSearch(false) }
 
         val update = findViewById<View>(R.id.checkUpdate)
         update.visibility = if (Look.SHOW_UPDATE_BUTTON.get(this)) View.VISIBLE else View.GONE
@@ -797,24 +806,7 @@ class HomeActivity : BaseActivity() {
     }
 
     private fun open(app: AppEntry) {
-        if (AppLock.isLocked(this, app.appPkg)) {
-            AppLock.ask(this, app.label) { launch(app) }
-        } else {
-            launch(app)
-        }
-    }
-
-    private fun launch(app: AppEntry) {
-        try {
-            startActivity(app.launch)
-            if (!app.isWatchNext) {
-                Prefs.setLastOpened(this, app.pkg)
-                Prefs.addRecent(this, app.pkg)
-            }
-        } catch (e: Exception) {
-            Toast.makeText(this, getString(R.string.open_failed, app.label), Toast.LENGTH_LONG).show()
-            reload()
-        }
+        Launch.open(this, app) { reload() }
     }
 
     // ------------------------------------------------------------------ an app's menu

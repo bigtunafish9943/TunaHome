@@ -85,6 +85,19 @@
         <package android:name="me.iacn.mbestyle" />
         <package android:name="com.kn.paper_foss_theme" />
         <package android:name="org.materialos.icons" />
+        <!-- Voice search, and searching everything with the TV's own search -->
+        <intent>
+            <action android:name="android.speech.action.RECOGNIZE_SPEECH" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.SEARCH" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.WEB_SEARCH" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.ASSIST" />
+        </intent>
         <!-- Offering Aerial Views in the Play Store when no wallpaper app is installed -->
         <intent>
             <action android:name="android.intent.action.VIEW" />
@@ -113,6 +126,13 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <activity
+            android:name=".SearchActivity"
+            android:configChanges="keyboard|keyboardHidden|navigation|orientation|screenSize|screenLayout|uiMode"
+            android:exported="false"
+            android:screenOrientation="landscape"
+            android:windowSoftInputMode="stateVisible|adjustNothing" />
 
         <activity
             android:name=".SettingsActivity"

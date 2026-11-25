@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The search box: the theme's card colour, outlined in the highlight colour while typing -->
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:state_focused="true">
+        <shape android:shape="rectangle">
+            <solid android:color="?attr/tsSurface" />
+            <stroke android:width="2dp" android:color="?attr/tsAccent" />
+            <corners android:radius="26dp" />
+        </shape>
+    </item>
+    <item>
+        <shape android:shape="rectangle">
+            <solid android:color="?attr/tsSurface" />
+            <stroke android:width="1dp" android:color="?attr/tsSurfaceBorder" />
+            <corners android:radius="26dp" />
+        </shape>
+    </item>
+</selector>
