@@ -273,10 +273,14 @@ class AppAdapter(
             itemView.contentDescription = app.label
             cardLabel.text = app.label
 
-            val showBanner = tiles.style == Look.TILE_BANNER && app.banner != null
-            banner.setImageDrawable(if (showBanner) app.banner else null)
+            // The viewer's own picture for an app wins in every style: it fills the card in the
+            // TV picture style and takes the icon's place in the icon styles
+            val wide = tiles.style == Look.TILE_BANNER
+            val wideImage = if (wide) app.own ?: app.banner else null
+            val showBanner = wideImage != null
+            banner.setImageDrawable(wideImage)
             banner.visibility = if (showBanner) View.VISIBLE else View.GONE
-            icon.setImageDrawable(if (showBanner) null else app.icon)
+            icon.setImageDrawable(if (showBanner) null else app.own ?: app.icon)
             icon.visibility = if (showBanner) View.GONE else View.VISIBLE
             cardLabel.visibility = if (tiles.style == Look.TILE_ICON_NAME) View.VISIBLE else View.GONE
             showFocus(itemView.isFocused, false)

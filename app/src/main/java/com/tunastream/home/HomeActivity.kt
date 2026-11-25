@@ -424,14 +424,7 @@ class HomeActivity : BaseActivity() {
         }
 
         labels.add(getString(R.string.menu_change_picture))
-        actions.add { choosePicture(app) }
-        if (Pictures.hasTile(this, app.pkg)) {
-            labels.add(getString(R.string.menu_own_picture))
-            actions.add {
-                Pictures.removeTile(this, app.pkg)
-                reload()
-            }
-        }
+        actions.add { pictureMenu(app) }
 
         labels.add(getString(R.string.menu_hide))
         actions.add {
@@ -486,6 +479,49 @@ class HomeActivity : BaseActivity() {
 
     // ------------------------------------------------------------------ an app's own picture
 
+    /** Where an app's own picture comes from: the TV, a web address, or back to its own. */
+    private fun pictureMenu(app: AppEntry) {
+        val labels = arrayListOf(getString(R.string.picture_from_tv), getString(R.string.picture_address))
+        if (Pictures.hasTile(this, app.pkg)) {
+            labels.add(getString(R.string.menu_own_picture))
+        }
+        AlertDialog.Builder(this)
+            .setTitle(getString(R.string.picture_title, app.label))
+            .setItems(labels.toTypedArray()) { _, which ->
+                when (which) {
+                    0 -> choosePicture(app)
+                    1 -> askForText(R.string.picture_address, "https://", url = true) { address ->
+                        if (!address.startsWith("http://") && !address.startsWith("https://")) {
+                            Toast.makeText(this, R.string.bg_address_bad, Toast.LENGTH_LONG).show()
+                        } else {
+                            Toast.makeText(this, R.string.picture_fetching, Toast.LENGTH_SHORT).show()
+                            saveTile(app.pkg, Uri.parse(address), R.string.picture_address_failed)
+                        }
+                    }
+                    else -> {
+                        Pictures.removeTile(this, app.pkg)
+                        reload()
+                    }
+                }
+            }
+            .show()
+    }
+
+    private fun saveTile(pkg: String, uri: Uri, failure: Int) {
+        thread(name = "TunaHome picture") {
+            val saved = try {
+                Pictures.saveTile(applicationContext, pkg, uri)
+            } catch (e: Throwable) {
+                false
+            }
+            runOnUiThread {
+                if (!isDestroyed) {
+                    if (saved) reload() else Toast.makeText(this, failure, Toast.LENGTH_LONG).show()
+                }
+            }
+        }
+    }
+
     private fun choosePicture(app: AppEntry) {
         choosingPictureFor = app.pkg
         try {
@@ -513,22 +549,7 @@ class HomeActivity : BaseActivity() {
         if (resultCode != RESULT_OK || pkg == null || uri == null) {
             return
         }
-        thread(name = "TunaHome picture") {
-            val saved = try {
-                Pictures.saveTile(applicationContext, pkg, uri)
-            } catch (e: Throwable) {
-                false
-            }
-            runOnUiThread {
-                if (!isDestroyed) {
-                    if (saved) {
-                        reload()
-                    } else {
-                        Toast.makeText(this, R.string.wallpaper_failed, Toast.LENGTH_LONG).show()
-                    }
-                }
-            }
-        }
+        saveTile(pkg, uri, R.string.wallpaper_failed)
     }
 
     private fun startOrExplain(intent: Intent) {

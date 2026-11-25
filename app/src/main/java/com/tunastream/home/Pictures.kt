@@ -178,7 +178,10 @@ object Pictures {
 
     // ------------------------------------------------------------------ shared
 
-    /** Copies a chosen picture to [target], scaled down so it covers the given size and no more. */
+    /**
+     * Copies a chosen picture (on the TV or at a web address) to [target], scaled down so it
+     * covers the given size and no more.
+     */
     private fun saveShrunk(
         context: Context,
         uri: Uri,
@@ -187,23 +190,7 @@ object Pictures {
         height: Int,
         format: Bitmap.CompressFormat,
     ): Boolean {
-        val resolver = context.contentResolver
-
-        // First pass: only the picture's size
-        val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
-        val sizing = resolver.openInputStream(uri) ?: return false
-        sizing.use { BitmapFactory.decodeStream(it, null, bounds) }
-        if (bounds.outWidth <= 0 || bounds.outHeight <= 0) {
-            return false
-        }
-        var sample = 1
-        while (bounds.outWidth / (sample * 2) >= width && bounds.outHeight / (sample * 2) >= height) {
-            sample *= 2
-        }
-
-        val options = BitmapFactory.Options().apply { inSampleSize = sample }
-        val reading = resolver.openInputStream(uri) ?: return false
-        var bitmap = reading.use { BitmapFactory.decodeStream(it, null, options) } ?: return false
+        var bitmap = decode(context, uri, width, height) ?: return false
 
         val scale = maxOf(width.toFloat() / bitmap.width, height.toFloat() / bitmap.height)
         if (scale < 1f) {

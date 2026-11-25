@@ -100,5 +100,8 @@
         <receiver
             android:name=".Updater$InstallResultReceiver"
             android:exported="false" />
+        <receiver
+            android:name=".IconPackStore$InstallResult"
+            android:exported="false" />
     </application>
 </manifest>

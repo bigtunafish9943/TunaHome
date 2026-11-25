@@ -11,12 +11,14 @@ class AppEntry(
     val pkg: String,
     val label: String,
     val launch: Intent,
-    /** Its wide TV picture, or the viewer's own picture for it; null when it has neither. */
+    /** Its wide TV picture; null when it has none. */
     val banner: Drawable?,
     /** Its icon, from the chosen icon pack when that has one. */
     val icon: Drawable?,
     /** Made for TV, as opposed to a phone or tablet app that happens to be installed. */
     val tv: Boolean,
+    /** A picture the viewer chose for this app; shown instead of its own in every style. */
+    val own: Drawable? = null,
 )
 
 object Apps {
@@ -49,9 +51,7 @@ object Apps {
                 } catch (e: Throwable) {
                     null
                 }
-                val banner: Drawable? = if (own != null) {
-                    BitmapDrawable(context.resources, own)
-                } else try {
+                val banner: Drawable? = try {
                     activity.loadBanner(pm)
                 } catch (e: Exception) {
                     null
@@ -68,7 +68,8 @@ object Apps {
                 }
                 found[pkg] = AppEntry(
                     pkg, label, launch, banner, icon,
-                    category == Intent.CATEGORY_LEANBACK_LAUNCHER
+                    category == Intent.CATEGORY_LEANBACK_LAUNCHER,
+                    own?.let { BitmapDrawable(context.resources, it) },
                 )
             }
         }

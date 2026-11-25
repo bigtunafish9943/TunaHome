@@ -45,6 +45,20 @@ class SettingsActivity : BaseActivity() {
     override fun onResume() {
         super.onResume()
         // Rebuilt each time: some settings change on other screens (the TV's, a wallpaper app's)
+        IconPackStore.resumeIfWaiting(this)
+        val waiting = IconPackStore.waitingFor
+        if (waiting != null && IconPackStore.isInstalled(this, waiting)) {
+            // Just installed through TunaHome: use it, as the viewer asked
+            IconPackStore.waitingFor = null
+            IconPacks.choose(this, waiting)
+            Look.TILE_STYLE.set(this, Look.TILE_ICON)
+            Prefs.appsChanged = true
+            Toast.makeText(this, R.string.pack_now_using, Toast.LENGTH_LONG).show()
+            if (outOfDate()) {
+                recreate()
+                return
+            }
+        }
         build()
         Updater.resumeIfWaiting(this)
     }
@@ -187,6 +201,25 @@ class SettingsActivity : BaseActivity() {
                     R.string.wallpaper_choose,
                     getString(if (Pictures.hasWallpaper(this)) R.string.set_wallpaper_set else R.string.set_wallpaper_none)
                 ) { pick(REQUEST_WALLPAPER, "image/*") }
+                row(R.string.picture_address, getString(R.string.picture_address_summary)) {
+                    askForText(R.string.picture_address, "https://", url = true) { address ->
+                        if (!address.startsWith("http://") && !address.startsWith("https://")) {
+                            Toast.makeText(this, R.string.bg_address_bad, Toast.LENGTH_LONG).show()
+                        } else {
+                            Toast.makeText(this, R.string.picture_fetching, Toast.LENGTH_SHORT).show()
+                            inBackground(R.string.picture_address_failed, { Pictures.saveWallpaper(it, Uri.parse(address)) }) {
+                                Backdrop.SOURCE.set(this, Backdrop.SOURCE_PICTURE)
+                            }
+                        }
+                    }
+                }
+                if (Pictures.hasWallpaper(this)) {
+                    row(R.string.wallpaper_remove, getString(R.string.wallpaper_remove_summary)) {
+                        Pictures.removeWallpaper(this)
+                        Look.touch(this)
+                        changed()
+                    }
+                }
             }
             Backdrop.SOURCE_VIDEOS -> {
                 val own = Backdrop.videos(this)
@@ -546,21 +579,22 @@ class SettingsActivity : BaseActivity() {
                 ?: getString(if (packs.isEmpty()) R.string.icon_pack_none_installed else R.string.icon_pack_none)
         ) {
             if (packs.isEmpty()) {
-                AlertDialog.Builder(this)
-                    .setTitle(R.string.set_icon_pack)
-                    .setMessage(R.string.icon_pack_how)
-                    .setPositiveButton(R.string.close, null)
-                    .show()
+                openPackStore()
             } else {
                 val names = listOf(getString(R.string.icon_pack_none)) + packs.map { it.name }
                 val current = packs.indexOfFirst { it.pkg == chosenPack } + 1
                 chooseOne(getString(R.string.set_icon_pack), names, current) {
                     IconPacks.choose(this, if (it == 0) null else packs[it - 1].pkg)
                     Prefs.appsChanged = true
-                    changed()
+                    if (it != 0 && Look.TILE_STYLE.get(this) == Look.TILE_BANNER) {
+                        offerIcons()
+                    } else {
+                        changed()
+                    }
                 }
             }
         }
+        row(R.string.pack_get, getString(R.string.pack_get_summary)) { openPackStore() }
         heading(R.string.heading_cards)
         choice(R.string.set_tile_corners, Look.TILE_CORNERS)
         choice(R.string.set_tile_card, Look.TILE_CARD)
@@ -574,6 +608,49 @@ class SettingsActivity : BaseActivity() {
         row(R.string.set_app_picture, getString(R.string.set_app_picture_summary)) {
             Toast.makeText(this, R.string.set_app_picture_summary, Toast.LENGTH_LONG).show()
         }
+    }
+
+    /** Icon packs change icons, but TV pictures hide most of them: offer to show icons. */
+    private fun offerIcons() {
+        AlertDialog.Builder(this)
+            .setTitle(R.string.pack_show_icons_title)
+            .setMessage(R.string.pack_show_icons_body)
+            .setPositiveButton(R.string.pack_show_icons) { _, _ ->
+                Look.TILE_STYLE.set(this, Look.TILE_ICON)
+                changed()
+            }
+            .setNegativeButton(R.string.pack_keep_pictures) { _, _ -> changed() }
+            .setOnCancelListener { changed() }
+            .show()
+    }
+
+    /** Free icon packs from F-Droid, each marked if it's already on the TV. */
+    private fun openPackStore() {
+        val offers = IconPackStore.CATALOGUE
+        val names = offers.map { offer ->
+            val about = getString(offer.about)
+            if (IconPackStore.isInstalled(this, offer.pkg)) getString(R.string.pack_entry_installed, offer.name, about)
+            else getString(R.string.pack_entry, offer.name, about)
+        }
+        AlertDialog.Builder(this)
+            .setTitle(R.string.pack_get)
+            .setItems(names.toTypedArray()) { _, which ->
+                val offer = offers[which]
+                if (IconPackStore.isInstalled(this, offer.pkg)) {
+                    IconPacks.choose(this, offer.pkg)
+                    Prefs.appsChanged = true
+                    if (Look.TILE_STYLE.get(this) == Look.TILE_BANNER) offerIcons() else changed()
+                    return@setItems
+                }
+                AlertDialog.Builder(this)
+                    .setTitle(offer.name)
+                    .setMessage(getString(R.string.pack_confirm, getString(offer.about)))
+                    .setPositiveButton(R.string.pack_download) { _, _ -> IconPackStore.get(this, offer) }
+                    .setNegativeButton(R.string.cancel, null)
+                    .show()
+            }
+            .setNegativeButton(R.string.close, null)
+            .show()
     }
 
     // ------------------------------------------------------------------ top of the screen
