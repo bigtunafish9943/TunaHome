@@ -119,6 +119,8 @@ Android TV has no setting for choosing your home screen, so the Home button keep
 
 If another launcher (such as Projectivy) already takes over the Home button, switch that off first. Only one app should catch the Home button at a time.
 
+**Or make it the TV's default home screen.** TunaHome tells Android it is a home screen, so launcher managers such as TV Box Tools' **Launcher Manager** list it and can set it as the default, and on TVs that ask which home screen to use, TunaHome is one of the choices. With TunaHome as the default you don't need the accessibility service for the Home button, though shortcuts on Home and Back, the sleep timer and waking into an app still need it.
+
 **To undo it,** switch TunaHome off on the same accessibility screen. The Home button goes back to the TV's own home screen straight away. Nothing on the TV is disabled or removed by this.
 
 What the service does:
