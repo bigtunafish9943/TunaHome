@@ -161,6 +161,21 @@ jobs:
           name: TunaHome-apk
           path: out
 
+      # The emulator's screenshots go with the release too, as one zip (the updater only
+      # ever takes the APK)
+      - name: Get the screenshots
+        uses: actions/download-artifact@v4
+        with:
+          name: tv-check
+          path: tv-check
+
+      - name: Zip the screenshots
+        run: |
+          set -euo pipefail
+          cd tv-check
+          zip -q "../out/TunaHome-0.1.${{ github.run_number }}-screenshots.zip" *.png
+          ls -l ../out
+
       # gh instead of a release action: GitHub sometimes answers 500 when a release is
       # created, so try a few times before giving up
       - name: Publish release
@@ -180,8 +195,8 @@ jobs:
           [ -s notes.md ] || echo "Small fixes and improvements." > notes.md
           for attempt in 1 2 3 4 5; do
             if gh release view "$tag" > /dev/null 2>&1; then
-              gh release upload "$tag" out/*.apk --clobber && exit 0
-            elif gh release create "$tag" out/*.apk \
+              gh release upload "$tag" out/* --clobber && exit 0
+            elif gh release create "$tag" out/* \
                 --title "TunaHome 0.1.${{ github.run_number }}" \
                 --target "$GITHUB_SHA" --notes-file notes.md; then
               exit 0
