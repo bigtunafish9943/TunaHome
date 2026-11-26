@@ -478,6 +478,16 @@ object Look {
         )
     )
 
+    /** Remote and controller batteries beside the clock. */
+    const val BATTERY_OFF = 0
+    const val BATTERY_LOW = 1
+    const val BATTERY_ALWAYS = 2
+    val BATTERIES = Choice(
+        "look_batteries", BATTERY_LOW, intArrayOf(
+            R.string.hidden, R.string.battery_when_low, R.string.battery_always,
+        )
+    )
+
     // ------------------------------------------------------------------ idle
 
     val IDLE = Choice(

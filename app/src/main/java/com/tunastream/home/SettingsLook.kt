@@ -267,6 +267,14 @@ internal fun SettingsActivity.topBarPage() {
     choice(R.string.set_clock_size, Look.CLOCK_SIZE)
     choice(R.string.set_date, Look.DATE)
     choice(R.string.set_system_info, Look.SYSTEM_INFO)
+    choice(R.string.set_batteries, Look.BATTERIES) {
+        // Android 12 and later ask first before TunaHome may see Bluetooth devices
+        if (Look.BATTERIES.get(this) != Look.BATTERY_OFF && !Batteries.allowed(this) &&
+            android.os.Build.VERSION.SDK_INT >= 31) {
+            requestPermissions(arrayOf(android.Manifest.permission.BLUETOOTH_CONNECT), 41)
+        }
+        changed()
+    }
     switch(R.string.set_show_network, Look.SHOW_NETWORK, R.string.shown, R.string.hidden)
     switch(R.string.set_show_vpn, Look.SHOW_VPN, R.string.vpn_shown, R.string.hidden)
     switch(R.string.set_show_who, Look.SHOW_WHO, R.string.set_show_who_on, R.string.hidden)

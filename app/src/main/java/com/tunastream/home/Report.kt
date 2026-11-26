@@ -67,6 +67,7 @@ object Report {
         } catch (e: Exception) {
             out.append("  (couldn't list USB: ").append(e).append(")\n")
         }
+        Batteries.levels(context).forEach { out.append("  Bluetooth battery: ").append(it.name).append(' ').append(it.percent).append("%\n") }
 
         out.append("\nRecent problems:\n")
         try {

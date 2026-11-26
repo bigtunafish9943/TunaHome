@@ -1137,4 +1137,9 @@
     <string name="pointer_off">Pointer off</string>
     <string name="pointer_no_taps">The pointer can\'t tap yet: switch TunaHome\'s Home button off and on again in the TV\'s accessibility settings.</string>
     <string name="pointer_needs_android_7">The pointer needs Android 7 or later.</string>
+    <string name="set_batteries">Remote and controller batteries</string>
+    <string name="battery_when_low">When low</string>
+    <string name="battery_always">Always</string>
+    <string name="info_battery">%1$s %2$d%%</string>
+    <string name="info_battery_low">%1$s battery low: %2$d%%</string>
 </resources>

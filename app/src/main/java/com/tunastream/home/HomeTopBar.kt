@@ -241,7 +241,7 @@ internal fun HomeActivity.showWeather() {
     }
 }
 
-/** Shows free storage and memory as chosen; false when it's switched off. */
+/** Shows free storage, memory and batteries as chosen; false when all are switched off. */
 internal fun HomeActivity.showSystemInfo(): Boolean {
     val view = findViewById<TextView>(R.id.systemInfo)
     val mode = Look.SYSTEM_INFO.get(this)
@@ -269,9 +269,18 @@ internal fun HomeActivity.showSystemInfo(): Boolean {
             // Left out
         }
     }
+    val batteries = Look.BATTERIES.get(this)
+    if (batteries != Look.BATTERY_OFF) {
+        for (b in Batteries.levels(this)) {
+            if (batteries == Look.BATTERY_ALWAYS || b.percent <= Batteries.LOW) {
+                parts.add(getString(if (b.percent <= Batteries.LOW) R.string.info_battery_low else R.string.info_battery,
+                    b.name, b.percent))
+            }
+        }
+    }
     view.text = parts.joinToString("   ")
     view.visibility = if (parts.isEmpty()) View.GONE else View.VISIBLE
-    return mode != Look.INFO_HIDDEN || sleepLeft > 0
+    return mode != Look.INFO_HIDDEN || sleepLeft > 0 || batteries != Look.BATTERY_OFF
 }
 
 internal fun HomeActivity.watchNetwork() {
