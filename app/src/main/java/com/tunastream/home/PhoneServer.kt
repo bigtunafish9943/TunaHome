@@ -227,6 +227,7 @@ class PhoneServer(private val context: Context, private val said: (String) -> Un
         "/api/people" -> people()
         "/api/person" -> person(r.json())
         "/api/person/photo" -> personPhoto(r)
+        "/api/report" -> JSONObject().put("text", Report.text(context))
         else -> JSONObject().put("error", "unknown")
     }
 

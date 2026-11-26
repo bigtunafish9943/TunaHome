@@ -147,15 +147,35 @@ async function load() {
 }
 
 function render() {
-  const tabs = [["sections", "Sections"], ["apps", "Apps"], ["people", "Who's watching"], ["link", "Add a link"], ["background", "Background"], ["look", "Look"]];
+  const tabs = [["sections", "Sections"], ["apps", "Apps"], ["people", "Who's watching"], ["link", "Add a link"], ["background", "Background"], ["look", "Look"], ["report", "Report a problem"]];
   const nav = el("nav");
   for (const [id, name] of tabs) nav.append(el("button", { class: tab === id ? "on" : "", text: name, onclick: () => { tab = id; if (id === "people") people = null; render(); window.scrollTo(0, 0); } }));
   const header = el("header", null,
     el("div", { class: "bar" }, el("h1", null, "Tuna", el("span", { text: "Home" }))),
     nav);
   const main = el("main");
-  ({ sections: sectionsTab, apps: appsTab, people: peopleTab, link: linkTab, background: backgroundTab, look: lookTab })[tab](main);
+  ({ sections: sectionsTab, apps: appsTab, people: peopleTab, link: linkTab, background: backgroundTab, look: lookTab, report: reportTab })[tab](main);
   app.replaceChildren(header, main);
+}
+
+// ---------------------------------------------------------------- report a problem
+
+function reportTab(main) {
+  const out = el("textarea", { readonly: "", rows: "16", style: "width:100%;background:var(--panel2);color:var(--text);border:1px solid var(--line);border-radius:10px;padding:10px;font:12px/1.4 ui-monospace,Consolas,monospace;" });
+  const copy = el("button", { class: "b", text: "Copy", onclick: async () => {
+    try { await navigator.clipboard.writeText(out.value); toast("Copied"); }
+    catch (e) { out.select(); document.execCommand("copy"); toast("Copied"); }
+  } });
+  const get = el("button", { class: "b primary", text: "Get the TV's report", onclick: async () => {
+    out.value = "Asking the TV…";
+    try { out.value = (await api("/api/report")).text; }
+    catch (e) { out.value = "Couldn't get it: " + e.message; }
+  } });
+  main.append(el("div", { class: "card" },
+    el("div", { class: "head" }, el("h2", { text: "Report a problem" })),
+    el("p", { class: "note", text: "What TunaHome sees on this TV right now: its version, the TV, the controllers and USB devices plugged in, recent problems and TunaHome's own log. Nothing else on the TV is included. Copy it into a message to whoever is helping you." }),
+    el("div", { class: "tools", style: "margin:10px 0" }, get, copy),
+    out));
 }
 
 const saving = {};
