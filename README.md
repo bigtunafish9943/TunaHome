@@ -127,7 +127,7 @@ For You, Recently opened, app use counts and everything else stay on the TV.
 
 ## Building
 
-GitHub Actions builds every push. Pushes to the default branch publish a release `v0.1.<run number>` with the APK attached, signed from the repo secrets `KEYSTORE_BASE64`, `KEYSTORE_PASSWORD`, `KEY_ALIAS` and `KEY_PASSWORD`. Without those secrets the build still runs, but the APK is signed with a throwaway key and no release is published. Release notes are made from the commit messages since the last release.
+GitHub Actions builds every push. Pushes to the default branch publish a release `v0.1.<run number>` with the APK attached, signed from the repo secrets `KEYSTORE_BASE64`, `KEYSTORE_PASSWORD`, `KEY_ALIAS` and `KEY_PASSWORD`. Without those secrets the build still runs, but the APK is signed with a throwaway key and no release is published. Before a release goes out, each build is run on an Android TV emulator: it goes through the main screens with remote button presses, takes a screenshot of each (kept with the build for 30 days), and stops the release if TunaHome stopped with an error or stopped answering. Release notes are made from the commit messages since the last release.
 
 To build it yourself you need Java 17 and the Android SDK (platform 36):
 

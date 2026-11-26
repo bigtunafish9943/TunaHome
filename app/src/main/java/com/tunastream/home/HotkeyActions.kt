@@ -34,6 +34,12 @@ object HotkeyActions {
     const val SLEEP_TIMER = "sleep_timer"
     const val QUICK = "quick_changes"
 
+    /**
+     * Opens one page of TunaHome settings (the argument names it). Not offered as a shortcut:
+     * it's how the automatic checks on each build reach each page. The settings lock still applies.
+     */
+    const val SETTINGS_PAGE = "settings_page"
+
     /** Every action in the order the list shows them, with its name. */
     val ALL = listOf(
         OPEN_APP to R.string.act_open_app,

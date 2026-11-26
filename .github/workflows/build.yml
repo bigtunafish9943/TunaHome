@@ -19,6 +19,8 @@ concurrency:
 jobs:
   apk:
     runs-on: ubuntu-latest
+    outputs:
+      signed: ${{ steps.ks.outputs.present }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -98,10 +100,70 @@ jobs:
           path: out/*.apk
           if-no-files-found: error
 
+  # Runs the new APK on an Android TV emulator: screenshots of the main screens, and a check that
+  # TunaHome didn't stop with an error. A release only goes out if this passes.
+  tv-check:
+    needs: apk
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Get the APK
+        uses: actions/download-artifact@v4
+        with:
+          name: TunaHome-apk
+          path: out
+
+      # The emulator needs the processor's virtualisation, which GitHub's Linux runners have
+      - name: Allow the emulator to use virtualisation
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: Run on an Android TV emulator
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 30
+          target: android-tv
+          arch: x86
+          profile: tv_1080p
+          force-avd-creation: true
+          emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim
+          disable-animations: false
+          script: .github/scripts/check-on-tv.sh "$(ls out/*.apk | head -1)" tv-check
+
+      - name: Keep the screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: tv-check
+          path: tv-check
+          if-no-files-found: ignore
+          retention-days: 30
+
+  release:
+    needs: [apk, tv-check]
+    if: needs.apk.outputs.signed == 'true' && github.event_name == 'push' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          # The whole history and tags, so release notes can list every change since the last release
+          fetch-depth: 0
+
+      - name: Get the APK
+        uses: actions/download-artifact@v4
+        with:
+          name: TunaHome-apk
+          path: out
+
       # gh instead of a release action: GitHub sometimes answers 500 when a release is
       # created, so try a few times before giving up
       - name: Publish release
-        if: steps.ks.outputs.present == 'true' && github.event_name == 'push' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
         env:
           GH_TOKEN: ${{ github.token }}
         run: |

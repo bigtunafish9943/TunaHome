@@ -109,6 +109,7 @@ class HomeActivity : BaseActivity() {
             }
             HotkeyActions.SLEEP_TIMER -> chooseSleep()
             HotkeyActions.QUICK -> quickCustomise()
+            HotkeyActions.SETTINGS_PAGE -> openTunaHomeSettings(arg)
         }
     }
 
@@ -968,13 +969,15 @@ class HomeActivity : BaseActivity() {
         startActivity(Intent(this, SearchActivity::class.java).putExtra(SearchActivity.EXTRA_VOICE, voice))
     }
 
-    private fun openTunaHomeSettings() {
+    private fun openTunaHomeSettings(page: String? = null) {
+        val open = Intent(this, SettingsActivity::class.java)
+        if (page != null) {
+            open.putExtra(SettingsActivity.EXTRA_PAGE, page)
+        }
         if (AppLock.settingsLocked(this)) {
-            AppLock.ask(this, getString(R.string.tunahome_settings)) {
-                startActivity(Intent(this, SettingsActivity::class.java))
-            }
+            AppLock.ask(this, getString(R.string.tunahome_settings)) { startActivity(open) }
         } else {
-            startActivity(Intent(this, SettingsActivity::class.java))
+            startActivity(open)
         }
     }
 
