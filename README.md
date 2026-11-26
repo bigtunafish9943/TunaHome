@@ -1,59 +1,92 @@
 # TunaHome
 
-A home screen for Android TV: your apps, a row of favourites, and nothing else. Made first for the NVIDIA Shield TV, in the same look as [TunaStream](https://github.com/bigtunafish9943/TunaStream) and [TunaReceive](https://github.com/bigtunafish9943/TunaReceive).
+A home screen for Android TV that you can make entirely your own: your apps in sections, the background you like (Aerial Views included), and every size, colour, glow and spacing tuned to taste. Made first for the NVIDIA Shield TV, for the Shield remote and game controllers, in the same look as [TunaStream](https://github.com/bigtunafish9943/TunaStream) and [TunaReceive](https://github.com/bigtunafish9943/TunaReceive).
 
 TunaHome works by itself. You don't need TunaStream or TunaReceive to use it.
 
-**Install:** download the APK from the [latest release](https://github.com/bigtunafish9943/TunaHome/releases/latest) and open it on the TV. After that, TunaHome updates itself.
+**Install:** download the APK from the [latest release](https://github.com/bigtunafish9943/TunaHome/releases/latest) and open it on the TV. After that, TunaHome updates itself, and shows what changed after each update.
 
 The app id is `com.tunastream.home`.
 
-## What it does
+## Getting started
 
-- **Sections of apps across the screen.** Favourites, TV apps and Mobile apps to begin with, plus sections of your own. Each section can show its apps on 1 to 5 lines, or as many lines as it takes so nothing scrolls sideways. Apps fill each line across before the next.
-- **Put apps where you want them.** Press select twice quickly on an app (or hold select and choose Move), then use the D-pad to move it (up and down too, in a section with more than one line) and press select to put it down.
-- **Side menu.** Press Left on the first app of a line to open a menu of your sections (choose one to jump to it) and shortcuts to search, TunaHome settings, TV settings, network, Bluetooth, screen saver, your saved layouts, installed apps and About this TV. Right or Back closes it. When closed it can show its icons down the left, or nothing.
-- **An app's menu.** Hold select on an app (or press Menu on a remote, or X or Y on a controller) to move it, add it to favourites or one of your sections, change its icon, hide it, open its app info, or uninstall it.
-- **Update, TV settings and TunaHome settings** are small buttons beside the clock.
-- **Updates itself** from this repo's releases. An update is installed only if it matches the checksum GitHub publishes and is signed with the same key as the TunaHome you have.
+The first time TunaHome opens, five quick choices set it up: colours, how apps show (TV pictures or icons), the background, the Home button, and bringing back a saved setup. Every step can be skipped, and the welcome can be run again from the bottom of TunaHome settings.
 
-- **Idle mode.** After a few minutes with no button pressed, everything but the background (and the clock, if you like) fades away. Any button brings it back.
-- **Recently opened** section, newest first (switch it on in Sections), and a **network icon** beside the clock.
-- **App lock.** A PIN on chosen apps and, if you like, on TunaHome settings, plus **locked hours** (bedtime, say) when every app needs it. It's a child lock, not security: it only stops apps being opened from TunaHome.
-- **Open an app when the TV wakes up**, such as TunaReceive. Needs the Home button setting (below), because Android only lets that kind of app open things by itself.
-- **Free icon packs** from F-Droid, downloaded and installed from inside TunaHome (Android asks you to confirm).
-- **Watch Next, Now playing, weather, search with voice, folders and shortcut keys** (double, triple or four presses, or two buttons together).
-- **Rename any app** from its menu, and **sort any section** your own way, A to Z, most used, newest installed or recently updated.
-- **Spotlight:** the first app in a one-line section can be shown twice the size.
-- **Sideloaded apps, Games, Video and TV, and Music and audio** sections (hidden to begin with), filled automatically from what each app says it is, or else its name.
-- **The section you're on glides into place**, near the top or in the middle of the screen, as you move up and down.
-- **"New"** on apps installed in the last three days until you open them.
-- **Screen saver.** TunaHome can be the TV's screen saver: your background (Aerial Views too) with the time, moving corner to corner every few minutes. It also shows the weather and what's playing, if those are switched on. Choose it in the TV's screen saver settings.
-- **Web links as cards.** Add a website, a YouTube channel or any app link to Favourites or a section of your own; it shows the picture of the app that opens it, or one you choose.
-- **Sleep timer** from the side menu or a shortcut: the TV goes to sleep after 15 minutes to 3 hours, with a warning a minute before. Needs the Home button setting.
-- **For you:** the apps you usually open at this time of day, learnt as you use TunaHome (nothing leaves the TV).
-- **Fine tuning:** card size, corners, spacing, how much the app you're on grows, its glow, the shine, movement speed, text and clock size, background darkness and more, each adjusted step by step with Left and Right while a row of your own apps shows the result live. Ready-made styles (Calm, Classic, Bold, Neon, Cinema) set them all at once.
-- **Quick changes** from the side menu, an app's menu or a shortcut: theme, highlight colour, background, cards, text size and more, changed over the home screen itself so you see each one straight away.
-- **Each section its own card style:** TV pictures in one, icons in another.
-- **Starts instantly after a restart:** a copy of your apps and their pictures is kept on the TV, shown at once while the full list loads.
-- **Automatic backup** of your setup to Downloads once a day, the last three kept, ready to bring back from Layouts.
-- **Controller shoulder buttons:** L1 and R1 jump a section up or down, L2 and R2 to the first or last app.
-- **A shine** sweeps across the card you move onto, and long names scroll along.
-- **PC games** from [TunaReceive](https://github.com/bigtunafish9943/TunaReceive), with box art, most recently played first; select one to start it. Needs a TunaReceive that shares its games list; without TunaReceive the section simply doesn't show.
-- **Goes back to where you were:** moving up or down into a section lands on the app you were on there last.
+To make the Home button open TunaHome, see [Making the Home button open TunaHome](#making-the-home-button-open-tunahome) below.
+
+## Getting around
+
+- **Sections of apps** run down the screen. Each can show its apps on 1 to 5 lines, or as many lines as it takes so nothing scrolls sideways.
+- **The section you're on glides into place**, near the top or in the middle of the screen (or the screen only scrolls when it has to, if you prefer). Moving up or down into a section lands on the app you were on there last.
+- **Moving apps:** press select twice quickly on an app (or hold select and choose Move), use the D-pad to move it, and press select to put it down.
+- **An app's menu:** hold select on an app (or press Menu on a remote, or X or Y on a controller) to move it, add it to Favourites or a section of your own, put it in a folder, change its icon, rename it, lock it, hide it, open its app info or uninstall it. The same menu opens Quick changes, edits the section, and adds a web link.
+- **Side menu:** press Left on the first app of a line. It lists your sections (choose one to jump to it), then search, Quick changes, TunaHome settings, TV settings, network, Bluetooth, the sleep timer, screen saver settings, your saved layouts, installed apps and About this TV. Right or Back closes it. When closed it can show its icons down the left, or nothing.
+- **Controller shoulder buttons:** L1 and R1 jump a section up or down, L2 and R2 to the first or last app of the section. Page Up, Page Down, Home and End do the same on a keyboard.
+- **Shortcut keys:** double, triple or four presses of a button, or two buttons together, can open an app, jump to a section, search, play or pause, mute, put the TV to sleep, set the sleep timer, open Quick changes and more. Shortcuts on Home and Back work everywhere, not just on the home screen (they need the Home button setting).
+- **Search** with the keyboard or your voice, across apps, web links, Watch Next and PC games, with a way to search the rest of the TV.
+- **Top of the screen:** the TunaHome name and logo, the clock (as numbers, with hands, or both), the date, the weather, free storage and memory, network and VPN icons, and buttons for search, updates, TV settings and TunaHome settings. Each can be shown or hidden.
+- **Idle mode:** after a few minutes with no button pressed, everything but the background (and the clock, if you like) fades away. Any button brings it back.
+- **Sleep timer:** the TV goes to sleep after 15 minutes to 3 hours, with a warning a minute before; the time left shows beside the clock. Needs the Home button setting.
+- **Screen saver:** TunaHome can be the TV's screen saver, showing your background (Aerial Views too) with the time, the weather and what's playing, moving corner to corner every few minutes. Choose it in the TV's screen saver settings (TunaHome settings, Background, Screen saver, takes you there).
+
+## Sections
+
+Favourites, TV apps and Mobile apps are there to begin with. These can be switched on, and all of them can be renamed, reordered, hidden or given their own look:
+
+- **For you:** the apps you usually open at this time of day, learnt as you use TunaHome.
+- **Recently opened**, newest first.
+- **Watch Next:** what you were watching, with how far through you are, refreshed every few minutes.
+- **PC games** from TunaReceive (see [With TunaReceive](#with-tunareceive)).
+- **Now playing:** what's playing, with its picture and controls. Needs notification access (TunaHome settings explains how); TunaHome uses it only to see what's playing, and doesn't read or keep notifications.
+- **Sideloaded apps:** apps that didn't come from the Play Store.
+- **Games, Video and TV, and Music and audio:** filled automatically from what each app says it is, or else from its name.
+- **Sections of your own**, with any apps and **web links** in them. A link (a website, a YouTube channel, a Plex library, any app link) shows the picture of the app that opens it, or one you choose.
+- **Folders**, if you want them, gather several apps into one card.
+
+Each section can have its own number of lines, card size and card style (TV pictures in one, icons in another), and its own order: your own, A to Z, most used, newest installed or recently updated. **Spotlight** shows the first app of a one-line section twice the size. Apps installed in the last three days show **"New"** until you open them.
 
 ## Make it yours
 
-The first time TunaHome opens, five quick choices set it up: colours, cards, background, the Home button, and bringing back a saved setup. Everything else is in TunaHome settings, most used first, and **Search settings** finds any setting by name. Each setting is a short list to pick from.
+Everything is in TunaHome settings, the most used first. **Search settings** at the top finds any setting by name. **Quick changes** (in the side menu, an app's menu, or as a shortcut) puts the most changed settings over the home screen itself, so you see each change straight away.
 
-- **Background:** the theme's colours, your own picture, your own videos and pictures (from the TV or a web address), or a **wallpaper app such as Aerial Views**. Wallpaper apps made for Projectivy Launcher work with TunaHome the same way: pick which videos you want in the wallpaper app's own settings. Also: how much to darken it, how it fits the screen, how often pictures change, shuffled or in order, and the name of what's showing. Videos are silent and stop as soon as you open an app. The background can follow the app you're on (its TV picture fades in, sharp or blurred) and drift a little as you scroll. Brightness, contrast, colour strength and blur can be changed, and animated GIF and WebP pictures play (Android 9 and later).
-- **Sections:** a dark glass, tinted or outlined panel behind each one; show, hide, rename, reorder and delete sections, add your own, set how many lines of apps each one has, section name style, space between sections, how a section scrolls, and which app you start on.
-- **Theme and colours:** nine themes named as in TunaStream (Deep Sea, Reef, Kelp, Midnight, Gold, Halloween, Autumn, Winter, Summer) with seasonal themes, a highlight colour and a text colour.
-- **Text:** over 40 fonts (each shown in its own style when you choose), your own .ttf or .otf font file, a separate clock font, six text sizes and a text shadow.
-- **Icons:** one list to pick from: TV pictures, the apps' own icons, or any icon pack on the TV (plus more to download); icons fill the whole card edge to edge, or sit smaller inside it; the name inside the card if you like; five sizes; icon packs made for phone launchers; every icon in one colour (white or the highlight colour); corners from square to fully rounded; card colour; edges; spacing; when names show; and how the app you're on stands out (enlarged, a glow or outline in the app's own colour, dim the rest). Any app can have an icon of your own (from the TV or a web address).
-- **Top of the screen:** name and logo, version, clock style and size, a clock with hands, date, free storage and memory, and which buttons show.
+- **Fine tuning:** card size, corners, space between cards, how much the app you're on grows, its glow, the shine, movement speed, how much the other apps dim, space between sections, text size, clock size, background darkness and the panel behind each section, each adjusted step by step with Left and Right while a row of your own apps shows the result live above. Select a row to put it back to its usual value. **Ready-made styles** (Calm, Classic, Bold, Neon, Cinema) set the focus effects together, ready to tune further.
+- **Theme and colours:** nine themes named as in TunaStream (Deep Sea, Reef, Kelp, Midnight, Gold, Halloween, Autumn, Winter, Summer), with seasonal themes that switch by themselves, a highlight colour and a text colour.
+- **Text:** over 40 fonts (each shown in its own style when you choose), your own .ttf or .otf font file, a separate clock font, text sizes and a text shadow.
+- **Cards and icons:** TV pictures, the apps' own icons, or any icon pack; icons edge to edge or smaller inside the card; the name inside the card or under it, always, only on the app you're on, or never; long names scroll along; card shape, colour, edges and corners; every icon in one colour (white or the highlight colour); any app given an icon of your own (from the TV or a web address).
+- **The app you're on:** enlarged, with an outline, a glow or a lift (in the highlight colour, white, or the app's own colour), a soft shine sweeping across, the rest dimmed, and smooth, bouncy, quick or instant movement.
+- **Sections:** a dark glass, tinted or outlined panel behind each one; section name style; space between sections; how a section scrolls; which app you start on.
+- **Sounds:** optional click sounds as you move and select, in several sets.
 
 Choosing a file needs an app on the TV that can browse files, such as a file manager.
+
+### Backgrounds
+
+- The theme's colours, your own picture, your own videos and pictures (from the TV or a web address), a picture of the day (Bing, Wikipedia or NASA), or a **wallpaper app such as Aerial Views**. Wallpaper apps made for Projectivy Launcher work with TunaHome the same way: pick which videos you want in the wallpaper app's own settings.
+- How dark it is, how it fits the screen, how often pictures change, shuffled or in order, and the name of what's showing.
+- Brightness, contrast, colour strength and blur. Animated GIF and WebP pictures play (Android 9 and later).
+- The background can **follow the app you're on** (its TV picture fades in, sharp or blurred) and **drift** a little as you scroll.
+- Videos are silent and stop as soon as you open an app.
+
+### Icon packs
+
+Icon packs made for phone launchers work, including those already on the TV. TunaHome can also download free, open-source packs from [F-Droid](https://f-droid.org) and [IzzyOnDroid](https://apt.izzysoft.de/fdroid/) and install them for you (Android asks you to confirm). Apps a pack doesn't cover can keep their own icon, be framed to match, or be drawn as white or highlight-coloured line art.
+
+## With TunaReceive
+
+With [TunaReceive](https://github.com/bigtunafish9943/TunaReceive) on the TV:
+
+- **PC games** shows your PC's games with box art, most recently played first; select one to start it. Games hidden in TunaReceive stay hidden, and locking TunaReceive in TunaHome's app lock locks its games too. Open TunaReceive once so it lists a PC's games. Needs a TunaReceive that shares its games list; without TunaReceive the section simply doesn't show.
+- **While a game streams**, TunaHome stops looking at button presses, so controller input goes straight to the game with no added delay (see below).
+- TunaReceive can be the app that **opens when the TV wakes up**.
+
+## Looking after your setup
+
+- **Layouts:** save your whole setup under a name and switch between setups (from settings or the side menu), say one for the children and one for you. Export a layout to Downloads, or bring one back from a file.
+- **Automatic backup** of your setup to Downloads once a day, the last three kept, ready to bring back from Layouts.
+- **App lock:** a PIN on chosen apps and, if you like, on TunaHome settings, plus **locked hours** (bedtime, say) when every app needs it. It's a child lock, not security: it only stops apps being opened from TunaHome.
+- **Starts instantly after a restart:** a copy of your apps and their pictures is kept on the TV and shown at once while the full list loads.
+- **Updates itself** from this repo's releases. An update is installed only if it matches the checksum GitHub publishes and is signed with the same key as the TunaHome you have.
+- **If something goes wrong,** TunaHome keeps a note of the last problem (TunaHome settings, Updates, Last problem), so it can be passed on without a computer. Nothing is sent anywhere.
 
 ## Making the Home button open TunaHome
 
@@ -70,6 +103,7 @@ What the service does:
 
 - A Home press opens TunaHome.
 - If you turn on **Replace the usual home screen** in TunaHome settings, TunaHome also opens whenever the TV's own home screen appears, such as after Back out of an app or a restart. This is off to begin with.
+- It runs shortcuts set on Home and Back, the sleep timer and the Sleep shortcut, and opens your chosen app when the TV wakes up.
 
 It only receives key presses and the name of the app that came to the front. It cannot read what is on screen, and it sends nothing anywhere.
 
@@ -79,9 +113,21 @@ It only receives key presses and the name of the app that came to the front. It 
 
 Known limits: holding Home no longer reaches the TV's own long-press action while the service is on, and a TV update can stop this kind of override working.
 
+## What TunaHome sends over the internet
+
+Nothing about you or your TV is collected. TunaHome only connects to:
+
+- **GitHub**, to check for updates, download them and show what changed.
+- **Open-Meteo**, for the weather at the place you chose. If you ask TunaHome to find your place from the TV's internet address, **ipapi.co** is asked once.
+- **Bing, Wikipedia or NASA**, for the picture of the day, if you chose that background.
+- **F-Droid or IzzyOnDroid**, when you download an icon pack.
+- Web addresses you give it yourself, for pictures, videos and icons.
+
+For You, Recently opened, app use counts and everything else stay on the TV.
+
 ## Building
 
-GitHub Actions builds every push. Pushes to the default branch publish a release `v0.1.<run number>` with the APK attached, signed from the repo secrets `KEYSTORE_BASE64`, `KEYSTORE_PASSWORD`, `KEY_ALIAS` and `KEY_PASSWORD`. Without those secrets the build still runs, but the APK is signed with a throwaway key and no release is published.
+GitHub Actions builds every push. Pushes to the default branch publish a release `v0.1.<run number>` with the APK attached, signed from the repo secrets `KEYSTORE_BASE64`, `KEYSTORE_PASSWORD`, `KEY_ALIAS` and `KEY_PASSWORD`. Without those secrets the build still runs, but the APK is signed with a throwaway key and no release is published. Release notes are made from the commit messages since the last release.
 
 To build it yourself you need Java 17 and the Android SDK (platform 36):
 
@@ -91,6 +137,13 @@ To build it yourself you need Java 17 and the Android SDK (platform 36):
 
 ## Credits and licence
 
-TunaHome is written from scratch; it is not based on another launcher. Its themes, branding and self-updater follow [TunaReceive](https://github.com/bigtunafish9943/TunaReceive). It uses AndroidX RecyclerView and the Kotlin standard library (both Apache 2.0).
+TunaHome is written from scratch; it is not based on another launcher. It builds on:
+
+- [TunaReceive](https://github.com/bigtunafish9943/TunaReceive) (GPL-3.0, same author): the themes, the fish mark and the self-updater follow it.
+- [Projectivy Launcher's wallpaper plugin interface](https://github.com/spocky/projectivy-plugin-wallpaper-provider) (Apache 2.0), copied unchanged into `projectivyapi/`, so wallpaper apps such as Aerial Views can show their videos behind TunaHome.
+- AndroidX RecyclerView, AndroidX Media3 and the Kotlin standard library (Apache 2.0).
+- [Google Fonts](https://github.com/google/fonts) (SIL Open Font License 1.1), trimmed to Latin characters; each font's licence is beside it in `app/src/main/assets/fonts/licences`.
+- Google's [Material icons and Material Symbols](https://github.com/google/material-design-icons) (Apache 2.0) for the small symbols; the weather icons are drawn from Material shapes.
+- Data and pictures from [Open-Meteo](https://open-meteo.com) (CC BY 4.0), Bing, Wikipedia and NASA, shown with their names.
 
 GPL-3.0. See [LICENSE.txt](LICENSE.txt) and [NOTICE](NOTICE).

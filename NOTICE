@@ -21,11 +21,16 @@ Its themes, branding and self-updater follow TunaReceive
 author: the theme names and colours, the fish mark, and the update checks
 were carried over from that project.
 
-Libraries: AndroidX RecyclerView (Apache License 2.0) and the Kotlin
-standard library (Apache License 2.0).
+Libraries: AndroidX RecyclerView, AndroidX Media3 and the Kotlin
+standard library (all Apache License 2.0).
 
-Icons: the settings, TV and download symbols are from Google's Material
-Symbols (Apache License 2.0).
+Icons: the small symbols (settings, TV, download, apps, folder, history,
+search, mic, play, pause, skip, music, star, lock, VPN key, Wi-Fi,
+Ethernet, phone, info, brightness, games, Bluetooth, bedtime, dashboard,
+timer, link) are from Google's Material icons and Material Symbols
+(https://github.com/google/material-design-icons, Apache License 2.0).
+The weather icons were drawn for TunaHome from Material shapes. The
+click sounds were made for TunaHome.
 
 Fonts: the fonts in app/src/main/assets/fonts are from Google Fonts
 (https://github.com/google/fonts), under the SIL Open Font License 1.1.
@@ -39,4 +44,7 @@ https://github.com/spocky/projectivy-plugin-wallpaper-provider
 (Apache License 2.0, see projectivyapi/LICENSE). It lets wallpaper
 apps such as Aerial Views show their videos behind TunaHome.
 
-Video: AndroidX Media3 (Apache License 2.0).
+Data and pictures fetched while running (not part of this program):
+weather from Open-Meteo (https://open-meteo.com, CC BY 4.0); pictures of
+the day from Bing, Wikipedia and NASA, shown with their sources; icon
+packs from F-Droid and IzzyOnDroid, each under its own licence.
