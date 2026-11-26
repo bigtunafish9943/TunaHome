@@ -5,7 +5,6 @@ import android.media.AudioAttributes
 import android.media.AudioManager
 import android.media.SoundPool
 import android.os.SystemClock
-import android.view.SoundEffectConstants
 
 /**
  * Optional sounds as you move around: a light one for moving between apps, a fuller one for
@@ -64,7 +63,7 @@ object Sounds {
         if (set == SET_ANDROID) {
             val audio = context.getSystemService(AudioManager::class.java) ?: return
             audio.playSoundEffect(
-                if (which == MOVE) SoundEffectConstants.NAVIGATION_RIGHT else AudioManager.FX_KEY_CLICK,
+                if (which == MOVE) AudioManager.FX_FOCUS_NAVIGATION_RIGHT else AudioManager.FX_KEY_CLICK,
                 VOLUMES[VOLUME.get(context)]
             )
             return
