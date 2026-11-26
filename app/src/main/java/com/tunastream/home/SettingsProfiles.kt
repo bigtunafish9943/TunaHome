@@ -37,6 +37,8 @@ internal fun SettingsActivity.profilesPage() {
         val notes = ArrayList<String>()
         if (person.id == currentId) notes.add(getString(R.string.who_now))
         if (person.locked) notes.add(getString(R.string.who_has_pin))
+        if (person.kids) notes.add(getString(R.string.kids_label))
+        if (person.dailyMinutes > 0) notes.add(getString(R.string.limit_person_note, minutesName(person.dailyMinutes)))
         row(person.name, notes.joinToString(" · ").ifEmpty { getString(R.string.who_tap_for_options) }) { personMenu(person) }
     }
     row(R.string.who_add, getString(R.string.who_add_summary)) {
@@ -108,6 +110,33 @@ private fun SettingsActivity.personMenu(person: Profiles.Profile) {
             build()
         }
     })
+    // Kids mode, the apps allowed and a daily limit: set by a grown-up
+    labels.add(getString(if (person.kids) R.string.kids_turn_off else R.string.kids_turn_on))
+    actions.add {
+        if (!person.kids && Profiles.grownUps(this).none { it.id != person.id }) {
+            Toast.makeText(this, R.string.kids_need_grown_up_pin, Toast.LENGTH_LONG).show()
+        } else {
+            Profiles.setKids(this, person.id, !person.kids)
+            if (!person.kids && person.allowed.isEmpty()) {
+                Toast.makeText(this, getString(R.string.kids_now_choose, person.name), Toast.LENGTH_LONG).show()
+            }
+            Look.touch(this)
+            build()
+        }
+    }
+    if (person.kids) {
+        labels.add(getString(R.string.kids_apps, person.allowed.size))
+        actions.add { chooseKidsApps(person) }
+    }
+    labels.add(getString(R.string.limit_person_menu, minutesName(person.dailyMinutes)))
+    actions.add {
+        val choices = intArrayOf(0, 30, 60, 90, 120, 180, 240)
+        chooseOne(getString(R.string.limit_person_title, person.name), choices.map { minutesName(it) },
+            choices.indexOf(person.dailyMinutes)) { which ->
+            Profiles.setDailyMinutes(this, person.id, choices[which])
+            build()
+        }
+    }
     if (person.locked) {
         labels.add(getString(R.string.who_remove_pin))
         actions.add(guarded {
@@ -165,4 +194,33 @@ private fun SettingsActivity.choosePersonPin(then: (String) -> Unit) {
         .setNegativeButton(R.string.cancel, null)
         .show()
     box.requestFocus()
+}
+
+/** Which apps a child in kids mode may open. */
+private fun SettingsActivity.chooseKidsApps(person: Profiles.Profile) {
+    val pm = packageManager
+    val launcher = android.content.Intent(android.content.Intent.ACTION_MAIN)
+    val found = HashMap<String, String>()
+    for (category in listOf(android.content.Intent.CATEGORY_LEANBACK_LAUNCHER, android.content.Intent.CATEGORY_LAUNCHER)) {
+        try {
+            pm.queryIntentActivities(android.content.Intent(launcher).addCategory(category), 0).forEach {
+                val pkg = it.activityInfo.packageName
+                if (pkg != packageName && pkg !in found) found[pkg] = it.loadLabel(pm).toString()
+            }
+        } catch (e: Exception) {
+            // That kind of app can't be listed
+        }
+    }
+    val named = found.entries.map { it.key to it.value }.sortedBy { it.second.lowercase() }
+    val keep = BooleanArray(named.size) { named[it].first in person.allowed }
+    QuietDialog.Builder(this)
+        .setTitle(getString(R.string.kids_apps_title, person.name))
+        .setMultiChoiceItems(named.map { it.second }.toTypedArray(), keep) { _, which, ticked -> keep[which] = ticked }
+        .setPositiveButton(R.string.done) { _, _ ->
+            Profiles.setAllowed(this, person.id, named.filterIndexed { i, _ -> keep[i] }.map { it.first }.toSet())
+            Look.touch(this)
+            build()
+        }
+        .setNegativeButton(R.string.cancel, null)
+        .show()
 }

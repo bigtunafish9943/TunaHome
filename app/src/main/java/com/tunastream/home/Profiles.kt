@@ -20,6 +20,13 @@ import java.security.SecureRandom
 object Profiles {
     class Profile(val id: String, var name: String, var colour: Int, var pinHash: String?, var pinSalt: String?) {
         val locked: Boolean get() = pinHash != null
+
+        /** Kids mode: only [allowed] apps, and TunaHome settings behind a grown-up's PIN. */
+        var kids = false
+        var allowed: Set<String> = emptySet()
+
+        /** Minutes of apps a day (TunaHome itself not counted); 0 for no limit. */
+        var dailyMinutes = 0
     }
 
     const val ASK_NEVER = 0
@@ -74,7 +81,12 @@ object Profiles {
             for (i in 0 until array.length()) {
                 val o = array.getJSONObject(i)
                 found.add(Profile(o.getString("id"), o.optString("name"), o.optInt("colour"),
-                    o.optString("pin").ifEmpty { null }, o.optString("salt").ifEmpty { null }))
+                    o.optString("pin").ifEmpty { null }, o.optString("salt").ifEmpty { null }).apply {
+                    kids = o.optBoolean("kids")
+                    dailyMinutes = o.optInt("daily")
+                    val apps = o.optJSONArray("allowed")
+                    allowed = if (apps == null) emptySet() else (0 until apps.length()).map { apps.optString(it) }.toSet()
+                })
             }
         } catch (e: Exception) {
             // None yet
@@ -86,7 +98,8 @@ object Profiles {
         val array = JSONArray()
         list.forEach {
             array.put(JSONObject().put("id", it.id).put("name", it.name).put("colour", it.colour)
-                .put("pin", it.pinHash ?: "").put("salt", it.pinSalt ?: ""))
+                .put("pin", it.pinHash ?: "").put("salt", it.pinSalt ?: "")
+                .put("kids", it.kids).put("daily", it.dailyMinutes).put("allowed", JSONArray(it.allowed.toList())))
         }
         store(context).edit().putString("list", array.toString()).apply()
     }
@@ -132,6 +145,21 @@ object Profiles {
     fun rename(context: Context, id: String, name: String) {
         save(context, all(context).onEach { if (it.id == id) it.name = name })
     }
+
+    fun setKids(context: Context, id: String, kids: Boolean) {
+        save(context, all(context).onEach { if (it.id == id) it.kids = kids })
+    }
+
+    fun setAllowed(context: Context, id: String, apps: Set<String>) {
+        save(context, all(context).onEach { if (it.id == id) it.allowed = apps })
+    }
+
+    fun setDailyMinutes(context: Context, id: String, minutes: Int) {
+        save(context, all(context).onEach { if (it.id == id) it.dailyMinutes = minutes })
+    }
+
+    /** People who aren't in kids mode and have a PIN: who can let a child do more. */
+    fun grownUps(context: Context): List<Profile> = all(context).filter { !it.kids && it.locked }
 
     fun setColour(context: Context, id: String, colour: Int) {
         save(context, all(context).onEach { if (it.id == id) it.colour = colour })

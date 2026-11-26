@@ -28,6 +28,16 @@ class HomeButtonService : AccessibilityService() {
     private var lastReplaced = 0L
     private var filteringKeys = true
 
+    private val guardHandler = android.os.Handler(android.os.Looper.getMainLooper())
+
+    /** Daily limits run out while an app is up, not only as one opens: checked every half minute. */
+    private val guardTick: Runnable = object : Runnable {
+        override fun run() {
+            UsageLog.current?.let { if (it != packageName) Guard.check(this@HomeButtonService, it) }
+            guardHandler.postDelayed(this, GUARD_TICK_MS)
+        }
+    }
+
     /** The pointer for phone apps (a shortcut switches it on). */
     internal val pointer by lazy { RemotePointer(this) }
 
@@ -84,6 +94,7 @@ class HomeButtonService : AccessibilityService() {
         super.onServiceConnected()
         running = this
         OpenApps.addDefaultShortcut(this)
+        guardHandler.postDelayed(guardTick, GUARD_TICK_MS)
         registerReceiver(wakeReceiver, android.content.IntentFilter(Intent.ACTION_SCREEN_ON).apply {
             addAction(Intent.ACTION_SCREEN_OFF)
         })
@@ -94,6 +105,7 @@ class HomeButtonService : AccessibilityService() {
     }
 
     override fun onDestroy() {
+        guardHandler.removeCallbacks(guardTick)
         pointer.off(false)
         if (running === this) {
             running = null
@@ -157,6 +169,10 @@ class HomeButtonService : AccessibilityService() {
         // For Open apps: what came to the front
         OpenApps.note(this, pkg)
         UsageLog.front(this, pkg)
+        // Kids mode and daily limits: an app that may not be up gives way
+        if (pkg != packageName && Guard.check(this, pkg)) {
+            return
+        }
         when {
             pkg == PcGames.RECEIVER && cls in STREAMING_SCREENS -> {
                 pointer.off(false)
@@ -196,6 +212,7 @@ class HomeButtonService : AccessibilityService() {
 
     companion object {
         private const val TAG = "TunaHome"
+        private const val GUARD_TICK_MS = 30_000L
         const val ACTION_HOME_PRESSED = "com.tunastream.home.HOME_PRESSED"
 
         /** The service while it is switched on, for shortcuts that need it (Recent apps, Sleep...). */

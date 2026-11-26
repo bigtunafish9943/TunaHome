@@ -1155,4 +1155,38 @@
     <string name="find_remote">Find my remote</string>
     <string name="find_remote_ringing">Listen for the remote: it should be beeping now.</string>
     <string name="find_remote_settings">This TV has no remote finder TunaHome can start. Its remote settings may have one.</string>
+    <string name="limit_title">Time\'s up</string>
+    <string name="limit_app_body">That\'s all the time for %1$s today.</string>
+    <string name="limit_person_body">That\'s all of %1$s\'s time on the TV today.</string>
+    <string name="limit_ok">OK</string>
+    <string name="limit_more">More time</string>
+    <string name="limit_more_title">More time for %1$s today</string>
+    <string name="limit_more_done">%1$d more minutes for %2$s today.</string>
+    <plurals name="limit_warning">
+        <item quantity="one">%1$s: %2$d minute left today</item>
+        <item quantity="other">%1$s: %2$d minutes left today</item>
+    </plurals>
+    <plurals name="limit_hours">
+        <item quantity="one">%d hour</item>
+        <item quantity="other">%d hours</item>
+    </plurals>
+    <string name="limit_off">No limit</string>
+    <string name="limit_menu">Daily limit</string>
+    <string name="limit_menu_set">Daily limit: %1$s</string>
+    <string name="limit_menu_title">How long %1$s may be used each day</string>
+    <string name="limit_person_menu">Daily time on the TV: %1$s</string>
+    <string name="limit_person_title">How long %1$s may use apps each day</string>
+    <string name="limit_person_note">%1$s a day</string>
+    <string name="kids_label">Kids mode</string>
+    <string name="kids_turn_on">Turn on kids mode</string>
+    <string name="kids_turn_off">Turn off kids mode</string>
+    <string name="kids_apps">Apps allowed (%1$d)</string>
+    <string name="kids_apps_title">Apps %1$s may open</string>
+    <string name="kids_now_choose">Kids mode is on. Now choose the apps %1$s may open.</string>
+    <string name="kids_need_grown_up_pin">First give a grown-up\'s profile a PIN (Who\'s watching), so kids mode can\'t simply be left.</string>
+    <string name="kids_grown_up_pin">A grown-up\'s PIN</string>
+    <string name="kids_not_allowed_title">Not in kids mode</string>
+    <string name="kids_not_allowed_body">%1$s isn\'t one of the apps allowed. Ask a grown-up.</string>
+    <string name="kids_allow">Allow it</string>
+    <string name="kids_allowed_now">%1$s is allowed now.</string>
 </resources>

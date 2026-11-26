@@ -182,6 +182,15 @@
             android:configChanges="keyboard|keyboardHidden|navigation|orientation|screenSize|screenLayout|uiMode"
             android:exported="false"
             android:screenOrientation="landscape" />
+        <!-- Time's up: in place of an app over its daily limit, or one kids mode doesn't allow -->
+        <activity
+            android:name=".TimesUpActivity"
+            android:configChanges="keyboard|keyboardHidden|navigation|orientation|screenSize|screenLayout|uiMode"
+            android:excludeFromRecents="true"
+            android:exported="false"
+            android:launchMode="singleTask"
+            android:screenOrientation="landscape"
+            android:taskAffinity="com.tunastream.home.timesup" />
         <!-- Picture test: test patterns, from TunaHome settings -->
         <activity
             android:name=".PictureTestActivity"

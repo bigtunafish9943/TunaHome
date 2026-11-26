@@ -49,6 +49,12 @@ class SettingsActivity : BaseActivity() {
 
     override fun onResume() {
         super.onResume()
+        // Kids mode: TunaHome settings are for grown-ups
+        if (Guard.kidsModeOn(this) && !Guard.grownUpRecently()) {
+            list.removeAllViews()
+            Guard.askGrownUp(this, cancelled = { finish() }) { recreate() }
+            return
+        }
         // Rebuilt each time: some settings change on other screens (the TV's, a wallpaper app's)
         IconPackStore.resumeIfWaiting(this)
         val waiting = IconPackStore.waitingFor

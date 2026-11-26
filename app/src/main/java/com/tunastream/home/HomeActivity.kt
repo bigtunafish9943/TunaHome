@@ -802,7 +802,9 @@ class HomeActivity : BaseActivity() {
     /** Puts the loaded apps into their sections, leaving out hidden ones. */
     internal fun show(only: Set<String>? = null) {
         val hidden = Prefs.hidden(this)
-        val visible = apps.filter { it.pkg !in hidden }
+        // Kids mode: only the apps a grown-up allowed (no web links)
+        val kidsAllowed = Profiles.current(this)?.takeIf { it.kids }?.allowed
+        val visible = apps.filter { it.pkg !in hidden && (kidsAllowed == null || (!it.isLink && it.pkg in kidsAllowed)) }
         val everyApp = visible.associateBy { it.pkg }
         // Apps in a folder show in the folder instead of their section
         val folders = Folders.load(this)

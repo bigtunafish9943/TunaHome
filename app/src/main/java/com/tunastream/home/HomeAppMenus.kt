@@ -133,6 +133,11 @@ internal fun HomeActivity.folderMenu(card: AppEntry, row: Rows.Row) {
 }
 
 internal fun HomeActivity.showMenu(app: AppEntry, row: Rows.Row) {
+    // Kids mode: changing things is for grown-ups
+    if (Guard.kidsModeOn(this) && !Guard.grownUpRecently()) {
+        Guard.askGrownUp(this) { showMenu(app, row) }
+        return
+    }
     if (app.isInsideApp) {
         watchNextMenu(app)
         return
@@ -266,6 +271,21 @@ internal fun HomeActivity.showMenu(app: AppEntry, row: Rows.Row) {
             .setItems(labels.toTypedArray()) { _, which -> actions[which]() }
             .show()
         return
+    }
+
+    if (!app.isLink) {
+        val limit = Guard.appLimit(this, app.pkg)
+        labels.add(if (limit > 0) getString(R.string.limit_menu_set, minutesName(limit)) else getString(R.string.limit_menu))
+        actions.add {
+            val change = {
+                chooseOne(getString(R.string.limit_menu_title, app.label), Guard.CHOICES.map { minutesName(it) },
+                    Guard.CHOICES.indexOf(limit)) { which ->
+                    Guard.setAppLimit(this, app.pkg, Guard.CHOICES[which])
+                }
+            }
+            // A limit someone set can't be lifted by whoever it limits
+            if (limit > 0 && AppLock.hasPin(this)) AppLock.ask(this, app.label) { change() } else change()
+        }
     }
 
     labels.add(getString(R.string.menu_hide))
@@ -451,4 +471,12 @@ internal fun HomeActivity.startOrExplain(intent: Intent) {
     } catch (e: Exception) {
         Toast.makeText(this, R.string.action_failed, Toast.LENGTH_LONG).show()
     }
+}
+
+/** "Off", "45 minutes", "1 h 30 min". */
+internal fun android.content.Context.minutesName(minutes: Int): String = when {
+    minutes <= 0 -> getString(R.string.limit_off)
+    minutes < 60 -> resources.getQuantityString(R.plurals.sleep_minutes, minutes, minutes)
+    minutes % 60 == 0 -> resources.getQuantityString(R.plurals.limit_hours, minutes / 60, minutes / 60)
+    else -> getString(R.string.usage_hours, minutes / 60, minutes % 60)
 }

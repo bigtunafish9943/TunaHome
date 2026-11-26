@@ -107,6 +107,9 @@ The changes show on the TV when you close its setup screen. The page only works 
 
 Each person can have their own TunaHome: sections, favourites, look, background, app lock and what For you learns. Set it up in TunaHome settings, **Who's watching**: name yourself and the next person, who starts as a copy of your setup or fresh. Anyone can have a PIN, so children can't switch into a grown-up's TunaHome or change it. Each person can have a photo, sent from a phone, in place of the coloured circle. "Who's watching?" can appear when the TV wakes up or when TunaHome starts, and is always in the side menu.
 
+- **Kids mode** (a person's options in Who's watching): only the apps a grown-up chose show and open; any other app that comes up, however it was opened, gives way to a *Not in kids mode* screen where a grown-up's PIN can allow it. TunaHome settings and app menus ask a grown-up's PIN too. It needs a grown-up with a PIN, so it can't simply be left.
+- **Daily limits:** a daily time for a person (all their apps), and for any app (hold it, *Daily limit*; everyone's time in it counts). Five minutes before, a message warns; at the limit the app gives way to *Time's up*, where a grown-up's PIN gives 15, 30 or 60 more minutes for today. Time is counted while apps are on screen, through the Home button setting.
+
 ## Looking after your setup
 
 - **Layouts:** save your whole setup under a name and switch between setups (from settings or the side menu), say one for the children and one for you. Export a layout to Downloads, or bring one back from a file.

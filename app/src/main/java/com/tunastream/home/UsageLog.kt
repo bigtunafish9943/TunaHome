@@ -19,7 +19,11 @@ object UsageLog {
     private const val KEEP_DAYS = 14
     private const val MIN_SHOWN_S = 60
 
-    private var current: String? = null
+    private const val PROFILE = "@p:"
+
+    /** The app in front now, as far as the Home button service has seen. */
+    var current: String? = null
+        private set
     private var since = 0L
     private var screenOn = true
     private val launchable = HashMap<String, Boolean>()
@@ -55,6 +59,10 @@ object UsageLog {
             JSONObject()
         }
         today.put(pkg, today.optLong(pkg) + seconds)
+        // The person's own total, for their daily limit (TunaHome itself isn't counted)
+        if (pkg != context.packageName) {
+            Profiles.currentId(context)?.let { id -> today.put(PROFILE + id, today.optLong(PROFILE + id) + seconds) }
+        }
         val edit = prefs.edit().putString(key, today.toString())
         // Older than two weeks: gone
         for (k in prefs.all.keys) {
@@ -95,7 +103,7 @@ object UsageLog {
             } catch (e: Exception) {
                 continue
             }
-            for (k in obj.keys()) sum[k] = (sum[k] ?: 0) + obj.optLong(k)
+            for (k in obj.keys()) if (!k.startsWith("@")) sum[k] = (sum[k] ?: 0) + obj.optLong(k)
         }
         return sum.entries.map { it.key to it.value }.sortedByDescending { it.second }
     }
@@ -108,8 +116,25 @@ object UsageLog {
             return 0
         }
         var total = 0L
-        for (k in obj.keys()) total += obj.optLong(k)
+        for (k in obj.keys()) if (!k.startsWith("@")) total += obj.optLong(k)
         return total
+    }
+
+    /** Seconds the app [pkg] has been on screen today, the time it's been up now included. */
+    fun appToday(context: Context, pkg: String): Long = today(context, pkg) + if (current == pkg) openSeconds() else 0
+
+    /** Seconds of apps the person [profileId] has had today, now included. */
+    fun profileToday(context: Context, profileId: String): Long =
+        today(context, PROFILE + profileId) +
+            if (current != null && current != context.packageName && Profiles.currentId(context) == profileId) openSeconds() else 0
+
+    private fun openSeconds(): Long =
+        if (!screenOn || since == 0L) 0 else ((SystemClock.elapsedRealtime() - since) / 1000).coerceIn(0, 12 * 3600)
+
+    private fun today(context: Context, key: String): Long = try {
+        JSONObject(context.getSharedPreferences(FILE, Context.MODE_PRIVATE).getString(day(0), "{}") ?: "{}").optLong(key)
+    } catch (e: Exception) {
+        0
     }
 
     fun clear(context: Context) {
