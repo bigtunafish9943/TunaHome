@@ -738,6 +738,8 @@
     <string name="watch_next">Watch Next</string>
     <string name="watch_next_play">Carry on watching</string>
     <string name="watch_next_open_app">Open %1$s</string>
+    <string name="watch_next_leave_out">Leave %1$s out of Watch Next</string>
+    <string name="watch_next_bring_back">Show every app in Watch Next again</string>
 
     <!-- Recently opened -->
     <string name="recent">Recently opened</string>

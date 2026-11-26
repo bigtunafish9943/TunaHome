@@ -313,22 +313,47 @@ internal fun HomeActivity.putInSection(key: String, row: Rows.Row) {
 /** A Watch Next card belongs to its app: offer to open it, or that app's info. */
 internal fun HomeActivity.watchNextMenu(item: AppEntry) {
     val appName = apps.firstOrNull { it.pkg == item.appPkg }?.label ?: item.appPkg
-    val labels = arrayOf(getString(if (item.isPcGame) R.string.pc_game_play else R.string.watch_next_play),
+    val labels = arrayListOf(getString(if (item.isPcGame) R.string.pc_game_play else R.string.watch_next_play),
         getString(R.string.watch_next_open_app, appName),
         getString(R.string.menu_app_info))
+    val actions = arrayListOf<() -> Unit>(
+        { open(item) },
+        {
+            apps.firstOrNull { it.pkg == item.appPkg }?.let { open(it) }
+                ?: Toast.makeText(this, getString(R.string.open_failed, appName), Toast.LENGTH_LONG).show()
+        },
+        {
+            startOrExplain(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:" + item.appPkg)))
+        },
+    )
+    // Watch Next without an app's shows (one you don't want there, like a news app)
+    if (!item.isPcGame && item.appPkg.isNotEmpty()) {
+        labels.add(getString(R.string.watch_next_leave_out, appName))
+        actions.add { setWatchNextLeftOut(item.appPkg, true) }
+    }
+    if (Rows.load(this).any { it.kind == Rows.WATCH_NEXT && it.apps.isNotEmpty() }) {
+        labels.add(getString(R.string.watch_next_bring_back))
+        actions.add { setWatchNextLeftOut(null, false) }
+    }
     AlertDialog.Builder(this)
         .setTitle(item.label)
-        .setItems(labels) { _, which ->
-            when (which) {
-                0 -> open(item)
-                1 -> apps.firstOrNull { it.pkg == item.appPkg }?.let { open(it) }
-                    ?: Toast.makeText(this, getString(R.string.open_failed, appName), Toast.LENGTH_LONG).show()
-                else -> startOrExplain(
-                    Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:" + item.appPkg))
-                )
-            }
-        }
+        .setItems(labels.toTypedArray()) { _, which -> actions[which]() }
         .show()
+}
+
+/** Leaves an app's shows out of Watch Next, or (with null) brings every app's back. */
+internal fun HomeActivity.setWatchNextLeftOut(appPkg: String?, out: Boolean) {
+    val rows = Rows.load(this)
+    rows.filter { it.kind == Rows.WATCH_NEXT }.forEach { row ->
+        if (appPkg == null) {
+            row.apps.clear()
+        } else if (out && appPkg !in row.apps) {
+            row.apps.add(appPkg)
+        }
+    }
+    Rows.save(this, rows, false)
+    // The sections read their rows again, then show the list without those apps
+    show()
 }
 
 /** Adds an app to one of the viewer's own rows, or to a new one. */

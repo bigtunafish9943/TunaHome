@@ -56,6 +56,10 @@ class HomeActivity : BaseActivity() {
     internal var apps: List<AppEntry> = emptyList()
     internal var watchNext: List<AppEntry> = emptyList()
     internal var pcGames: List<AppEntry> = emptyList()
+    /** Watch Next without the apps left out of this section (its list of apps, for this kind). */
+    internal fun withoutLeftOut(list: List<AppEntry>, row: Rows.Row): List<AppEntry> =
+        if (row.apps.isEmpty()) list else list.filter { it.appPkg !in row.apps }
+
     internal var loadingWatchNext = false
     internal var watchNextAgain = false
     internal var loaded = false
@@ -750,7 +754,9 @@ class HomeActivity : BaseActivity() {
                     return@runOnUiThread
                 }
                 watchNext = found
-                sections.filter { it.row.kind == Rows.WATCH_NEXT }.forEach { it.show(found) }
+                val current = Rows.load(this).associateBy { it.id }
+                sections.filter { it.row.kind == Rows.WATCH_NEXT }
+                    .forEach { it.show(withoutLeftOut(found, current[it.row.id] ?: it.row)) }
                 applyGaps()
                 if (!sideMenu.isOpen) {
                     refreshMenu()
@@ -835,7 +841,7 @@ class HomeActivity : BaseActivity() {
                 Rows.MUSIC -> ordered(loose.filter { it.group == Apps.MUSIC }, Prefs.order(this, section.row.id))
                 Rows.RECENT -> Prefs.recent(this).mapNotNull { everyApp[it] }
                 Rows.FOR_YOU -> forYou(everyApp)
-                Rows.WATCH_NEXT -> watchNext
+                Rows.WATCH_NEXT -> withoutLeftOut(watchNext, rows[section.row.id] ?: section.row)
                 Rows.PC_GAMES -> pcGames
                 else -> (rows[section.row.id]?.apps ?: section.row.apps).mapNotNull { byPackage[it] }
             }

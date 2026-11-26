@@ -37,7 +37,7 @@ Favourites, TV apps and Mobile apps are there to begin with. These can be switch
 
 - **For you:** the apps you usually open at this time of day, learnt as you use TunaHome.
 - **Recently opened**, newest first.
-- **Watch Next:** what you were watching, with how far through you are, refreshed every few minutes. Rest on a show and its **preview** plays silently behind the apps, where its app gives one.
+- **Watch Next:** what you were watching, with how far through you are, kept up to date as apps change it. Rest on a show and its **preview** plays silently behind the apps, where its app gives one. Hold select on a show to leave its app out of Watch Next (and bring every app back the same way).
 - **PC games** from TunaReceive (see [With TunaReceive](#with-tunareceive)).
 - **Now playing:** what's playing, with its picture and controls. Needs notification access (TunaHome settings explains how); TunaHome uses it only to see what's playing, and doesn't read or keep notifications.
 - **Sideloaded apps:** apps that didn't come from the Play Store.
