@@ -178,6 +178,7 @@ class HomeActivity : BaseActivity() {
         listOf(R.id.sections, R.id.appsHint, R.id.brand, R.id.networkIcon, R.id.checkUpdate,
             R.id.openTvSettings, R.id.openSettings, R.id.sideMenu, R.id.vpnIcon, R.id.openSearch, R.id.systemInfo).forEach { fadeWhenIdle.add(findViewById(it)) }
         if (!Look.IDLE_CLOCK.get(this)) {
+            fadeWhenIdle.add(findViewById(R.id.clockFace))
             fadeWhenIdle.add(findViewById(R.id.clockBox))
             fadeWhenIdle.add(findViewById(R.id.weatherBox))
         }

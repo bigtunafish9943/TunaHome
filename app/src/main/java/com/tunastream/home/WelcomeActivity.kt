@@ -192,6 +192,8 @@ class WelcomeActivity : BaseActivity() {
                 done(home)
                 return
             }
+            // Shown once: leaving it with Back skips it for good (it's in settings to run again)
+            done(home)
             home.startActivity(Intent(home, WelcomeActivity::class.java))
         }
 

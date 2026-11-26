@@ -19,6 +19,9 @@ object PcGames {
     private val LIST = Uri.parse("content://games.$RECEIVER/games")
     private const val MAX = 40
 
+    /** Box art already loaded, by address: the list is read again every few minutes. */
+    private val posters = android.util.LruCache<String, Drawable>(MAX + 10)
+
     /** Slow: call from a background thread. */
     fun load(context: Context): List<AppEntry> {
         val found = ArrayList<AppEntry>()
@@ -64,7 +67,10 @@ object PcGames {
     }
 
     /** A game's box art, no bigger than a card needs. */
-    private fun picture(context: Context, address: String): Drawable? = try {
+    private fun picture(context: Context, address: String): Drawable? =
+        posters.get(address) ?: loadPoster(context, address)?.also { posters.put(address, it) }
+
+    private fun loadPoster(context: Context, address: String): Drawable? = try {
         val uri = Uri.parse(address)
         val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
         context.contentResolver.openInputStream(uri)?.use { BitmapFactory.decodeStream(it, null, bounds) }

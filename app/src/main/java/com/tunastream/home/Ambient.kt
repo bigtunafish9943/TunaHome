@@ -37,7 +37,10 @@ class Ambient(private val view: ImageView) {
 
     private val mode = FOLLOW.get(view.context)
     private val main = Handler(Looper.getMainLooper())
-    private val made = LruCache<String, Bitmap>(16)
+    // Kept by size, not count: a dozen sharp pictures would otherwise take a lot of memory
+    private val made = object : LruCache<String, Bitmap>(12 * 1024 * 1024) {
+        override fun sizeOf(key: String, value: Bitmap): Int = value.byteCount
+    }
     private var wanted: String? = null
     private var showing: String? = null
 
@@ -105,9 +108,10 @@ class Ambient(private val view: ImageView) {
     private fun render(picture: Drawable): Bitmap {
         var w = picture.intrinsicWidth.takeIf { it > 0 } ?: 640
         var h = picture.intrinsicHeight.takeIf { it > 0 } ?: 360
-        if (w > 960) {
-            h = h * 960 / w
-            w = 960
+        // Blurred or not, the screen scales it up: more than this adds memory, not detail
+        if (w > 640) {
+            h = h * 640 / w
+            w = 640
         }
         val bitmap = Bitmap.createBitmap(w.coerceAtLeast(16), h.coerceAtLeast(16), Bitmap.Config.ARGB_8888)
         picture.setBounds(0, 0, bitmap.width, bitmap.height)

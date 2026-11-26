@@ -29,7 +29,8 @@ object AppsOnDisk {
     private fun signature(context: Context, apps: List<AppEntry>): String =
         look(context) + "|" + apps.joinToString(",") { "${it.pkg}:${it.label}:${it.updated}:${it.colour}" }.hashCode()
 
-    /** Slow: call from a background thread. */
+    /** Slow: call from a background thread. One at a time, as they share a folder. */
+    @Synchronized
     fun save(context: Context, apps: List<AppEntry>) {
         try {
             val sign = signature(context, apps)
