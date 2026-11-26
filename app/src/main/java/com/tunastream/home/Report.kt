@@ -29,6 +29,18 @@ object Report {
         out.append("Home button setting: ").append(if (HomeButtonService.running != null) "on" else "off").append('\n')
         out.append("Open apps lately: ").append(OpenApps.list(context).joinToString(", ").ifEmpty { "none" }).append('\n')
 
+        // Watch Next as the TV gives it to TunaHome: which apps' shows it can read
+        try {
+            val shows = WatchNext.load(context)
+            val byApp = shows.groupingBy { it.appPkg }.eachCount()
+            out.append("Watch Next: ").append(shows.size).append(" shows")
+            if (byApp.isNotEmpty()) out.append(" (").append(byApp.entries.joinToString(", ") { "${it.key} ${it.value}" }).append(')')
+            WatchNext.problem?.let { out.append(", problem: ").append(it) }
+            out.append('\n')
+        } catch (e: Exception) {
+            out.append("Watch Next: couldn't read: ").append(e).append('\n')
+        }
+
         out.append("\nControllers and input devices:\n")
         try {
             for (id in InputDevice.getDeviceIds()) {
