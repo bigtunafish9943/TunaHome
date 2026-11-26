@@ -49,6 +49,8 @@ internal fun HomeActivity.setUpTopBar() {
     tvSettings.setOnClickListener { HomeActivity.openTvSettings(this) }
     // Always shown: it is the way back to every other setting
     findViewById<View>(R.id.openSettings).setOnClickListener { openTunaHomeSettings() }
+    findViewById<View>(R.id.whoChip).setOnClickListener { WhoActivity.start(this) }
+    showWho()
 
     val clock = findViewById<TextClock>(R.id.clock)
     when (Look.CLOCK.get(this)) {
@@ -98,6 +100,46 @@ internal fun HomeActivity.setUpTopBar() {
         date.format12Hour = pattern
         date.format24Hour = pattern
         date.visibility = View.VISIBLE
+    }
+}
+
+/** Who's in now: their circle and name, when more than one person uses this TV. */
+internal fun HomeActivity.showWho() {
+    val chip = findViewById<View>(R.id.whoChip) ?: return
+    val person = if (Look.SHOW_WHO.get(this) && Profiles.all(this).size > 1) Profiles.current(this) else null
+    if (person == null) {
+        chip.visibility = View.GONE
+        return
+    }
+    chip.visibility = View.VISIBLE
+    chip.contentDescription = getString(R.string.who_in_chip, person.name)
+    findViewById<TextView>(R.id.whoName).text = person.name
+    val initial = findViewById<TextView>(R.id.whoInitial)
+    initial.text = person.name.trim().take(1).uppercase()
+    initial.background = android.graphics.drawable.GradientDrawable().apply {
+        shape = android.graphics.drawable.GradientDrawable.OVAL
+        setColor(person.colour)
+    }
+    val photo = findViewById<ImageView>(R.id.whoPhoto)
+    val bitmap = try {
+        Profiles.photo(this, person.id)
+    } catch (e: Exception) {
+        null
+    }
+    if (bitmap != null) {
+        // Their photo, round, in place of the letter
+        val round = android.graphics.Bitmap.createBitmap(bitmap.width, bitmap.height, android.graphics.Bitmap.Config.ARGB_8888)
+        android.graphics.Canvas(round).drawOval(0f, 0f, bitmap.width.toFloat(), bitmap.height.toFloat(),
+            android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
+                shader = android.graphics.BitmapShader(bitmap, android.graphics.Shader.TileMode.CLAMP, android.graphics.Shader.TileMode.CLAMP)
+            })
+        photo.setImageBitmap(round)
+        photo.visibility = View.VISIBLE
+        initial.visibility = View.INVISIBLE
+    } else {
+        photo.setImageDrawable(null)
+        photo.visibility = View.GONE
+        initial.visibility = View.VISIBLE
     }
 }
 

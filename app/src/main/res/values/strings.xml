@@ -456,6 +456,9 @@
     <string name="date_short">Short, such as Wed 25 Nov</string>
     <string name="date_long">Long, such as Wednesday 25 November</string>
     <string name="set_show_update">Update button</string>
+    <string name="set_show_who">Who\'s in</string>
+    <string name="set_show_who_on">Shown when more than one person uses this TV. Select it to switch.</string>
+    <string name="who_in_chip">Who\'s watching: %1$s. Select to switch.</string>
     <string name="set_show_tv_settings">TV settings button</string>
     <string name="set_settings_button">TunaHome settings button</string>
     <string name="set_settings_button_summary">Always shown, so you can always get back here.</string>

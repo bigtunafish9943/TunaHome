@@ -463,6 +463,8 @@ object Look {
     val SHOW_NETWORK = Switch("look_show_network", true)
     val SHOW_VPN = Switch("look_show_vpn", true)
     val SHOW_UPDATE_BUTTON = Switch("look_show_update", true)
+    /** Who's in, on the top bar, when more than one person uses the TV. */
+    val SHOW_WHO = Switch("look_show_who", true)
     val SHOW_SEARCH_BUTTON = Switch("look_show_search", true)
 
     /** Free storage and memory beside the clock. */

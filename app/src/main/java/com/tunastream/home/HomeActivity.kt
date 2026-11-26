@@ -498,6 +498,8 @@ class HomeActivity : BaseActivity() {
 
     override fun onResume() {
         super.onResume()
+        // A rename or a new photo in settings shows straight away
+        showWho()
         // Back from watching something: its place in Watch Next has changed
         weatherHandler.removeCallbacks(watchNextTick)
         watchNextTick.run()

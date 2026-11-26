@@ -269,6 +269,7 @@ internal fun SettingsActivity.topBarPage() {
     choice(R.string.set_system_info, Look.SYSTEM_INFO)
     switch(R.string.set_show_network, Look.SHOW_NETWORK, R.string.shown, R.string.hidden)
     switch(R.string.set_show_vpn, Look.SHOW_VPN, R.string.vpn_shown, R.string.hidden)
+    switch(R.string.set_show_who, Look.SHOW_WHO, R.string.set_show_who_on, R.string.hidden)
     switch(R.string.set_show_search, Look.SHOW_SEARCH_BUTTON, R.string.shown, R.string.hidden)
     switch(R.string.set_show_update, Look.SHOW_UPDATE_BUTTON, R.string.shown, R.string.hidden)
     switch(R.string.set_show_tv_settings, Look.SHOW_TV_SETTINGS_BUTTON, R.string.shown, R.string.hidden)
