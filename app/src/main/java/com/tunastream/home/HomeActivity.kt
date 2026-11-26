@@ -1249,7 +1249,8 @@ class HomeActivity : BaseActivity() {
                 if (isDestroyed) {
                     return@runOnUiThread
                 }
-                if (games.map { it.pkg } != pcGames.map { it.pkg }) {
+                // Box art can arrive after the list (TunaReceive fetches it later): show it then too
+                if (games.map { it.pkg to (it.banner != null) } != pcGames.map { it.pkg to (it.banner != null) }) {
                     pcGames = games
                     sections.filter { it.row.kind == Rows.PC_GAMES }.forEach { it.show(games) }
                     applyGaps()

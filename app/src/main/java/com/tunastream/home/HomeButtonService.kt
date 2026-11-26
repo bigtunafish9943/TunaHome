@@ -1,6 +1,7 @@
 package com.tunastream.home
 
 import android.accessibilityservice.AccessibilityService
+import android.accessibilityservice.AccessibilityServiceInfo
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
@@ -23,6 +24,28 @@ import android.view.accessibility.AccessibilityEvent
  */
 class HomeButtonService : AccessibilityService() {
     private var lastReplaced = 0L
+    private var filteringKeys = true
+
+    /**
+     * While TunaReceive streams a game (or watches one), button presses go straight to it.
+     * Filtering keys makes Android wait for this service before every press, controller buttons
+     * included, which adds delay to the game, more so when TunaHome is busy. So the filter is
+     * off while a stream is in front, and back on as soon as anything else is.
+     */
+    private fun setKeyFiltering(on: Boolean) {
+        if (filteringKeys == on) {
+            return
+        }
+        val info = serviceInfo ?: return
+        info.flags = if (on) {
+            info.flags or AccessibilityServiceInfo.FLAG_REQUEST_FILTER_KEY_EVENTS
+        } else {
+            info.flags and AccessibilityServiceInfo.FLAG_REQUEST_FILTER_KEY_EVENTS.inv()
+        }
+        serviceInfo = info
+        filteringKeys = on
+        hotkeys.reset()
+    }
 
     /** Shortcuts on Home and Back that work everywhere. */
     private val hotkeys = HotkeyEngine(
@@ -107,6 +130,13 @@ class HomeButtonService : AccessibilityService() {
             return
         }
         val pkg = event.packageName?.toString() ?: return
+        val cls = event.className?.toString() ?: ""
+        when {
+            pkg == PcGames.RECEIVER && cls in STREAMING_SCREENS -> setKeyFiltering(false)
+            // TunaReceive's own pop-ups over the stream leave things as they are
+            pkg == PcGames.RECEIVER && !cls.startsWith("com.limelight.") -> {}
+            else -> setKeyFiltering(true)
+        }
         if (pkg !in STOCK_HOME_SCREENS || !Prefs.replaceStock(this) || CrashLog.failingLately(this)) {
             return
         }
@@ -147,6 +177,8 @@ class HomeButtonService : AccessibilityService() {
          * Only these are ever replaced. A fixed list on purpose: the TV's Settings app also
          * counts as a "home" app on some devices, and replacing that would lock the viewer out.
          */
+        private val STREAMING_SCREENS = setOf("com.limelight.Game", "com.limelight.WatchActivity")
+
         private val STOCK_HOME_SCREENS = setOf(
             "com.google.android.tvlauncher",
             "com.google.android.apps.tv.launcherx",
