@@ -80,6 +80,11 @@ internal fun HomeActivity.refreshMenu() {
         entries.add(SideMenu.Entry(R.drawable.ic_bluetooth, getString(R.string.menu_bluetooth), null) {
             openSetting(Settings.ACTION_BLUETOOTH_SETTINGS)
         })
+        if (FindRemote.available(this)) {
+            entries.add(SideMenu.Entry(R.drawable.ic_bluetooth, getString(R.string.find_remote), null) {
+                FindRemote.find(this)
+            })
+        }
         SleepTimer.minutesLeft().let { left ->
             entries.add(SideMenu.Entry(
                 R.drawable.ic_timer,

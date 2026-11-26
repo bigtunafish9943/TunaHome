@@ -1152,4 +1152,7 @@
     <string name="usage_home_screen">Home screen</string>
     <string name="usage_clear">Clear</string>
     <string name="usage_needs_service">Apps are only timed with the Home button setting on.</string>
+    <string name="find_remote">Find my remote</string>
+    <string name="find_remote_ringing">Listen for the remote: it should be beeping now.</string>
+    <string name="find_remote_settings">This TV has no remote finder TunaHome can start. Its remote settings may have one.</string>
 </resources>

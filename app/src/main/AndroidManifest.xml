@@ -118,6 +118,8 @@
             <action android:name="android.intent.action.VIEW" />
             <data android:scheme="market" />
         </intent>
+        <!-- Find my remote: the SHIELD's remote locator -->
+        <package android:name="com.nvidia.remotelocator" />
     </queries>
 
     <!-- Open apps: closing an app the viewer chose -->
