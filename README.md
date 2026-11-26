@@ -95,6 +95,7 @@ Typing on a TV is slow, so TunaHome can be set up from a phone on the same Wi-Fi
 - add web links;
 - send pictures and videos from the phone as the background;
 - change the theme, highlight colour, cards, effects and more.
+- **Report a problem**: get what TunaHome sees on the TV right now (its version, the controllers and USB devices plugged in, the last problem it hit and its own log) to copy into a message.
 
 The changes show on the TV when you close its setup screen. The page only works while that screen is open, only from your home network, and only after the code is typed; five wrong codes make a new one.
 
