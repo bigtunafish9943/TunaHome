@@ -106,6 +106,13 @@ class MorningActivity : BaseActivity() {
             if (!Look.MORNING.get(activity)) return
             val hour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
             if (hour !in 5..11) return
+            // Not on the day TunaHome was installed: the welcome comes first
+            val installed = try {
+                activity.packageManager.getPackageInfo(activity.packageName, 0).firstInstallTime
+            } catch (e: Exception) {
+                0L
+            }
+            if (System.currentTimeMillis() - installed < 12 * 3600_000L) return
             val today = SimpleDateFormat("yyyy-MM-dd", Locale.ROOT).format(Date())
             val prefs = Prefs.of(activity)
             if (prefs.getString(SHOWN, "") == today) return
