@@ -45,6 +45,17 @@ object PackPicker {
         layout.orientation = LinearLayout.VERTICAL
         layout.setPadding(pad, pad / 2, pad, 0)
 
+        // What TunaHome found by itself, so a wrong or missing icon can be told apart from a
+        // drawing that wouldn't load
+        val found = loaded.match(app.appPkg, app.launch.component?.className ?: "", app.label)
+        layout.addView(TextView(activity).apply {
+            text = if (found != null) activity.getString(R.string.pick_found, found.replace('_', ' '), app.appPkg)
+            else activity.getString(R.string.pick_not_found, app.appPkg)
+            textSize = 13f
+            setTextColor(activity.themeColor(R.attr.tsTextSecondary))
+            setPadding(0, 0, 0, pad / 2)
+        })
+
         val box = EditText(activity)
         box.setSingleLine()
         box.hint = activity.getString(R.string.pick_search)

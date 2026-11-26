@@ -78,10 +78,14 @@ object WatchNext {
                 val picture = text("poster_art_uri") ?: text("thumbnail_uri")
                 val duration = number("duration_millis")
                 val position = number("last_playback_position_millis")
+                val engaged = number("last_engagement_time_utc_millis")
                 val progress = if (duration > 0 && position > 0) (position.toFloat() / duration).coerceIn(0f, 1f) else -1f
+                // Apps often keep one entry and change it (the next game, the next episode)
+                // without changing its picture's address: fetch the picture again when it changed
+                val pictureKey = picture?.let { "$it#$engaged" }
                 val poster = picture?.let {
                     try {
-                        val bitmap = posters.get(it) ?: Pictures.decode(context, Uri.parse(it), 640, 360)?.also { b -> posters.put(it, b) }
+                        val bitmap = posters.get(pictureKey!!) ?: Pictures.decode(context, Uri.parse(it), 640, 360)?.also { b -> posters.put(pictureKey, b) }
                         bitmap?.let { b -> BitmapDrawable(context.resources, b) }
                     } catch (e: Throwable) {
                         null
@@ -94,7 +98,7 @@ object WatchNext {
                 }
                 val id = number("_id")
                 found.add(
-                    number("last_engagement_time_utc_millis") to AppEntry(
+                    engaged to AppEntry(
                         pkg = "watchnext:$id",
                         label = label,
                         launch = launch,

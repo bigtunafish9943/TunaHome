@@ -364,6 +364,8 @@
     <string name="pick_loading">Opening the icon pack…</string>
     <string name="pick_no_pack">Choose an icon pack first, in TunaHome settings, Icons.</string>
     <string name="pick_reset">Let TunaHome choose</string>
+    <string name="pick_found">Chosen by itself: %1$s (for %2$s)</string>
+    <string name="pick_not_found">The pack has no drawing TunaHome could match to %1$s: choose one below.</string>
     <string name="set_card_size">Card size</string>
     <string name="set_card_shape">Card shape</string>
     <string name="shape_auto">Automatic: wide for TV pictures, square for icons</string>

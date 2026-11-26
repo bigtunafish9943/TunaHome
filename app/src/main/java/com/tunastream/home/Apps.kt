@@ -186,7 +186,14 @@ object Apps {
                 }
                 // A name the viewer gave it wins; the pack still looks it up by its own name
                 val label = names[pkg] ?: ownLabel
-                val fromPack = pack?.icon(pkg, activity.name, ownLabel)
+                // The pack also looks the app up by the app's name, which can differ from its
+                // TV screen's name ("Hulu" and "Hulu Live TV")
+                val appLabel = if (pack == null) "" else try {
+                    activity.applicationInfo?.loadLabel(pm)?.toString() ?: ""
+                } catch (e: Exception) {
+                    ""
+                }
+                val fromPack = pack?.icon(pkg, activity.name, ownLabel, appLabel)
                 if (fromPack != null) {
                     packHits++
                 }

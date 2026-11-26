@@ -57,6 +57,7 @@ class HomeActivity : BaseActivity() {
     internal var watchNext: List<AppEntry> = emptyList()
     internal var pcGames: List<AppEntry> = emptyList()
     internal var loadingWatchNext = false
+    internal var watchNextAgain = false
     internal var loaded = false
     internal var loading = false
     internal var loadAgain = false
@@ -353,10 +354,48 @@ class HomeActivity : BaseActivity() {
         }
     }
 
+    // Apps write where you got to as you leave them, often a few seconds after the home screen
+    // is back: look again as soon as the TV's list changes, and once more shortly after coming back
+    private val watchNextSoon = Runnable { reloadWatchNext() }
+    private var watchNextObserver: android.database.ContentObserver? = null
+
+    private fun watchWatchNext(on: Boolean) {
+        if (Build.VERSION.SDK_INT < 26) {
+            return
+        }
+        watchNextObserver?.let {
+            try {
+                contentResolver.unregisterContentObserver(it)
+            } catch (e: Exception) {
+                // Already gone
+            }
+        }
+        watchNextObserver = null
+        weatherHandler.removeCallbacks(watchNextSoon)
+        if (!on || sections.none { it.row.kind == Rows.WATCH_NEXT }) {
+            return
+        }
+        val observer = object : android.database.ContentObserver(weatherHandler) {
+            override fun onChange(selfChange: Boolean) {
+                // A few changes usually come together: once, after they settle
+                weatherHandler.removeCallbacks(watchNextSoon)
+                weatherHandler.postDelayed(watchNextSoon, 1500L)
+            }
+        }
+        try {
+            contentResolver.registerContentObserver(android.media.tv.TvContract.WatchNextPrograms.CONTENT_URI, true, observer)
+            watchNextObserver = observer
+        } catch (e: Exception) {
+            // This TV doesn't say: the checks below still catch up
+        }
+        weatherHandler.postDelayed(watchNextSoon, 15_000L)
+    }
+
     override fun onPause() {
         weatherHandler.removeCallbacks(weatherTick)
         weatherHandler.removeCallbacks(infoTick)
         weatherHandler.removeCallbacks(watchNextTick)
+        watchWatchNext(false)
         hotkeys.reset()
         // Leaving mid-move: keep the app where it was put
         sections.forEach { it.adapter.finishMove() }
@@ -462,6 +501,7 @@ class HomeActivity : BaseActivity() {
         // Back from watching something: its place in Watch Next has changed
         weatherHandler.removeCallbacks(watchNextTick)
         watchNextTick.run()
+        watchWatchNext(true)
         showWeather()
         weatherHandler.removeCallbacks(weatherTick)
         weatherTick.run()
@@ -660,7 +700,12 @@ class HomeActivity : BaseActivity() {
     internal fun reloadWatchNext() {
         val wantShows = sections.any { it.row.kind == Rows.WATCH_NEXT }
         val wantGames = sections.any { it.row.kind == Rows.PC_GAMES }
-        if (loadingWatchNext || (!wantShows && !wantGames)) {
+        if (!wantShows && !wantGames) {
+            return
+        }
+        if (loadingWatchNext) {
+            // Still fetching the last look: look again when it's done, so this change isn't missed
+            watchNextAgain = true
             return
         }
         loadingWatchNext = true
@@ -680,15 +725,24 @@ class HomeActivity : BaseActivity() {
                 if (isDestroyed) {
                     return@runOnUiThread
                 }
+                if (watchNextAgain) {
+                    watchNextAgain = false
+                    weatherHandler.post { reloadWatchNext() }
+                }
                 // Box art can arrive after the list (TunaReceive fetches it later): show it then too
                 if (games.map { it.pkg to (it.banner != null) } != pcGames.map { it.pkg to (it.banner != null) }) {
                     pcGames = games
                     sections.filter { it.row.kind == Rows.PC_GAMES }.forEach { it.show(games) }
                     applyGaps()
                 }
-                // Nothing new: leave the section alone, so it doesn't jump under the viewer
+                // Nothing new: leave the section alone, so it doesn't jump under the viewer. An
+                // entry the app changed in place (a new game, the next episode) counts as new.
+                fun picture(e: AppEntry) = (e.own as? android.graphics.drawable.BitmapDrawable)?.bitmap
                 val same = found.size == watchNext.size && found.indices.all {
-                    found[it].pkg == watchNext[it].pkg && found[it].progress == watchNext[it].progress
+                    val a = found[it]
+                    val b = watchNext[it]
+                    a.pkg == b.pkg && a.progress == b.progress && a.label == b.label &&
+                        a.preview == b.preview && picture(a) === picture(b)
                 }
                 if (same && found.isNotEmpty()) {
                     return@runOnUiThread

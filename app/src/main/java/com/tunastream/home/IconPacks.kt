@@ -51,7 +51,20 @@ object IconPacks {
         "com.apple.atve.androidtv.appletv" to "com.apple.atve.android.appletv",
         "com.google.android.tvrecommendations" to "com.google.android.googlequicksearchbox",
         "com.nvidia.tegrazone3" to "com.nvidia.geforcenow",
+        "com.espn.gtv" to "com.espn.score_center",
     )
+
+    /** Parts TV builds add to a package name: "com.example.tv", "com.example.androidtv.app". */
+    private val TV_PARTS = setOf(
+        "tv", "androidtv", "atv", "ott", "livingroom", "firetv", "leanback", "gtv", "googletv", "tvapp", "bigscreen", "stb",
+    )
+
+    /** [pkg] without its TV parts, or null if it has none. */
+    private fun withoutTvParts(pkg: String): String? {
+        val parts = pkg.split('.')
+        val kept = parts.filterIndexed { i, part -> i < 2 || part.lowercase() !in TV_PARTS }
+        return if (kept.size == parts.size) null else kept.joinToString(".")
+    }
 
     /** Words too common to stand for one app on their own. */
     private val GENERIC = setOf(
@@ -195,10 +208,23 @@ object IconPacks {
         val names: List<String>
             get() = byName.values.distinct().sorted()
 
+        /** Every package the pack lists, in order, for finding a maker's other apps. */
+        private val byPackageSorted by lazy { java.util.TreeMap(byPackage) }
+
         private val res = try {
             context.packageManager.getResourcesForApplication(pkg)
         } catch (e: PackageManager.NameNotFoundException) {
             null
+        }
+
+        // Some packs draw with their own theme's colours: without it those drawings don't load
+        private val theme: android.content.res.Resources.Theme? = res?.let { r ->
+            try {
+                val style = context.packageManager.getApplicationInfo(pkg, 0).theme
+                r.newTheme().apply { if (style != 0) applyStyle(style, true) }
+            } catch (e: Exception) {
+                null
+            }
         }
 
         init {
@@ -308,21 +334,37 @@ object IconPacks {
         }
 
         /**
-         * The pack's icon for an app: by its exact activity, then by its package, then by the
-         * phone version of a TV app, then by a drawable named the same as the app.
+         * The pack's icon for an app: the one picked by hand, else the first that loads of: its
+         * exact activity, its package, the phone version of a TV app, its name, and the same
+         * maker's app of that name. A drawing the pack lists but can't load is skipped, so the
+         * next way still has a chance.
          */
-        fun icon(appPkg: String, cls: String, label: String): Drawable? {
+        fun icon(appPkg: String, cls: String, vararg labels: String): Drawable? {
             res ?: return null
-            val name = picked(context, pkg, appPkg) ?: match(appPkg, cls, label) ?: return null
-            return drawable(name)
+            picked(context, pkg, appPkg)?.let { name -> drawable(name)?.let { return it } }
+            for (name in candidates(appPkg, cls, labels.toList())) {
+                drawable(name)?.let { return it }
+            }
+            return null
         }
 
-        /** The drawing that fits an app best, without asking: exact first, then by name. */
-        fun match(appPkg: String, cls: String, label: String): String? {
-            val phone = TV_TO_PHONE[appPkg]
-            byComponent["$appPkg/$cls"]?.let { return it }
-            byPackage[appPkg]?.let { return it }
-            phone?.let { byPackage[it] }?.let { return it }
+        /** The drawing that fits an app best, without asking. */
+        fun match(appPkg: String, cls: String, vararg labels: String): String? =
+            candidates(appPkg, cls, labels.toList()).firstOrNull { idOf(it) != 0 }
+
+        private fun candidates(appPkg: String, cls: String, labels: List<String>): Sequence<String> = sequence {
+            byComponent["$appPkg/$cls"]?.let { yield(it) }
+            byPackage[appPkg]?.let { yield(it) }
+            TV_TO_PHONE[appPkg]?.let { phone -> byPackage[phone]?.let { yield(it) } }
+            withoutTvParts(appPkg)?.let { bare -> byPackage[bare]?.let { yield(it) } }
+            for (label in labels.filter { it.isNotBlank() }.distinct()) {
+                byLabel(label)?.let { yield(it) }
+            }
+            family(appPkg, labels)?.let { yield(it) }
+        }
+
+        /** A drawing named like the app. */
+        private fun byLabel(label: String): String? {
             val plainLabel = plain(label)
             if (plainLabel.length < 3) {
                 return null
@@ -332,7 +374,7 @@ object IconPacks {
             val bare = withoutTvWords(plainLabel)
             byName[bare]?.let { return it }
             // Any run of the name's words: "Amazon Prime Video" finds "prime_video"
-            val words = label.lowercase().split(' ', '-', ':', '.', '&', '+').map { plain(it) }.filter { it.isNotEmpty() }
+            val words = words(label)
             for (length in words.size - 1 downTo 1) {
                 for (start in 0..words.size - length) {
                     val run = words.subList(start, start + length).joinToString("")
@@ -345,6 +387,41 @@ object IconPacks {
                 val starts = byName.keys.filter { withoutTvWords(it) == bare || it.startsWith(bare) }
                 if (starts.size == 1) {
                     return byName[starts[0]]
+                }
+            }
+            return null
+        }
+
+        private fun words(label: String): List<String> =
+            label.lowercase().split(' ', '-', ':', '.', '&', '+', '|', '/', '(', ')').map { plain(it) }.filter { it.isNotEmpty() }
+
+        /**
+         * A TV app the pack doesn't list by name, found through the same maker's other entries:
+         * "com.hulu.livingroomplus" through "com.hulu.plus". Only a drawing that also looks like
+         * the app's name counts, so another app by the same maker isn't used by mistake.
+         */
+        private fun family(appPkg: String, labels: List<String>): String? {
+            val wanted = labels.flatMap { words(it) + plain(it) }.map { withoutTvWords(it) }
+                .filter { it.length >= 3 && it !in GENERIC }.toSet()
+            if (wanted.isEmpty()) {
+                return null
+            }
+            val parts = appPkg.split('.')
+            for (keep in parts.size - 1 downTo 2) {
+                val prefix = parts.take(keep).joinToString(".")
+                val names = (byPackageSorted.subMap("$prefix.", "$prefix.\uffff").values + listOfNotNull(byPackage[prefix])).toSet()
+                if (names.isEmpty()) {
+                    continue
+                }
+                val fitting = names.filter { name ->
+                    val drawn = withoutTvWords(plain(name))
+                    wanted.any { w -> drawn == w || drawn.startsWith(w) || (drawn.length >= 4 && w.startsWith(drawn)) }
+                }
+                if (fitting.size == 1) {
+                    return fitting[0]
+                }
+                if (fitting.size > 1) {
+                    return null
                 }
             }
             return null
@@ -370,15 +447,36 @@ object IconPacks {
 
         fun drawable(name: String): Drawable? {
             val res = res ?: return null
-            val id = res.getIdentifier(name, "drawable", pkg)
+            val id = idOf(name)
             if (id == 0) {
                 return null
             }
             return try {
-                res.getDrawable(id, null)
+                res.getDrawable(id, theme)
             } catch (e: Exception) {
-                null
+                try {
+                    res.getDrawable(id, null)
+                } catch (e2: Exception) {
+                    null
+                }
             }
+        }
+
+        /** The drawing's resource: in drawable or mipmap, written plain or as "@drawable/name.png". */
+        private fun idOf(name: String): Int {
+            val res = res ?: return 0
+            val clean = name.trim().removePrefix("@").removePrefix("drawable/").removePrefix("mipmap/")
+                .removeSuffix(".png").removeSuffix(".webp").removeSuffix(".xml")
+            if (clean.isEmpty()) {
+                return 0
+            }
+            for (type in arrayOf("drawable", "mipmap")) {
+                val id = res.getIdentifier(clean, type, pkg)
+                if (id != 0) {
+                    return id
+                }
+            }
+            return 0
         }
     }
 }
