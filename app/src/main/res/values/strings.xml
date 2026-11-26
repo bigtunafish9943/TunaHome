@@ -1113,4 +1113,23 @@
     <string name="phone_did_icon">A new icon for %1$s</string>
     <string name="phone_did_move">%1$s moved to %2$s</string>
     <string name="phone_did_person">Who\'s watching changed</string>
+    <string name="picture_test">Picture test</string>
+    <string name="picture_test_summary">Test patterns for setting up the TV\'s picture, and the screen mode it\'s getting.</string>
+    <string name="pt_black">Black level</string>
+    <string name="pt_black_tip">Bar 0 should be as black as the edges and bar 4 just visible. Raise Brightness if low bars vanish; lower it if 0 looks grey.</string>
+    <string name="pt_white">White level</string>
+    <string name="pt_white_tip">Bars up to 253 should stand apart from the white around them. Lower Contrast if the top bars merge into it.</string>
+    <string name="pt_colour">Colour bars</string>
+    <string name="pt_colour_tip">Clean colours with no glow at the edges, and skin tones that look natural. Adjust Colour and Tint if not.</string>
+    <string name="pt_gradient">Gradients</string>
+    <string name="pt_gradient_tip">Smooth from end to end. Visible steps are banding: try turning the TV\'s noise reduction off.</string>
+    <string name="pt_edges">Edges and sharpness</string>
+    <string name="pt_edges_tip">The red line on all four sides should show; if not, set the TV\'s picture size to Just Scan or Screen Fit. Halos round the fine lines mean Sharpness is too high.</string>
+    <string name="pt_motion">Smooth motion</string>
+    <string name="pt_motion_tip">The bar should glide evenly. Judder means the TV is converting the frame rate; turn its motion smoothing off for games.</string>
+    <string name="pt_skipped">Frames skipped by the TV box: %1$d of %2$d</string>
+    <string name="pt_mode">Sending %1$d × %2$d at %3$s Hz.</string>
+    <string name="pt_mode_also">Also: %1$s Hz.</string>
+    <string name="pt_mode_hdr">HDR: %1$s.</string>
+    <string name="pt_keys">Left and Right: next pattern. Select: hide these notes. Back: leave.</string>
 </resources>

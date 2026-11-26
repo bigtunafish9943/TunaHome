@@ -30,6 +30,7 @@ To make the Home button open TunaHome, see [Making the Home button open TunaHome
 - **Idle mode:** after a few minutes with no button pressed, everything but the background (and the clock, if you like) fades away. Any button brings it back.
 - **Sleep timer:** the TV goes to sleep after 15 minutes to 3 hours, with a warning a minute before; the time left shows beside the clock. Needs the Home button setting.
 - **Screen saver:** TunaHome can be the TV's screen saver, showing your background (Aerial Views too) with the time, the weather and what's playing, moving corner to corner every few minutes. Choose it in the TV's screen saver settings (TunaHome settings, Background, Screen saver, takes you there).
+- **Picture test** (TunaHome settings): test patterns for setting up the TV's picture (black and white level, colour bars, gradients for banding, edges for overscan and sharpness, and a moving bar for smooth motion that counts frames the TV box skips), with the screen mode the box is sending, the other refresh rates the TV offers and its HDR formats. Left and Right change pattern.
 
 ## Sections
 

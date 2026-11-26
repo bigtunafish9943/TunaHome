@@ -245,6 +245,9 @@ class SettingsActivity : BaseActivity() {
         row(R.string.tv_settings, getString(R.string.set_tv_settings_summary)) {
             HomeActivity.openTvSettings(this)
         }
+        row(R.string.picture_test, getString(R.string.picture_test_summary)) {
+            startActivity(android.content.Intent(this, PictureTestActivity::class.java))
+        }
         row(R.string.welcome_again, getString(R.string.welcome_again_summary)) { WelcomeActivity.start(this) }
     }
 
