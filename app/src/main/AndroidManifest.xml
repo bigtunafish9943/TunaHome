@@ -191,6 +191,13 @@
             android:launchMode="singleTask"
             android:screenOrientation="landscape"
             android:taskAffinity="com.tunastream.home.timesup" />
+        <!-- The morning screen: once each morning, over the home screen -->
+        <activity
+            android:name=".MorningActivity"
+            android:configChanges="keyboard|keyboardHidden|navigation|orientation|screenSize|screenLayout|uiMode"
+            android:excludeFromRecents="true"
+            android:exported="false"
+            android:screenOrientation="landscape" />
         <!-- Picture test: test patterns, from TunaHome settings -->
         <activity
             android:name=".PictureTestActivity"

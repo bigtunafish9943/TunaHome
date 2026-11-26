@@ -142,6 +142,10 @@ object UsageLog {
         since = SystemClock.elapsedRealtime()
     }
 
+    fun yesterdaySeconds(context: Context): Long = dayTotal(context, 1)
+
+    fun durationText(context: Context, seconds: Long): String = duration(context, seconds)
+
     private fun duration(context: Context, seconds: Long): String {
         val minutes = seconds / 60
         return if (minutes < 60) context.getString(R.string.usage_minutes, minutes.coerceAtLeast(1))

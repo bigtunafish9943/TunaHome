@@ -530,6 +530,7 @@ class HomeActivity : BaseActivity() {
         scheduleIdle()
         Updater.resumeIfWaiting(this)
         ChangeLog.showIfUpdated(this)
+        MorningActivity.showIfDue(this)
         if (Prefs.autoUpdateCheck(this)) {
             Updater.check(this, false)
         }

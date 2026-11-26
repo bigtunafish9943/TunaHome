@@ -466,6 +466,8 @@ object Look {
     /** Who's in, on the top bar, when more than one person uses the TV. */
     val SHOW_WHO = Switch("look_show_who", true)
     val SHOW_SEARCH_BUTTON = Switch("look_show_search", true)
+    /** The morning screen: a big clock, the weather and what you were watching, once each morning. */
+    val MORNING = Switch("look_morning", true)
 
     /** Free storage and memory beside the clock. */
     const val INFO_HIDDEN = 0
