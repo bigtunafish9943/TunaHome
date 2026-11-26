@@ -38,49 +38,49 @@ import kotlin.concurrent.thread
  */
 class HomeActivity : BaseActivity() {
     /** One section of apps on screen. Hidden altogether while it has nothing in it. */
-    private class Section(val row: Rows.Row, val view: View, val list: RecyclerView, val adapter: AppAdapter) {
+    internal class Section(val row: Rows.Row, val view: View, val list: RecyclerView, val adapter: AppAdapter) {
         fun show(apps: List<AppEntry>) {
             adapter.submit(apps)
             view.visibility = if (apps.isEmpty()) View.GONE else View.VISIBLE
         }
     }
 
-    private lateinit var scroll: ScrollView
-    private lateinit var appsHint: TextView
-    private lateinit var backdrop: Backdrop
-    private lateinit var tiles: TileStyle
-    private lateinit var ambient: Ambient
-    private val sections = ArrayList<Section>()
+    internal lateinit var scroll: ScrollView
+    internal lateinit var appsHint: TextView
+    internal lateinit var backdrop: Backdrop
+    internal lateinit var tiles: TileStyle
+    internal lateinit var ambient: Ambient
+    internal val sections = ArrayList<Section>()
 
-    private var apps: List<AppEntry> = emptyList()
-    private var watchNext: List<AppEntry> = emptyList()
-    private var pcGames: List<AppEntry> = emptyList()
-    private var loadingWatchNext = false
-    private var loaded = false
-    private var loading = false
-    private var loadAgain = false
-    private var placedFocus = false
+    internal var apps: List<AppEntry> = emptyList()
+    internal var watchNext: List<AppEntry> = emptyList()
+    internal var pcGames: List<AppEntry> = emptyList()
+    internal var loadingWatchNext = false
+    internal var loaded = false
+    internal var loading = false
+    internal var loadAgain = false
+    internal var placedFocus = false
 
     // Idle: after a while with no button pressed, everything but the background fades away
-    private val idleHandler = Handler(Looper.getMainLooper())
-    private val goIdle = Runnable { enterIdle() }
-    private var idle = false
-    private var swallowKeyUp = false
-    private var shadeAlpha = 0f
-    private val fadeWhenIdle = ArrayList<View>()
+    internal val idleHandler = Handler(Looper.getMainLooper())
+    internal val goIdle = Runnable { enterIdle() }
+    internal var idle = false
+    internal var swallowKeyUp = false
+    internal var shadeAlpha = 0f
+    internal val fadeWhenIdle = ArrayList<View>()
 
-    private var networkCallback: ConnectivityManager.NetworkCallback? = null
+    internal var networkCallback: ConnectivityManager.NetworkCallback? = null
 
     // Shortcuts pressed on the home screen
-    private var replaying = false
-    private val hotkeys = HotkeyEngine(
+    internal var replaying = false
+    internal val hotkeys = HotkeyEngine(
         { Hotkeys.all(this).filter { !it.everywhere } },
         { HotkeyActions.run(this, it.action, it.arg, this) },
         { code, taps -> replay(code, taps) },
     )
 
     /** A press that wasn't a shortcut after all: let it do its ordinary job. */
-    private fun replay(code: Int, taps: Int) {
+    internal fun replay(code: Int, taps: Int) {
         replaying = true
         try {
             repeat(taps) {
@@ -114,22 +114,22 @@ class HomeActivity : BaseActivity() {
     }
 
     /** A shortcut pressed elsewhere that needs the home screen: do it once it shows. */
-    private fun hotkeyFromIntent(intent: Intent?) {
+    internal fun hotkeyFromIntent(intent: Intent?) {
         val action = intent?.getStringExtra(HotkeyActions.EXTRA_ACTION) ?: return
         val arg = intent.getStringExtra(HotkeyActions.EXTRA_ARG)
         intent.removeExtra(HotkeyActions.EXTRA_ACTION)
         scroll.postDelayed({ if (!isDestroyed) hotkey(action, arg) }, 250)
     }
-    private lateinit var sideMenu: SideMenu
-    private var nowPlaying: NowPlaying? = null
+    internal lateinit var sideMenu: SideMenu
+    internal var nowPlaying: NowPlaying? = null
 
     /** The app whose picture is being chosen, while the TV's picture chooser is open. */
-    private var choosingPictureFor: String? = null
+    internal var choosingPictureFor: String? = null
 
     /** Installing or updating an app sends a burst of changes: load once, after the burst. */
-    private val reloadSoon = Runnable { reload() }
+    internal val reloadSoon = Runnable { reload() }
 
-    private val packageReceiver = object : BroadcastReceiver() {
+    internal val packageReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
             idleHandler.removeCallbacks(reloadSoon)
             idleHandler.postDelayed(reloadSoon, 1200)
@@ -137,7 +137,7 @@ class HomeActivity : BaseActivity() {
     }
 
     /** Sections with the same card style share their spare cards, so scrolling builds fewer. */
-    private val pools = HashMap<String, RecyclerView.RecycledViewPool>()
+    internal val pools = HashMap<String, RecyclerView.RecycledViewPool>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -225,6 +225,9 @@ class HomeActivity : BaseActivity() {
         WelcomeActivity.showIfNew(this)
     }
 
+    /** Whether the look changed since this screen was built (for the files that extend it). */
+    internal fun lookChanged(): Boolean = outOfDate()
+
     /** The TV is short of memory: let go of what can be loaded again. */
     override fun onTrimMemory(level: Int) {
         super.onTrimMemory(level)
@@ -245,108 +248,9 @@ class HomeActivity : BaseActivity() {
     // ------------------------------------------------------------------ quick changes
 
     /** Set when a quick change rebuilds the screen, so the list comes back to try another. */
-    private var reopenQuick = false
+    internal var reopenQuick = false
 
-    /**
-     * The most changed settings, over the home screen itself: each change shows behind the list
-     * straight away, and the list comes back so the next can be tried.
-     */
-    fun quickCustomise() {
-        if (AppLock.settingsLocked(this) && !quickUnlocked) {
-            AppLock.ask(this, getString(R.string.quick_title)) {
-                quickUnlocked = true
-                quickCustomise()
-            }
-            return
-        }
-        val labels = ArrayList<String>()
-        val actions = ArrayList<() -> Unit>()
-        fun item(title: Int, value: String, action: () -> Unit) {
-            labels.add(if (value.isEmpty()) getString(title) else getString(title) + ":  " + value)
-            actions.add(action)
-        }
-        fun choice(title: Int, setting: Look.Choice) = item(title, setting.name(this)) {
-            chooseOne(getString(title), setting.names.map { getString(it) }, setting.get(this)) {
-                setting.set(this, it)
-                quickApplied()
-            }
-        }
-        item(R.string.set_theme, getString(TunaTheme.nameOf(TunaTheme.chosen(this)))) {
-            val ids = TunaTheme.IDS
-            chooseOne(getString(R.string.set_theme), ids.map { getString(TunaTheme.nameOf(it)) }, ids.indexOf(TunaTheme.chosen(this))) {
-                TunaTheme.setChosen(this, ids[it])
-                Look.touch(this)
-                quickApplied()
-            }
-        }
-        choice(R.string.set_accent, Look.ACCENT)
-        item(R.string.set_background, Backdrop.SOURCE.name(this)) { quickBackground() }
-        choice(R.string.bg_dim, Backdrop.DIM)
-        choice(R.string.set_tile_style, Look.TILE_STYLE)
-        choice(R.string.set_card_size, Look.CARD_SIZE)
-        item(R.string.preset_title, "") {
-            chooseOne(getString(R.string.preset_title), Look.PRESETS.map { getString(it) }, -1) {
-                Look.applyPreset(this, it)
-                quickApplied()
-            }
-        }
-        choice(R.string.set_focus_zoom, Look.FOCUS_ZOOM)
-        choice(R.string.set_focus_shadow, Look.FOCUS_SHADOW)
-        choice(R.string.set_text_size, Look.TEXT_SIZE)
-        choice(R.string.set_section_position, Look.SECTION_POSITION)
-        choice(R.string.set_section_panel, Look.SECTION_PANEL)
-        choice(R.string.set_clock_face, Look.CLOCK_FACE)
-        labels.add(getString(R.string.quick_fine))
-        actions.add {
-            startActivity(Intent(this, SettingsActivity::class.java)
-                .putExtra(SettingsActivity.EXTRA_PAGE, SettingsActivity.FINE))
-        }
-        labels.add(getString(R.string.quick_everything))
-        actions.add {
-            startActivity(Intent(this, SettingsActivity::class.java))
-        }
-        AlertDialog.Builder(this)
-            .setTitle(R.string.quick_title)
-            .setItems(labels.toTypedArray()) { _, which -> actions[which]() }
-            .show()
-    }
-
-    private var quickUnlocked = false
-
-    /** Backgrounds that need nothing more chosen; the rest are in settings. */
-    private fun quickBackground() {
-        val names = ArrayList<String>()
-        val picks = ArrayList<() -> Unit>()
-        names.add(getString(R.string.bg_theme)); picks.add { Backdrop.SOURCE.set(this, Backdrop.SOURCE_THEME) }
-        names.add(getString(R.string.bg_daily)); picks.add { Backdrop.SOURCE.set(this, Backdrop.SOURCE_DAILY) }
-        WallpaperApps.installed(this).forEach { app ->
-            names.add(app.name)
-            picks.add {
-                Backdrop.setApp(this, app.component)
-                Backdrop.SOURCE.set(this, Backdrop.SOURCE_APP)
-            }
-        }
-        names.add(getString(R.string.quick_more_backgrounds))
-        picks.add {
-            startActivity(Intent(this, SettingsActivity::class.java)
-                .putExtra(SettingsActivity.EXTRA_PAGE, SettingsActivity.BACKGROUND))
-        }
-        chooseOne(getString(R.string.set_background), names, -1) { which ->
-            picks[which]()
-            if (which < names.size - 1) quickApplied()
-        }
-    }
-
-    /** Rebuilds the home screen in the new look, then shows the quick list again. */
-    private fun quickApplied() {
-        reopenQuick = true
-        if (outOfDate()) {
-            recreate()
-        } else {
-            reopenQuick = false
-            quickCustomise()
-        }
-    }
+    internal var quickUnlocked = false
 
     override fun onDestroy() {
         backdrop.stop()
@@ -363,7 +267,7 @@ class HomeActivity : BaseActivity() {
     }
 
     /** Sections glide up into place, one after another, as the home screen appears. */
-    private fun arrive() {
+    internal fun arrive() {
         val mode = Look.ANIMATIONS.get(this)
         if (mode == Look.ANIM_OFF) {
             return
@@ -399,86 +303,18 @@ class HomeActivity : BaseActivity() {
     }
 
     // The weather is checked when the home screen shows and every half hour while it stays up
-    private val weatherHandler = Handler(Looper.getMainLooper())
-    private val weatherTick: Runnable = object : Runnable {
+    internal val weatherHandler = Handler(Looper.getMainLooper())
+    internal val weatherTick: Runnable = object : Runnable {
         override fun run() {
             Weather.refresh(this@HomeActivity) { showWeather() }
             weatherHandler.postDelayed(this, 30L * 60 * 1000)
         }
     }
 
-    /** Puts the weather beside or under the clock, in the chosen detail, picture and size. */
-    private fun showWeather() {
-        val box = findViewById<LinearLayout>(R.id.weatherBox)
-        val now = Weather.current
-        if (!Weather.SHOW.get(this) || Weather.place(this) == null || now == null) {
-            box.visibility = View.GONE
-            return
-        }
-        val icon = findViewById<ImageView>(R.id.weatherIcon)
-        val temp = findViewById<TextView>(R.id.weatherTemp)
-        val detail = findViewById<TextView>(R.id.weatherDetail)
-        temp.text = getString(R.string.wx_degrees, now.temperature)
-        val condition = getString(Weather.condition(now.code))
-        val parts = ArrayList<String>()
-        when (Weather.DETAIL.get(this)) {
-            Weather.DETAIL_CONDITION -> parts.add(condition)
-            Weather.DETAIL_HIGH_LOW -> {
-                parts.add(condition)
-                parts.add(getString(R.string.wx_high_low, now.high, now.low))
-            }
-            Weather.DETAIL_ALL -> {
-                parts.add(condition)
-                parts.add(getString(R.string.wx_high_low, now.high, now.low))
-                parts.add(getString(R.string.wx_feels, now.feelsLike))
-                if (now.humidity >= 0) parts.add(getString(R.string.wx_humidity, now.humidity))
-                if (now.wind >= 0) parts.add(getString(
-                    if (Weather.UNITS.get(this) == Weather.UNITS_F) R.string.wx_wind_mph else R.string.wx_wind_kmh, now.wind))
-            }
-        }
-        detail.text = parts.joinToString(" · ")
-        detail.visibility = if (parts.isEmpty()) View.GONE else View.VISIBLE
-
-        val style = Weather.ICONS.get(this)
-        icon.visibility = if (style == Weather.ICONS_NONE) View.GONE else View.VISIBLE
-        icon.setImageResource(Weather.icon(now.code, now.day))
-        when (style) {
-            Weather.ICONS_WHITE -> icon.setColorFilter(android.graphics.Color.WHITE, android.graphics.PorterDuff.Mode.SRC_IN)
-            Weather.ICONS_ACCENT -> icon.setColorFilter(themeColor(R.attr.tsAccent), android.graphics.PorterDuff.Mode.SRC_IN)
-            else -> icon.clearColorFilter()
-        }
-
-        if (!weatherSized) {
-            weatherSized = true
-            val scale = Weather.scale(this)
-            icon.layoutParams = icon.layoutParams.apply {
-                width = Math.round(width * scale)
-                height = Math.round(height * scale)
-            }
-            temp.setTextSize(TypedValue.COMPLEX_UNIT_PX, temp.textSize * scale)
-            detail.setTextSize(TypedValue.COMPLEX_UNIT_PX, detail.textSize * maxOf(scale, 0.9f))
-            if (Weather.PLACE.get(this) == Weather.PLACE_UNDER) {
-                // Under the clock instead of beside it
-                (box.parent as ViewGroup).removeView(box)
-                findViewById<LinearLayout>(R.id.clockBox).addView(box)
-                (box.layoutParams as LinearLayout.LayoutParams).apply {
-                    marginStart = 0
-                    marginEnd = 0
-                    topMargin = Math.round(Look.dp(this@HomeActivity, 4f))
-                }
-            }
-        }
-        if (box.visibility != View.VISIBLE) {
-            box.alpha = 0f
-            box.visibility = View.VISIBLE
-            box.animate().alpha(1f).setDuration(400).start()
-        }
-    }
-
-    private var weatherSized = false
+    internal var weatherSized = false
 
     // Free storage and memory, every half minute while the home screen is up
-    private val infoTick: Runnable = object : Runnable {
+    internal val infoTick: Runnable = object : Runnable {
         override fun run() {
             if (showSystemInfo()) {
                 weatherHandler.postDelayed(this, 30_000L)
@@ -486,42 +322,9 @@ class HomeActivity : BaseActivity() {
         }
     }
 
-    /** Shows free storage and memory as chosen; false when it's switched off. */
-    private fun showSystemInfo(): Boolean {
-        val view = findViewById<TextView>(R.id.systemInfo)
-        val mode = Look.SYSTEM_INFO.get(this)
-        val parts = ArrayList<String>()
-        val sleepLeft = SleepTimer.minutesLeft()
-        if (sleepLeft > 0) {
-            parts.add(getString(R.string.sleep_in, sleepLeft))
-        }
-        if (mode == Look.INFO_STORAGE || mode == Look.INFO_BOTH) {
-            try {
-                val stat = android.os.StatFs(android.os.Environment.getDataDirectory().path)
-                parts.add(getString(R.string.info_storage_free,
-                    android.text.format.Formatter.formatShortFileSize(this, stat.availableBytes)))
-            } catch (e: Exception) {
-                // Left out
-            }
-        }
-        if (mode == Look.INFO_MEMORY || mode == Look.INFO_BOTH) {
-            try {
-                val memory = android.app.ActivityManager.MemoryInfo()
-                getSystemService(android.app.ActivityManager::class.java)?.getMemoryInfo(memory)
-                parts.add(getString(R.string.info_memory_free,
-                    android.text.format.Formatter.formatShortFileSize(this, memory.availMem)))
-            } catch (e: Exception) {
-                // Left out
-            }
-        }
-        view.text = parts.joinToString("   ")
-        view.visibility = if (parts.isEmpty()) View.GONE else View.VISIBLE
-        return mode != Look.INFO_HIDDEN || sleepLeft > 0
-    }
-
     // Watch Next changes while you watch on another device, or as shows are added: look again
     // every five minutes while the home screen is up
-    private val watchNextTick: Runnable = object : Runnable {
+    internal val watchNextTick: Runnable = object : Runnable {
         override fun run() {
             reloadWatchNext()
             weatherHandler.postDelayed(this, 5L * 60 * 1000)
@@ -545,7 +348,7 @@ class HomeActivity : BaseActivity() {
 
     // ------------------------------------------------------------------ idle
 
-    private fun scheduleIdle() {
+    internal fun scheduleIdle() {
         idleHandler.removeCallbacks(goIdle)
         val after = Look.idleMs(this)
         if (after > 0) {
@@ -553,7 +356,7 @@ class HomeActivity : BaseActivity() {
         }
     }
 
-    private fun enterIdle() {
+    internal fun enterIdle() {
         // Not while a menu or another window is in front
         if (!hasWindowFocus() || idle) {
             scheduleIdle()
@@ -566,7 +369,7 @@ class HomeActivity : BaseActivity() {
         shade.animate().alpha(0f).setDuration(1200).start()
     }
 
-    private fun leaveIdle(animate: Boolean) {
+    internal fun leaveIdle(animate: Boolean) {
         idle = false
         val time = if (animate) 300L else 0L
         fadeWhenIdle.forEach { it.animate().alpha(1f).setDuration(time).start() }
@@ -630,85 +433,7 @@ class HomeActivity : BaseActivity() {
         return super.dispatchKeyEvent(event)
     }
 
-    /**
-     * Controller shoulder buttons (and Page up, Page down, Home and End on a keyboard): a section
-     * up or down, or the first or last app of this one.
-     */
-    private fun jump(code: Int): Boolean {
-        val shown = sections.filter { it.view.visibility == View.VISIBLE && it.adapter.appCount > 0 }
-        if (shown.isEmpty()) {
-            return false
-        }
-        val focused = currentFocus
-        val here = shown.indexOfFirst { it.list === focused?.parent }
-        when (code) {
-            KeyEvent.KEYCODE_BUTTON_L1, KeyEvent.KEYCODE_PAGE_UP ->
-                goToSection(shown[maxOf(0, here - 1)])
-            KeyEvent.KEYCODE_BUTTON_R1, KeyEvent.KEYCODE_PAGE_DOWN ->
-                goToSection(shown[if (here < 0) 0 else minOf(here + 1, shown.size - 1)])
-            KeyEvent.KEYCODE_BUTTON_L2, KeyEvent.KEYCODE_MOVE_HOME,
-            KeyEvent.KEYCODE_BUTTON_R2, KeyEvent.KEYCODE_MOVE_END -> {
-                val section = shown.getOrNull(here) ?: return false
-                val first = code == KeyEvent.KEYCODE_BUTTON_L2 || code == KeyEvent.KEYCODE_MOVE_HOME
-                val position = section.adapter.positionOfApp(if (first) 0 else section.adapter.appCount - 1)
-                section.list.scrollToPosition(position)
-                section.list.post { section.list.layoutManager?.findViewByPosition(position)?.requestFocus() }
-            }
-            else -> return false
-        }
-        return true
-    }
-
     // ------------------------------------------------------------------ network icon
-
-    private fun watchNetwork() {
-        val icon = findViewById<ImageView>(R.id.networkIcon)
-        val vpn = findViewById<View>(R.id.vpnIcon)
-        val showNetwork = Look.SHOW_NETWORK.get(this)
-        val showVpn = Look.SHOW_VPN.get(this)
-        if (!showNetwork && !showVpn) {
-            icon.visibility = View.GONE
-            vpn.visibility = View.GONE
-            return
-        }
-        val manager = getSystemService(ConnectivityManager::class.java) ?: return
-        fun update() {
-            val caps = manager.activeNetwork?.let { manager.getNetworkCapabilities(it) }
-            vpn.visibility = if (showVpn && caps?.hasTransport(NetworkCapabilities.TRANSPORT_VPN) == true) View.VISIBLE else View.GONE
-            if (!showNetwork) {
-                icon.visibility = View.GONE
-                return
-            }
-            val picture = when {
-                caps == null -> R.drawable.ic_net_none
-                caps.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET) -> R.drawable.ic_net_wired
-                caps.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) -> R.drawable.ic_net_wifi
-                else -> R.drawable.ic_net_wired
-            }
-            icon.setImageResource(picture)
-            icon.visibility = View.VISIBLE
-        }
-        update()
-        val callback = object : ConnectivityManager.NetworkCallback() {
-            override fun onAvailable(network: Network) {
-                runOnUiThread { update() }
-            }
-
-            override fun onLost(network: Network) {
-                runOnUiThread { update() }
-            }
-
-            override fun onCapabilitiesChanged(network: Network, caps: NetworkCapabilities) {
-                runOnUiThread { update() }
-            }
-        }
-        try {
-            manager.registerDefaultNetworkCallback(callback)
-            networkCallback = callback
-        } catch (e: Exception) {
-            // The icon just won't change until the home screen is shown again
-        }
-    }
 
     override fun onResume() {
         super.onResume()
@@ -760,344 +485,13 @@ class HomeActivity : BaseActivity() {
 
     // ------------------------------------------------------------------ side menu
 
-    /** The side menu's entries: every section showing, then the shortcuts. */
-    private fun refreshMenu() {
-        val entries = ArrayList<SideMenu.Entry>()
-        for (section in sections) {
-            if (section.view.visibility != View.VISIBLE) {
-                continue
-            }
-            val icon = when (section.row.kind) {
-                Rows.FAVOURITES -> R.drawable.ic_star
-                Rows.TV -> R.drawable.ic_tv
-                Rows.MOBILE -> R.drawable.ic_phone
-                Rows.RECENT -> R.drawable.ic_history
-                Rows.FOR_YOU -> R.drawable.ic_star
-                Rows.WATCH_NEXT -> R.drawable.ic_play
-                Rows.SIDELOADED -> R.drawable.ic_apps
-                Rows.GAMES, Rows.PC_GAMES -> R.drawable.ic_games
-                Rows.VIDEO -> R.drawable.ic_tv
-                Rows.MUSIC -> R.drawable.ic_music
-                else -> R.drawable.ic_folder
-            }
-            entries.add(SideMenu.Entry(icon, section.row.name(this), section.row.id) { goToSection(section) })
-        }
-        if (Look.SIDE_MENU_SHORTCUTS.get(this)) {
-            entries.add(SideMenu.Entry(0, "", null) {})
-            entries.add(SideMenu.Entry(R.drawable.ic_search, getString(R.string.search), null) { openSearch(false) })
-            entries.add(SideMenu.Entry(R.drawable.ic_display, getString(R.string.quick_title), null) {
-                quickCustomise()
-            })
-            entries.add(SideMenu.Entry(R.drawable.ic_settings, getString(R.string.tunahome_settings), null) {
-                openTunaHomeSettings()
-            })
-            entries.add(SideMenu.Entry(R.drawable.ic_display, getString(R.string.tv_settings), null) {
-                openTvSettings(this)
-            })
-            entries.add(SideMenu.Entry(R.drawable.ic_net_wifi, getString(R.string.menu_network), null) {
-                openSetting(Settings.ACTION_WIFI_SETTINGS)
-            })
-            entries.add(SideMenu.Entry(R.drawable.ic_bluetooth, getString(R.string.menu_bluetooth), null) {
-                openSetting(Settings.ACTION_BLUETOOTH_SETTINGS)
-            })
-            SleepTimer.minutesLeft().let { left ->
-                entries.add(SideMenu.Entry(
-                    R.drawable.ic_timer,
-                    if (left > 0) getString(R.string.sleep_menu_left, left) else getString(R.string.sleep_title),
-                    null,
-                ) { chooseSleep() })
-            }
-            entries.add(SideMenu.Entry(R.drawable.ic_screensaver, getString(R.string.menu_screensaver), null) {
-                openSetting(Settings.ACTION_DREAM_SETTINGS)
-            })
-            // Switch between saved layouts (left out while TunaHome settings are locked)
-            val layouts = Layouts.saved(this)
-            if (layouts.isNotEmpty() && !AppLock.settingsLocked(this)) {
-                entries.add(SideMenu.Entry(R.drawable.ic_layouts, getString(R.string.menu_layouts), null) {
-                    chooseOne(getString(R.string.menu_layouts), layouts, -1) { which -> useLayout(layouts[which]) }
-                })
-            }
-            entries.add(SideMenu.Entry(R.drawable.ic_apps, getString(R.string.menu_installed_apps), null) {
-                openSetting(Settings.ACTION_APPLICATION_SETTINGS)
-            })
-            entries.add(SideMenu.Entry(R.drawable.ic_info, getString(R.string.menu_about_tv), null) {
-                openSetting(Settings.ACTION_DEVICE_INFO_SETTINGS)
-            })
-        }
-        sideMenu.setEntries(entries)
-    }
-
-    /** Sets the sleep timer; the time left shows beside the clock. */
-    private fun chooseSleep() {
-        SleepTimer.choose(this) {
-            weatherHandler.removeCallbacks(infoTick)
-            infoTick.run()
-        }
-    }
-
-    /** Puts a saved layout in place and starts the home screen again with it. */
-    private fun useLayout(name: String) {
-        thread(name = "TunaHome layout") {
-            val worked = try {
-                Layouts.load(applicationContext, name)
-                true
-            } catch (e: Exception) {
-                false
-            }
-            runOnUiThread {
-                if (worked) Layouts.restart(this)
-                else Toast.makeText(this, R.string.layout_failed, Toast.LENGTH_LONG).show()
-            }
-        }
-    }
-
-    /** A page of the TV's own settings, or the TV's settings if this TV doesn't have that page. */
-    private fun openSetting(action: String) {
-        try {
-            startActivity(Intent(action))
-        } catch (e: Exception) {
-            openTvSettings(this)
-        }
-    }
-
     // ------------------------------------------------------------------ where the section you're on sits
-
-    /**
-     * As focus moves to another section, that section glides to the chosen height (near the
-     * top, or the middle) instead of the screen scrolling only as far as it must. Sections too
-     * tall for that scroll the usual way.
-     */
-    private fun setUpAlignment() {
-        if (Look.SECTION_POSITION.get(this) == Look.POSITION_FREE) {
-            return
-        }
-        (scroll as? HomeScroll)?.aligned = { rect ->
-            val y = rect.centerY()
-            sections.any { section ->
-                section.view.visibility == View.VISIBLE && alignTarget(section) != null &&
-                    sectionTop(section).let { top -> y >= top && y < top + section.view.height }
-            }
-        }
-        scroll.viewTreeObserver.addOnGlobalFocusChangeListener { _, now ->
-            val section = now?.let { view -> sections.firstOrNull { it.list === view.parent } }
-            val target = section?.let { alignTarget(it) }
-            if (target != null && target != scroll.scrollY) {
-                scroll.smoothScrollTo(0, target)
-            }
-        }
-    }
-
-    /** The soft panel behind a section, if one is chosen. */
-    private fun dressSection(view: View) {
-        val panel = Look.SECTION_PANEL.get(this)
-        if (panel == Look.PANEL_NONE) return
-        val strength = Look.FINE_PANEL.get(this) / 100f
-        val drawable = android.graphics.drawable.GradientDrawable().apply {
-            cornerRadius = Look.dp(this@HomeActivity, Look.FINE_PANEL_CORNERS.get(this@HomeActivity).toFloat())
-            when (panel) {
-                Look.PANEL_GLASS -> setColor(android.graphics.Color.argb(Math.round(255 * strength), 0, 0, 0))
-                Look.PANEL_TINT -> setColor(themeColor(R.attr.tsAccent) and 0x00FFFFFF or (Math.round(255 * strength * 0.6f) shl 24))
-                else -> setStroke(Math.round(Look.dp(this@HomeActivity, 1.5f)),
-                    android.graphics.Color.argb(Math.round(255 * strength * 1.5f).coerceAtMost(255), 255, 255, 255))
-            }
-        }
-        view.background = drawable
-        val pad = Math.round(Look.dp(this, 10f))
-        view.setPadding(pad, pad / 2, pad, pad / 2)
-        (view.layoutParams as? ViewGroup.MarginLayoutParams)?.let { it.bottomMargin = pad }
-    }
-
-    /** The app the viewer is on, if they're on one. */
-    private fun focusedApp(): AppEntry? {
-        val view = currentFocus ?: return null
-        val section = sections.firstOrNull { it.list === view.parent } ?: return null
-        return section.adapter.appAtPosition(section.list.getChildAdapterPosition(view))
-    }
-
-    /** The background moves up a little as you scroll down, slower than the sections. */
-    private fun setUpDrift() {
-        if (!Backdrop.DRIFT.get(this)) {
-            return
-        }
-        val layers = listOf<View>(findViewById(R.id.backdropImage), findViewById(R.id.backdropVideo), findViewById(R.id.followBackdrop))
-        // A little bigger than the screen, so there is picture to move into
-        layers.forEach {
-            it.scaleX = 1.1f
-            it.scaleY = 1.1f
-        }
-        val room = resources.displayMetrics.heightPixels * 0.045f
-        scroll.setOnScrollChangeListener { _, _, y, _, _ ->
-            val shift = -minOf(y * 0.12f, room)
-            layers.forEach { it.translationY = shift }
-        }
-    }
-
-    /** Where a section starts, measured down the whole scrolling page. */
-    private fun sectionTop(section: Section): Int {
-        val rect = android.graphics.Rect(0, 0, section.view.width, section.view.height)
-        scroll.offsetDescendantRectToMyCoords(section.view, rect)
-        return rect.top
-    }
-
-    /** How far down to scroll so [section] sits where the viewer chose; null to scroll as usual. */
-    private fun alignTarget(section: Section): Int? {
-        val mode = Look.SECTION_POSITION.get(this)
-        val screen = scroll.height
-        if (mode == Look.POSITION_FREE || screen == 0 || section.view.height > screen * 0.8f) {
-            return null
-        }
-        val top = sectionTop(section)
-        val first = sections.firstOrNull { it.view.visibility == View.VISIBLE } === section
-        val target = when {
-            // The first section keeps the top of the screen in view
-            first -> 0
-            mode == Look.POSITION_MIDDLE -> top + section.view.height / 2 - screen / 2
-            else -> top - Math.round(Look.dp(this, 28f))
-        }
-        val most = maxOf(0, (scroll.getChildAt(0)?.height ?: 0) - screen)
-        return target.coerceIn(0, most)
-    }
-
-    private fun goToSection(section: Section) {
-        scroll.post {
-            scroll.smoothScrollTo(0, alignTarget(section) ?: maxOf(0, section.view.top - Math.round(Look.dp(this, 24f))))
-            focusIn(section, 0)
-        }
-    }
-
-    fun openSearch(voice: Boolean) {
-        startActivity(Intent(this, SearchActivity::class.java).putExtra(SearchActivity.EXTRA_VOICE, voice))
-    }
-
-    private fun openTunaHomeSettings(page: String? = null) {
-        val open = Intent(this, SettingsActivity::class.java)
-        if (page != null) {
-            open.putExtra(SettingsActivity.EXTRA_PAGE, page)
-        }
-        if (AppLock.settingsLocked(this)) {
-            AppLock.ask(this, getString(R.string.tunahome_settings)) { startActivity(open) }
-        } else {
-            startActivity(open)
-        }
-    }
-
-    private fun goToTop() {
-        scroll.smoothScrollTo(0, 0)
-        focusFirst()
-    }
-
-    private fun focusFirst() {
-        val first = sections.firstOrNull { it.adapter.appCount > 0 } ?: return
-        focusIn(first, 0)
-    }
-
-    private fun focusIn(section: Section, position: Int) {
-        section.list.scrollToPosition(position)
-        section.list.post { section.list.layoutManager?.findViewByPosition(position)?.requestFocus() }
-    }
 
     // ------------------------------------------------------------------ top of the screen
 
-    private fun setUpTopBar() {
-        setUpBrand()
-
-        val search = findViewById<View>(R.id.openSearch)
-        search.visibility = if (Look.SHOW_SEARCH_BUTTON.get(this)) View.VISIBLE else View.GONE
-        search.setOnClickListener { openSearch(false) }
-
-        val update = findViewById<View>(R.id.checkUpdate)
-        update.visibility = if (Look.SHOW_UPDATE_BUTTON.get(this)) View.VISIBLE else View.GONE
-        update.setOnClickListener { Updater.check(this, true) }
-        val tvSettings = findViewById<View>(R.id.openTvSettings)
-        tvSettings.visibility = if (Look.SHOW_TV_SETTINGS_BUTTON.get(this)) View.VISIBLE else View.GONE
-        tvSettings.setOnClickListener { openTvSettings(this) }
-        // Always shown: it is the way back to every other setting
-        findViewById<View>(R.id.openSettings).setOnClickListener { openTunaHomeSettings() }
-
-        val clock = findViewById<TextClock>(R.id.clock)
-        when (Look.CLOCK.get(this)) {
-            Look.CLOCK_24 -> {
-                clock.format12Hour = "HH:mm"
-                clock.format24Hour = "HH:mm"
-            }
-            Look.CLOCK_12 -> {
-                clock.format12Hour = "h:mm"
-                clock.format24Hour = "h:mm"
-            }
-            Look.CLOCK_12_AMPM -> {
-                clock.format12Hour = "h:mm a"
-                clock.format24Hour = "h:mm a"
-            }
-            Look.CLOCK_HIDDEN -> clock.visibility = View.GONE
-            else -> {
-                clock.format12Hour = "h:mm"
-                clock.format24Hour = "HH:mm"
-            }
-        }
-        clock.setTextSize(TypedValue.COMPLEX_UNIT_PX, clock.textSize * Look.clockScale(this))
-        // A clock with hands, beside the numbers or instead of them
-        val face = findViewById<View>(R.id.clockFace)
-        val faceStyle = Look.CLOCK_FACE.get(this)
-        if (faceStyle != Look.FACE_DIGITAL && Look.CLOCK.get(this) != Look.CLOCK_HIDDEN) {
-            face.visibility = View.VISIBLE
-            val side = Math.round(Look.dp(this, 44f) * Look.clockScale(this))
-            face.layoutParams = face.layoutParams.apply {
-                width = side
-                height = side
-            }
-            if (faceStyle == Look.FACE_HANDS) {
-                clock.visibility = View.GONE
-            }
-        }
-        Look.clockFont(this)?.let { id -> Fonts.typeface(this, id, 300)?.let { clock.typeface = it } }
-
-        val date = findViewById<TextClock>(R.id.date)
-        val skeleton = when (Look.DATE.get(this)) {
-            Look.DATE_SHORT -> "EEEdMMM"
-            Look.DATE_LONG -> "EEEEdMMMM"
-            else -> null
-        }
-        if (skeleton != null) {
-            val pattern = DateFormat.getBestDateTimePattern(Locale.getDefault(), skeleton)
-            date.format12Hour = pattern
-            date.format24Hour = pattern
-            date.visibility = View.VISIBLE
-        }
-    }
-
-    /** The fish and the name: shown or not, which parts, and how big. */
-    private fun setUpBrand() {
-        findViewById<View>(R.id.brand).visibility = if (Look.SHOW_BRAND.get(this)) View.VISIBLE else View.GONE
-        val parts = Look.BRAND_PARTS.get(this)
-        val logo = findViewById<ImageView>(R.id.brandLogo)
-        val text = findViewById<View>(R.id.brandText)
-        logo.visibility = if (parts == Look.BRAND_NAME) View.GONE else View.VISIBLE
-        text.visibility = if (parts == Look.BRAND_LOGO) View.GONE else View.VISIBLE
-        if (parts == Look.BRAND_NAME) {
-            (text.layoutParams as LinearLayout.LayoutParams).marginStart = 0
-        }
-        val version = findViewById<TextView>(R.id.brandVersion)
-        version.text = getString(R.string.version, BuildConfig.VERSION_NAME)
-        version.visibility = if (Look.SHOW_VERSION.get(this)) View.VISIBLE else View.GONE
-
-        val scale = Look.brandScale(this)
-        if (scale != 1f) {
-            logo.layoutParams = logo.layoutParams.apply { height = Math.round(height * scale) }
-            (text.layoutParams as LinearLayout.LayoutParams).apply {
-                marginStart = Math.round(marginStart * scale)
-            }
-            for (id in intArrayOf(R.id.brandTuna, R.id.brandWord)) {
-                val word = findViewById<TextView>(id)
-                word.setTextSize(TypedValue.COMPLEX_UNIT_PX, word.textSize * scale)
-            }
-            // The version stays readable even when the rest is small
-            version.setTextSize(TypedValue.COMPLEX_UNIT_PX, version.textSize * maxOf(scale, 0.8f))
-        }
-    }
-
     // ------------------------------------------------------------------ sections
 
-    private fun buildSections() {
+    internal fun buildSections() {
         val holder = findViewById<LinearLayout>(R.id.sections)
         holder.removeAllViews()
         sections.clear()
@@ -1173,7 +567,7 @@ class HomeActivity : BaseActivity() {
     }
 
     /** A section's apps were rearranged by moving one. */
-    private fun saveOrder(row: Rows.Row, order: List<String>) {
+    internal fun saveOrder(row: Rows.Row, order: List<String>) {
         if (row.sort != Rows.SORT_OWN) {
             // Moving an app by hand puts the section back in the viewer's own order
             row.sort = Rows.SORT_OWN
@@ -1191,7 +585,7 @@ class HomeActivity : BaseActivity() {
     }
 
     /** A section in the viewer's own order; apps they haven't placed follow in A to Z order. */
-    private fun ordered(apps: List<AppEntry>, order: List<String>): List<AppEntry> {
+    internal fun ordered(apps: List<AppEntry>, order: List<String>): List<AppEntry> {
         if (order.isEmpty()) {
             return apps
         }
@@ -1204,7 +598,7 @@ class HomeActivity : BaseActivity() {
      * The apps you usually open around this time of day, most likely first: each app's opens in
      * this hour count fully, the hours either side half, two hours away a quarter.
      */
-    private fun forYou(everyApp: Map<String, AppEntry>): List<AppEntry> {
+    internal fun forYou(everyApp: Map<String, AppEntry>): List<AppEntry> {
         val hour = java.util.Calendar.getInstance().get(java.util.Calendar.HOUR_OF_DAY)
         val weights = mapOf(0 to 1f, 1 to 0.5f, -1 to 0.5f, 2 to 0.25f, -2 to 0.25f)
         return Prefs.hourUses(this).mapNotNull { (pkg, counts) ->
@@ -1215,7 +609,7 @@ class HomeActivity : BaseActivity() {
     }
 
     /** A section sorted the way the viewer chose for it. */
-    private fun sorted(list: List<AppEntry>, sort: Int): List<AppEntry> = when (sort) {
+    internal fun sorted(list: List<AppEntry>, sort: Int): List<AppEntry> = when (sort) {
         Rows.SORT_AZ -> list.sortedBy { it.label.lowercase(Locale.getDefault()) }
         Rows.SORT_USED -> {
             val uses = Prefs.uses(this)
@@ -1229,7 +623,7 @@ class HomeActivity : BaseActivity() {
 
     // ------------------------------------------------------------------ Watch Next
 
-    private fun reloadWatchNext() {
+    internal fun reloadWatchNext() {
         val wantShows = sections.any { it.row.kind == Rows.WATCH_NEXT }
         val wantGames = sections.any { it.row.kind == Rows.PC_GAMES }
         if (loadingWatchNext || (!wantShows && !wantGames)) {
@@ -1277,7 +671,7 @@ class HomeActivity : BaseActivity() {
 
     // ------------------------------------------------------------------ the list of apps
 
-    private fun reload() {
+    internal fun reload() {
         if (loading) {
             loadAgain = true
             return
@@ -1310,7 +704,7 @@ class HomeActivity : BaseActivity() {
     }
 
     /** Puts the loaded apps into their sections, leaving out hidden ones. */
-    private fun show(only: Set<String>? = null) {
+    internal fun show(only: Set<String>? = null) {
         val hidden = Prefs.hidden(this)
         val visible = apps.filter { it.pkg !in hidden }
         val everyApp = visible.associateBy { it.pkg }
@@ -1381,7 +775,7 @@ class HomeActivity : BaseActivity() {
     }
 
     /** Space above each section: the header gap above the first one showing, the section gap above the rest. */
-    private fun applyGaps() {
+    internal fun applyGaps() {
         val headerGap = Math.round(Look.dp(this, Look.headerGapDp(this)))
         val rowGap = Math.round(Look.dp(this, Look.rowGapDp(this)))
         var first = true
@@ -1401,7 +795,7 @@ class HomeActivity : BaseActivity() {
     }
 
     /** Where the viewer starts: the first app, or the one they opened last. */
-    private fun placeStartFocus() {
+    internal fun placeStartFocus() {
         if (Look.START_ON.get(this) == Look.START_LAST) {
             val last = Prefs.lastOpened(this)
             if (last != null) {
@@ -1417,7 +811,7 @@ class HomeActivity : BaseActivity() {
         focusFirst()
     }
 
-    private fun open(app: AppEntry) {
+    internal fun open(app: AppEntry) {
         if (app.isFolder) {
             openFolder(app.pkg.removePrefix(Folders.PREFIX))
             return
@@ -1427,395 +821,9 @@ class HomeActivity : BaseActivity() {
 
     // ------------------------------------------------------------------ folders
 
-    /** A folder's apps in a small grid over the home screen. */
-    private fun openFolder(id: String) {
-        val folder = Folders.load(this).firstOrNull { it.id == id } ?: return
-        val byPackage = apps.associateBy { it.pkg }
-        val inside = folder.apps.mapNotNull { byPackage[it] }
-        val list = RecyclerView(this)
-        val across = minOf(5, maxOf(2, inside.size))
-        lateinit var dialog: AlertDialog
-        val adapter = AppAdapter(tiles, Rows.WRAP, { app ->
-            dialog.dismiss()
-            Launch.open(this, app) { reload() }
-        }, { app ->
-            AlertDialog.Builder(this)
-                .setTitle(app.label)
-                .setItems(arrayOf(getString(R.string.folder_take_out), getString(R.string.menu_app_info))) { _, which ->
-                    if (which == 0) {
-                        Folders.update(this, id) { it.apps.remove(app.pkg) }
-                        dialog.dismiss()
-                        show()
-                    } else {
-                        startOrExplain(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:" + app.pkg)))
-                    }
-                }
-                .show()
-        }, { order -> Folders.update(this, id) { it.apps.clear(); it.apps.addAll(order) }; show() })
-        adapter.wrapColumns = across
-        list.layoutManager = GridLayoutManager(this, across)
-        list.adapter = adapter
-        list.itemAnimator = null
-        list.clipToPadding = false
-        val pad = Math.round(Look.dp(this, 16f))
-        list.setPadding(pad, pad, pad, pad)
-        adapter.submit(inside)
-        dialog = AlertDialog.Builder(this)
-            .setTitle(folder.name)
-            .setView(list)
-            .setNegativeButton(R.string.close, null)
-            .show()
-        list.post { list.layoutManager?.findViewByPosition(0)?.requestFocus() }
-    }
-
-    /** Puts an app into a folder, or a new one in the same place in its section. */
-    private fun putInFolder(app: AppEntry, row: Rows.Row) {
-        val folders = Folders.load(this)
-        val names = folders.map { it.name } + getString(R.string.folder_new)
-        AlertDialog.Builder(this)
-            .setTitle(getString(R.string.folder_put_title, app.label))
-            .setItems(names.toTypedArray()) { _, which ->
-                if (which < folders.size) {
-                    val list = Folders.load(this)
-                    list.forEach { it.apps.remove(app.pkg) }
-                    list.firstOrNull { it.id == folders[which].id }?.apps?.add(app.pkg)
-                    Folders.save(this, list.filter { it.apps.isNotEmpty() })
-                    show()
-                } else {
-                    askForText(R.string.folder_new, "") { name ->
-                        val folder = Folders.create(this, name, app.pkg)
-                        // The folder takes the app's place in its section
-                        val section = sections.firstOrNull { it.row.id == row.id }
-                        val order = section?.adapter?.order()?.map { if (it == app.pkg) Folders.key(folder.id) else it }
-                        if (order != null) saveOrder(row, order)
-                        show()
-                    }
-                }
-            }
-            .show()
-    }
-
-    private fun folderMenu(card: AppEntry, row: Rows.Row) {
-        val id = card.pkg.removePrefix(Folders.PREFIX)
-        val section = sections.firstOrNull { it.row.id == row.id }
-        val labels = ArrayList<String>()
-        val actions = ArrayList<() -> Unit>()
-        if (section != null && section.adapter.appCount > 1) {
-            labels.add(getString(R.string.menu_move))
-            actions.add { section.adapter.startMove(card.pkg) }
-        }
-        labels.add(getString(R.string.folder_open))
-        actions.add { openFolder(id) }
-        labels.add(getString(R.string.section_rename))
-        actions.add {
-            askForText(R.string.section_rename, card.label) { name ->
-                Folders.update(this, id) { it.name = name }
-                show()
-            }
-        }
-        labels.add(getString(R.string.folder_delete))
-        actions.add {
-            val list = Folders.load(this).filter { it.id != id }
-            Folders.save(this, list)
-            show()
-        }
-        AlertDialog.Builder(this)
-            .setTitle(card.label)
-            .setItems(labels.toTypedArray()) { _, which -> actions[which]() }
-            .show()
-    }
-
     // ------------------------------------------------------------------ an app's menu
 
-    private fun showMenu(app: AppEntry, row: Rows.Row) {
-        if (app.isInsideApp) {
-            watchNextMenu(app)
-            return
-        }
-        if (app.isFolder) {
-            folderMenu(app, row)
-            return
-        }
-        val section = sections.firstOrNull { it.row.id == row.id }
-        val favourites = Prefs.favourites(this)
-        val labels = ArrayList<String>()
-        val actions = ArrayList<() -> Unit>()
-
-        // First, so that hold select then select picks the app up. Recently opened keeps its
-        // own order, newest first.
-        if (section != null && section.adapter.appCount > 1 && row.kind != Rows.RECENT) {
-            labels.add(getString(R.string.menu_move))
-            actions.add { section.adapter.startMove(app.pkg) }
-        }
-
-        if (app.pkg in favourites) {
-            labels.add(getString(R.string.menu_remove_favourite))
-            actions.add {
-                favourites.remove(app.pkg)
-                Prefs.setFavourites(this, favourites)
-                show()
-            }
-        } else {
-            labels.add(getString(R.string.menu_add_favourite))
-            actions.add {
-                favourites.add(app.pkg)
-                Prefs.setFavourites(this, favourites)
-                show()
-            }
-        }
-
-        labels.add(getString(R.string.menu_add_to_row))
-        actions.add { addToRow(app) }
-        if (row.kind != Rows.RECENT && row.kind != Rows.WATCH_NEXT) {
-            labels.add(getString(R.string.folder_put))
-            actions.add { putInFolder(app, row) }
-        }
-        if (row.custom) {
-            labels.add(getString(R.string.menu_remove_from_row, row.name(this)))
-            actions.add {
-                Rows.update(this, row.id, restyle = false) { it.apps.remove(app.pkg) }
-                show()
-            }
-        }
-
-        labels.add(getString(R.string.menu_change_picture))
-        actions.add { pictureMenu(app) }
-
-        labels.add(getString(R.string.menu_rename))
-        actions.add {
-            askForText(R.string.menu_rename, app.label) { name ->
-                Prefs.setAppName(this, app.pkg, name)
-                Prefs.appsChanged = false
-                reload()
-            }
-        }
-        if (Prefs.appNames(this).containsKey(app.pkg)) {
-            labels.add(getString(R.string.menu_own_name))
-            actions.add {
-                Prefs.setAppName(this, app.pkg, null)
-                Prefs.appsChanged = false
-                reload()
-            }
-        }
-
-        if (AppLock.isLocked(this, app.pkg)) {
-            labels.add(getString(R.string.menu_unlock))
-            actions.add {
-                AppLock.ask(this, app.label) {
-                    AppLock.setLocked(this, app.pkg, false)
-                    show()
-                }
-            }
-        } else {
-            labels.add(getString(R.string.menu_lock))
-            actions.add {
-                val lock = {
-                    AppLock.setLocked(this, app.pkg, true)
-                    show()
-                    Toast.makeText(this, getString(R.string.lock_locked, app.label), Toast.LENGTH_LONG).show()
-                }
-                if (AppLock.hasPin(this)) lock() else AppLock.choosePin(this, lock)
-            }
-        }
-
-        labels.add(getString(R.string.quick_title))
-        actions.add { quickCustomise() }
-
-        labels.add(getString(R.string.menu_edit_section, row.name(this)))
-        actions.add {
-            startActivity(Intent(this, SettingsActivity::class.java)
-                .putExtra(SettingsActivity.EXTRA_PAGE, SettingsActivity.SECTIONS)
-                .putExtra(SettingsActivity.EXTRA_SECTION, row.id))
-        }
-
-        if (row.kind == Rows.FAVOURITES || row.custom) {
-            labels.add(getString(R.string.link_add_here))
-            actions.add { addLink { key -> putInSection(key, row) } }
-        }
-
-        if (app.isLink) {
-            labels.add(getString(R.string.link_change))
-            actions.add {
-                askForText(R.string.link_address, Links.address(this, app.pkg) ?: "", url = true) { address ->
-                    if (address.isNotBlank()) {
-                        Links.change(this, app.pkg, address)
-                        Prefs.appsChanged = false
-                        reload()
-                    }
-                }
-            }
-            labels.add(getString(R.string.link_delete))
-            actions.add {
-                AlertDialog.Builder(this)
-                    .setTitle(getString(R.string.link_delete_title, app.label))
-                    .setPositiveButton(R.string.link_delete) { _, _ ->
-                        Links.remove(this, app.pkg)
-                        Prefs.appsChanged = false
-                        reload()
-                    }
-                    .setNegativeButton(R.string.cancel, null)
-                    .show()
-            }
-            AlertDialog.Builder(this)
-                .setTitle(app.label)
-                .setItems(labels.toTypedArray()) { _, which -> actions[which]() }
-                .show()
-            return
-        }
-
-        labels.add(getString(R.string.menu_hide))
-        actions.add {
-            val hidden = Prefs.hidden(this)
-            hidden.add(app.pkg)
-            Prefs.setHidden(this, hidden)
-            Prefs.appsChanged = false
-            show()
-            Toast.makeText(this, getString(R.string.hidden_toast, app.label), Toast.LENGTH_LONG).show()
-        }
-
-        labels.add(getString(R.string.menu_app_info))
-        actions.add {
-            startOrExplain(
-                Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:" + app.pkg))
-            )
-        }
-
-        labels.add(getString(R.string.menu_uninstall))
-        actions.add {
-            // Android shows its own "Do you want to uninstall this app?" before anything is removed
-            startOrExplain(Intent(Intent.ACTION_DELETE, Uri.parse("package:" + app.pkg)))
-        }
-
-        AlertDialog.Builder(this)
-            .setTitle(app.label)
-            .setItems(labels.toTypedArray()) { _, which -> actions[which]() }
-            .show()
-    }
-
-    /** Puts a new card at the end of Favourites or a section of the viewer's own. */
-    private fun putInSection(key: String, row: Rows.Row) {
-        if (row.kind == Rows.FAVOURITES) {
-            val favourites = Prefs.favourites(this)
-            favourites.add(key)
-            Prefs.setFavourites(this, favourites)
-        } else {
-            Rows.update(this, row.id, restyle = false) { it.apps.add(key) }
-        }
-        Prefs.appsChanged = false
-        reload()
-    }
-
-    /** A Watch Next card belongs to its app: offer to open it, or that app's info. */
-    private fun watchNextMenu(item: AppEntry) {
-        val appName = apps.firstOrNull { it.pkg == item.appPkg }?.label ?: item.appPkg
-        val labels = arrayOf(getString(if (item.isPcGame) R.string.pc_game_play else R.string.watch_next_play),
-            getString(R.string.watch_next_open_app, appName),
-            getString(R.string.menu_app_info))
-        AlertDialog.Builder(this)
-            .setTitle(item.label)
-            .setItems(labels) { _, which ->
-                when (which) {
-                    0 -> open(item)
-                    1 -> apps.firstOrNull { it.pkg == item.appPkg }?.let { open(it) }
-                        ?: Toast.makeText(this, getString(R.string.open_failed, appName), Toast.LENGTH_LONG).show()
-                    else -> startOrExplain(
-                        Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:" + item.appPkg))
-                    )
-                }
-            }
-            .show()
-    }
-
-    /** Adds an app to one of the viewer's own rows, or to a new one. */
-    private fun addToRow(app: AppEntry) {
-        val own = Rows.load(this).filter { it.custom && app.pkg !in it.apps }
-        val names = own.map { it.name(this) } + getString(R.string.row_new)
-        AlertDialog.Builder(this)
-            .setTitle(getString(R.string.menu_add_to_row_title, app.label))
-            .setItems(names.toTypedArray()) { _, which ->
-                if (which < own.size) {
-                    Rows.update(this, own[which].id, restyle = false) { it.apps.add(app.pkg) }
-                    show()
-                } else {
-                    askForText(R.string.row_new, "") { title ->
-                        val made = Rows.add(this, title)
-                        Rows.update(this, made.id) { it.apps.add(app.pkg) }
-                        // A new section: build the screen again
-                        recreate()
-                    }
-                }
-            }
-            .show()
-    }
-
     // ------------------------------------------------------------------ an app's own picture
-
-    /** Where an app's own picture comes from: the TV, a web address, or back to its own. */
-    private fun pictureMenu(app: AppEntry) {
-        val labels = arrayListOf(getString(R.string.picture_from_tv), getString(R.string.picture_address))
-        if (Pictures.hasTile(this, app.pkg)) {
-            labels.add(getString(R.string.menu_own_picture))
-        }
-        // With an icon pack on, any of its drawings can be chosen for this app
-        val pack = IconPacks.chosen(this)
-        if (pack != null && Look.TILE_STYLE.get(this) != Look.TILE_BANNER) {
-            labels.add(0, getString(R.string.pick_from_pack))
-        }
-        val offset = if (labels[0] == getString(R.string.pick_from_pack)) 1 else 0
-        AlertDialog.Builder(this)
-            .setTitle(getString(R.string.picture_title, app.label))
-            .setItems(labels.toTypedArray()) { _, chosen ->
-                if (offset == 1 && chosen == 0) {
-                    PackPicker.show(this, app) { reload() }
-                    return@setItems
-                }
-                when (chosen - offset) {
-                    0 -> choosePicture(app)
-                    1 -> askForText(R.string.picture_address, "https://", url = true) { address ->
-                        if (!address.startsWith("http://") && !address.startsWith("https://")) {
-                            Toast.makeText(this, R.string.bg_address_bad, Toast.LENGTH_LONG).show()
-                        } else {
-                            Toast.makeText(this, R.string.picture_fetching, Toast.LENGTH_SHORT).show()
-                            saveTile(app.pkg, Uri.parse(address), R.string.picture_address_failed)
-                        }
-                    }
-                    else -> {
-                        Pictures.removeTile(this, app.pkg)
-                        reload()
-                    }
-                }
-            }
-            .show()
-    }
-
-    private fun saveTile(pkg: String, uri: Uri, failure: Int) {
-        thread(name = "TunaHome picture") {
-            val saved = try {
-                Pictures.saveTile(applicationContext, pkg, uri)
-            } catch (e: Throwable) {
-                false
-            }
-            runOnUiThread {
-                if (!isDestroyed) {
-                    if (saved) reload() else Toast.makeText(this, failure, Toast.LENGTH_LONG).show()
-                }
-            }
-        }
-    }
-
-    private fun choosePicture(app: AppEntry) {
-        choosingPictureFor = app.pkg
-        try {
-            @Suppress("DEPRECATION")
-            startActivityForResult(Pictures.pickerIntent(), REQUEST_TILE_PICTURE)
-        } catch (e: Exception) {
-            choosingPictureFor = null
-            AlertDialog.Builder(this)
-                .setMessage(R.string.wallpaper_no_picker)
-                .setPositiveButton(android.R.string.ok, null)
-                .show()
-        }
-    }
 
     @Deprecated("Deprecated in Java")
     @Suppress("OVERRIDE_DEPRECATION", "DEPRECATION")
@@ -1833,19 +841,11 @@ class HomeActivity : BaseActivity() {
         saveTile(pkg, uri, R.string.wallpaper_failed)
     }
 
-    private fun startOrExplain(intent: Intent) {
-        try {
-            startActivity(intent)
-        } catch (e: Exception) {
-            Toast.makeText(this, R.string.action_failed, Toast.LENGTH_LONG).show()
-        }
-    }
-
     companion object {
-        private const val STATE_PICTURE_FOR = "picture_for"
-        private const val STATE_QUICK = "quick"
-        private const val FOR_YOU_MAX = 12
-        private const val REQUEST_TILE_PICTURE = 1
+        internal const val STATE_PICTURE_FOR = "picture_for"
+        internal const val STATE_QUICK = "quick"
+        internal const val FOR_YOU_MAX = 12
+        internal const val REQUEST_TILE_PICTURE = 1
 
         /** The TV's own settings, which a home screen has to offer a way into. */
         fun openTvSettings(context: Context) {

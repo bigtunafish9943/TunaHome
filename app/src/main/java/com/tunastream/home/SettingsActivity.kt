@@ -22,13 +22,13 @@ import kotlin.concurrent.thread
  * its own. Every row says what it is set to now, and selecting it changes it.
  */
 class SettingsActivity : BaseActivity() {
-    private lateinit var list: LinearLayout
-    private var page = MAIN
-    private var focusIndex = 0
+    internal lateinit var list: LinearLayout
+    internal var page = MAIN
+    internal var focusIndex = 0
 
     /** A section to open the menu of straight away (from an app's menu on the home screen). */
-    private var openSection: String? = null
-    private val rows = ArrayList<View>()
+    internal var openSection: String? = null
+    internal val rows = ArrayList<View>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -66,9 +66,12 @@ class SettingsActivity : BaseActivity() {
         Updater.resumeIfWaiting(this)
     }
 
+    /** Takes the current look as this screen's own (for the files that extend it). */
+    internal fun takeLook() = acceptLook()
+
     // ------------------------------------------------------------------ building a page
 
-    private fun build() {
+    internal fun build() {
         list.removeAllViews()
         rows.clear()
         buildPage(page)
@@ -85,200 +88,19 @@ class SettingsActivity : BaseActivity() {
 
     // ------------------------------------------------------------------ searching settings
 
-    private class Found(val title: String, val summary: String, val page: String, val index: Int)
+    internal class Found(val title: String, val summary: String, val page: String, val index: Int)
 
     /** While searching: rows are noted here instead of shown. */
-    private var collecting: MutableList<Found>? = null
-    private var collectingPage = MAIN
-    private var collectedOnPage = 0
-
-    /** Every setting whose name or current choice has [query] in it, on every page. */
-    private fun findSettings(query: String): List<Found> {
-        val found = ArrayList<Found>()
-        collecting = found
-        try {
-            for (p in SEARCHABLE) {
-                collectingPage = p
-                collectedOnPage = 0
-                try {
-                    buildPage(p)
-                } catch (e: Exception) {
-                    // A page that can't be read is left out
-                }
-            }
-        } finally {
-            collecting = null
-        }
-        val wanted = query.trim().lowercase()
-        return found.filter { it.title.lowercase().contains(wanted) || it.summary.lowercase().contains(wanted) }
-            .sortedBy { if (it.title.lowercase().contains(wanted)) 0 else 1 }
-    }
-
-    private fun searchPage() {
-        val query = intent.getStringExtra(EXTRA_QUERY) ?: ""
-        findViewById<TextView>(R.id.pageTitle).text = getString(R.string.settings_search_title, query)
-        val found = findSettings(query)
-        if (found.isEmpty()) {
-            row(getString(R.string.settings_search_none, query), getString(R.string.settings_search_again)) { askSearch() }
-            return
-        }
-        for (f in found) {
-            row(f.title, getString(pageTitle(f.page)) + (if (f.summary.isNotEmpty()) " · " + f.summary else "")) {
-                startActivity(Intent(this, SettingsActivity::class.java)
-                    .putExtra(EXTRA_PAGE, f.page).putExtra(EXTRA_FOCUS, f.index))
-            }
-        }
-    }
-
-    private fun askSearch() {
-        askForText(R.string.settings_search, "") { text ->
-            if (text.isNotBlank()) {
-                startActivity(Intent(this, SettingsActivity::class.java)
-                    .putExtra(EXTRA_PAGE, SEARCH).putExtra(EXTRA_QUERY, text.trim()))
-            }
-        }
-    }
+    internal var collecting: MutableList<Found>? = null
+    internal var collectingPage = MAIN
+    internal var collectedOnPage = 0
 
     // ------------------------------------------------------------------ fine tuning
 
     /** A few of the viewer's apps drawn with the current settings, redrawn as they change. */
-    private var preview: androidx.recyclerview.widget.RecyclerView? = null
+    internal var preview: androidx.recyclerview.widget.RecyclerView? = null
 
-    private fun previewApps(): List<AppEntry> {
-        val hidden = Prefs.hidden(this)
-        val visible = Apps.cached.filter { it.pkg !in hidden }
-        val favourites = Prefs.favourites(this).mapNotNull { pkg -> visible.firstOrNull { it.pkg == pkg } }
-        return (favourites + visible).distinctBy { it.pkg }.take(8)
-    }
-
-    private fun previewRow() {
-        if (collecting != null) return
-        val apps = previewApps()
-        if (apps.isEmpty()) return
-        val view = androidx.recyclerview.widget.RecyclerView(this)
-        view.layoutManager = androidx.recyclerview.widget.LinearLayoutManager(
-            this, androidx.recyclerview.widget.LinearLayoutManager.HORIZONTAL, false)
-        view.clipChildren = false
-        view.clipToPadding = false
-        view.itemAnimator = null
-        val pad = Math.round(Look.dp(this, 20f))
-        view.setPadding(pad / 2, pad, pad, pad)
-        view.layoutParams = LinearLayout.LayoutParams(
-            Math.round(Look.dp(this, 900f)), ViewGroup.LayoutParams.WRAP_CONTENT)
-        list.clipChildren = false
-        list.addView(view)
-        preview = view
-        refreshPreview()
-    }
-
-    private fun refreshPreview() {
-        val view = preview ?: return
-        val adapter = AppAdapter(TileStyle(this), 1, {}, {}, {})
-        adapter.canMove = false
-        adapter.submit(previewApps())
-        view.adapter = adapter
-    }
-
-    /**
-     * A number tuned with Left and Right, shown as a bar. Select puts it back to the usual.
-     * The preview at the top of the page follows straight away.
-     */
-    private fun slider(title: Int, level: Look.Level) {
-        val view = row(getString(title), sliderText(level)) {} ?: return
-        val summary = view.findViewById<TextView>(R.id.summary)
-        val track = android.widget.FrameLayout(this)
-        val fill = View(this)
-        val height = Math.round(Look.dp(this, 4f))
-        track.layoutParams = LinearLayout.LayoutParams(Math.round(Look.dp(this, 300f)), height).apply {
-            topMargin = Math.round(Look.dp(this@SettingsActivity, 8f))
-        }
-        track.background = android.graphics.drawable.GradientDrawable().apply {
-            cornerRadius = height / 2f
-            setColor(themeColor(R.attr.tsTextSecondary) and 0x00FFFFFF or 0x40000000)
-        }
-        fill.background = android.graphics.drawable.GradientDrawable().apply {
-            cornerRadius = height / 2f
-            setColor(themeColor(R.attr.tsAccent))
-        }
-        track.addView(fill, android.widget.FrameLayout.LayoutParams(0, height))
-        (view as LinearLayout).addView(track)
-        fun show() {
-            summary.text = sliderText(level)
-            val share = (level.get(this) - level.min).toFloat() / (level.max - level.min)
-            fill.layoutParams = fill.layoutParams.apply { width = Math.round(track.layoutParams.width * share) }
-        }
-        show()
-        view.setOnKeyListener { _, code, event ->
-            val direction = when (code) {
-                KeyEvent.KEYCODE_DPAD_LEFT -> -1
-                KeyEvent.KEYCODE_DPAD_RIGHT -> 1
-                else -> return@setOnKeyListener false
-            }
-            if (event.action == KeyEvent.ACTION_DOWN) {
-                // Holding the button speeds up
-                val steps = when {
-                    event.repeatCount > 12 -> 5
-                    event.repeatCount > 4 -> 2
-                    else -> 1
-                }
-                val before = level.get(this)
-                level.set(this, before + direction * level.step * steps)
-                if (level.get(this) != before) {
-                    acceptLook()
-                    Sounds.play(this, Sounds.MOVE)
-                    show()
-                    refreshPreview()
-                }
-            }
-            true
-        }
-        view.setOnClickListener {
-            level.clear(this)
-            acceptLook()
-            show()
-            refreshPreview()
-        }
-    }
-
-    private fun sliderText(level: Look.Level): String {
-        val now = level.name(this)
-        return if (level.isSet(this)) getString(R.string.fine_value_tuned, now, level.name(this, level.usual(this)))
-        else getString(R.string.fine_value_usual, now)
-    }
-
-    private fun finePage() {
-        previewRow()
-        row(R.string.preset_title, getString(R.string.preset_summary)) {
-            chooseOne(getString(R.string.preset_title), Look.PRESETS.map { getString(it) }, -1) {
-                Look.applyPreset(this, it)
-                changed()
-            }
-        }
-        heading(R.string.fine_cards)
-        slider(R.string.set_card_size, Look.FINE_CARD_SIZE)
-        slider(R.string.fine_corners, Look.FINE_CORNERS)
-        slider(R.string.fine_gap, Look.FINE_GAP)
-        heading(R.string.fine_selected)
-        slider(R.string.fine_zoom, Look.FINE_ZOOM)
-        slider(R.string.fine_glow, Look.FINE_GLOW)
-        slider(R.string.fine_shine, Look.FINE_SHINE)
-        slider(R.string.fine_speed, Look.FINE_SPEED)
-        slider(R.string.fine_dim_others, Look.FINE_DIM_OTHERS)
-        heading(R.string.fine_screen)
-        slider(R.string.fine_row_gap, Look.FINE_ROW_GAP)
-        slider(R.string.fine_text, Look.FINE_TEXT)
-        slider(R.string.fine_clock, Look.FINE_CLOCK)
-        slider(R.string.fine_bg_dim, Backdrop.FINE_DIM)
-        slider(R.string.fine_follow_dark, Ambient.FINE_DARK)
-        slider(R.string.fine_panel, Look.FINE_PANEL)
-        slider(R.string.fine_panel_corners, Look.FINE_PANEL_CORNERS)
-        row(R.string.fine_reset, getString(R.string.fine_reset_summary)) {
-            Look.allFine().forEach { it.clear(this) }
-            changed()
-        }
-    }
-
-    private fun buildPage(page: String) {
+    internal fun buildPage(page: String) {
         when (page) {
             BACKGROUND -> backgroundPage()
             COLOURS -> coloursPage()
@@ -299,7 +121,7 @@ class SettingsActivity : BaseActivity() {
         }
     }
 
-    private fun row(title: CharSequence, summary: CharSequence, action: () -> Unit): View? {
+    internal fun row(title: CharSequence, summary: CharSequence, action: () -> Unit): View? {
         collecting?.let {
             it.add(Found(title.toString(), summary.toString(), collectingPage, collectedOnPage++))
             return null
@@ -323,11 +145,11 @@ class SettingsActivity : BaseActivity() {
         return view
     }
 
-    private fun row(title: Int, summary: CharSequence, action: () -> Unit) =
+    internal fun row(title: Int, summary: CharSequence, action: () -> Unit) =
         row(getString(title), summary, action)
 
     /** A small heading between groups of rows. */
-    private fun heading(text: Int) {
+    internal fun heading(text: Int) {
         if (collecting != null) return
         val view = layoutInflater.inflate(R.layout.item_heading, list, false) as TextView
         view.setText(text)
@@ -336,7 +158,7 @@ class SettingsActivity : BaseActivity() {
     }
 
     /** A setting with named options. */
-    private fun choice(title: Int, setting: Look.Choice, then: () -> Unit = ::changed) {
+    internal fun choice(title: Int, setting: Look.Choice, then: () -> Unit = ::changed) {
         // Tuned step by step on the Fine tuning page: say so, until a named option is picked
         val fine = Look.allFine().firstOrNull { it.key == setting.fine }?.takeIf { it.isSet(this) }
         val summary = if (fine != null) getString(R.string.fine_tuned, fine.name(this)) else setting.name(this)
@@ -349,7 +171,7 @@ class SettingsActivity : BaseActivity() {
     }
 
     /** A setting that is on or off. */
-    private fun switch(title: Int, setting: Look.Switch, on: Int = R.string.on, off: Int = R.string.off) {
+    internal fun switch(title: Int, setting: Look.Switch, on: Int = R.string.on, off: Int = R.string.off) {
         val value = setting.get(this)
         row(title, getString(if (value) on else off)) {
             setting.set(this, !value)
@@ -358,14 +180,14 @@ class SettingsActivity : BaseActivity() {
     }
 
     /** Opens another page of settings. */
-    private fun pageRow(page: String, summary: CharSequence) {
+    internal fun pageRow(page: String, summary: CharSequence) {
         row(pageTitle(page), summary) {
             startActivity(Intent(this, SettingsActivity::class.java).putExtra(EXTRA_PAGE, page))
         }
     }
 
     /** After a setting changed: rebuild the whole screen if its look changed, else just the list. */
-    private fun changed() {
+    internal fun changed() {
         if (outOfDate()) {
             recreate()
         } else {
@@ -375,7 +197,7 @@ class SettingsActivity : BaseActivity() {
 
     // ------------------------------------------------------------------ the first page
 
-    private fun mainPage() {
+    internal fun mainPage() {
         row(R.string.settings_search, getString(R.string.settings_search_summary)) { askSearch() }
         pageRow(BACKGROUND, backgroundSummary())
         pageRow(SECTIONS, sectionsSummary())
@@ -421,1336 +243,47 @@ class SettingsActivity : BaseActivity() {
         row(R.string.welcome_again, getString(R.string.welcome_again_summary)) { WelcomeActivity.start(this) }
     }
 
-    private fun backgroundSummary(): String {
-        val source = Backdrop.SOURCE.get(this)
-        if (source == Backdrop.SOURCE_APP) {
-            WallpaperApps.find(this, Backdrop.app(this))?.let { return it.name }
-        }
-        return Backdrop.SOURCE.name(this)
-    }
-
-    private fun sectionsSummary(): String {
-        val shown = Rows.load(this).count { it.visible }
-        return resources.getQuantityString(R.plurals.sections_shown, shown, shown)
-    }
-
     // ------------------------------------------------------------------ background
-
-    private fun backgroundPage() {
-        val source = Backdrop.SOURCE.get(this)
-        row(R.string.set_background, Backdrop.SOURCE.name(this)) { chooseBackground() }
-
-        when (source) {
-            Backdrop.SOURCE_PICTURE -> {
-                row(
-                    R.string.wallpaper_choose,
-                    getString(if (Pictures.hasWallpaper(this)) R.string.set_wallpaper_set else R.string.set_wallpaper_none)
-                ) { pick(REQUEST_WALLPAPER, "image/*") }
-                row(R.string.picture_address, getString(R.string.picture_address_summary)) {
-                    askForText(R.string.picture_address, "https://", url = true) { address ->
-                        if (!address.startsWith("http://") && !address.startsWith("https://")) {
-                            Toast.makeText(this, R.string.bg_address_bad, Toast.LENGTH_LONG).show()
-                        } else {
-                            Toast.makeText(this, R.string.picture_fetching, Toast.LENGTH_SHORT).show()
-                            inBackground(R.string.picture_address_failed, { Pictures.saveWallpaper(it, Uri.parse(address)) }) {
-                                Backdrop.SOURCE.set(this, Backdrop.SOURCE_PICTURE)
-                            }
-                        }
-                    }
-                }
-                if (Pictures.hasWallpaper(this)) {
-                    row(R.string.wallpaper_remove, getString(R.string.wallpaper_remove_summary)) {
-                        Pictures.removeWallpaper(this)
-                        Look.touch(this)
-                        changed()
-                    }
-                }
-            }
-            Backdrop.SOURCE_VIDEOS -> {
-                val own = Backdrop.videos(this)
-                row(
-                    R.string.bg_add_from_tv,
-                    if (own.isEmpty()) getString(R.string.bg_videos_none)
-                    else resources.getQuantityString(R.plurals.bg_videos_count, own.size, own.size)
-                ) { addOwnFromTv() }
-                row(R.string.bg_add_address, getString(R.string.bg_add_address_summary)) {
-                    askForText(R.string.bg_add_address, "https://", url = true) { address ->
-                        if (!address.startsWith("http://") && !address.startsWith("https://")) {
-                            Toast.makeText(this, R.string.bg_address_bad, Toast.LENGTH_LONG).show()
-                        } else {
-                            Backdrop.setVideos(
-                                this,
-                                Backdrop.videos(this) + Backdrop.Own(address, !Backdrop.looksLikePicture(address))
-                            )
-                            build()
-                        }
-                    }
-                }
-                if (own.isNotEmpty()) {
-                    row(R.string.bg_remove_own, getString(R.string.bg_remove_own_summary)) { removeOwn() }
-                }
-            }
-            Backdrop.SOURCE_DAILY -> {
-                choice(R.string.daily_from, Daily.PROVIDER)
-                row(R.string.daily_again, getString(R.string.daily_again_summary)) {
-                    work(R.string.daily_failed, { Daily.picture(it, force = true) }) {
-                        Look.touch(this)
-                    }
-                }
-            }
-            Backdrop.SOURCE_APP -> {
-                val app = WallpaperApps.find(this, Backdrop.app(this))
-                row(R.string.bg_which_app, app?.name ?: getString(R.string.bg_no_app)) { chooseWallpaperApp() }
-                if (app != null) {
-                    row(getString(R.string.bg_open_app, app.name), getString(R.string.bg_open_app_summary)) {
-                        // Whatever is picked there shows up the next time the home screen opens
-                        WallpaperApps.forget()
-                        if (!WallpaperApps.openSettings(this, app)) {
-                            Toast.makeText(this, R.string.action_failed, Toast.LENGTH_LONG).show()
-                        }
-                    }
-                    row(R.string.bg_refresh, getString(R.string.bg_refresh_summary)) {
-                        WallpaperApps.forget()
-                        Toast.makeText(this, R.string.bg_refreshed, Toast.LENGTH_LONG).show()
-                    }
-                }
-            }
-        }
-
-        if (source != Backdrop.SOURCE_THEME && Backdrop.status.isNotEmpty()) {
-            row(R.string.bg_status, Backdrop.status) { build() }
-        }
-
-        if (source != Backdrop.SOURCE_THEME) {
-            heading(R.string.heading_how_it_shows)
-            choice(R.string.bg_dim, Backdrop.DIM)
-            choice(R.string.bg_fit, Backdrop.FIT)
-            choice(R.string.bg_brightness, Backdrop.BRIGHTNESS)
-            choice(R.string.bg_contrast, Backdrop.CONTRAST)
-            choice(R.string.bg_saturation, Backdrop.SATURATION)
-            choice(R.string.bg_blur, Backdrop.BLUR)
-            if (source != Backdrop.SOURCE_PICTURE && source != Backdrop.SOURCE_DAILY) {
-                choice(R.string.bg_change_every, Backdrop.CHANGE_EVERY)
-                switch(R.string.bg_shuffle, Backdrop.SHUFFLE, R.string.bg_shuffle_on, R.string.bg_shuffle_off)
-                switch(R.string.bg_play_videos, Backdrop.PLAY_VIDEOS, R.string.bg_play_videos_on, R.string.bg_play_videos_off)
-            }
-            if (source == Backdrop.SOURCE_APP || source == Backdrop.SOURCE_DAILY) {
-                switch(R.string.bg_caption, Backdrop.SHOW_CAPTION, R.string.shown, R.string.hidden)
-            }
-        }
-
-        heading(R.string.heading_follow)
-        choice(R.string.bg_follow, Ambient.FOLLOW)
-        switch(R.string.bg_drift, Backdrop.DRIFT, R.string.drift_on, R.string.off)
-
-        heading(R.string.heading_idle)
-        choice(R.string.set_idle, Look.IDLE)
-        if (Look.IDLE.get(this) != 0) {
-            switch(R.string.set_idle_clock, Look.IDLE_CLOCK, R.string.idle_clock_on, R.string.idle_clock_off)
-        }
-
-        heading(R.string.heading_screensaver)
-        row(
-            R.string.set_screensaver,
-            getString(if (Screensaver.isChosen(this)) R.string.screensaver_chosen else R.string.screensaver_how)
-        ) {
-            try {
-                startActivity(Intent(Settings.ACTION_DREAM_SETTINGS))
-            } catch (e: Exception) {
-                HomeActivity.openTvSettings(this)
-            }
-        }
-    }
-
-    private fun chooseBackground() {
-        val names = Backdrop.SOURCE.names.map { getString(it) }
-        chooseOne(getString(R.string.set_background), names, Backdrop.SOURCE.get(this)) { which ->
-            if (which == Backdrop.SOURCE_APP) {
-                val installed = WallpaperApps.installed(this)
-                if (installed.isEmpty()) {
-                    offerAerialViews()
-                    return@chooseOne
-                }
-                if (WallpaperApps.find(this, Backdrop.app(this)) == null) {
-                    Backdrop.setApp(this, installed.first().component)
-                }
-            }
-            Backdrop.SOURCE.set(this, which)
-            changed()
-            if (which == Backdrop.SOURCE_PICTURE && !Pictures.hasWallpaper(this)) {
-                pick(REQUEST_WALLPAPER, "image/*")
-            }
-        }
-    }
-
-    /** No wallpaper app on the TV: say what one is and offer Aerial Views. */
-    private fun offerAerialViews() {
-        AlertDialog.Builder(this)
-            .setTitle(R.string.bg_app)
-            .setMessage(R.string.bg_no_apps_body)
-            .setPositiveButton(R.string.bg_get_aerial) { _, _ ->
-                val market = Intent(Intent.ACTION_VIEW, Uri.parse("market://details?id=" + WallpaperApps.AERIAL_VIEWS))
-                try {
-                    startActivity(market)
-                } catch (e: ActivityNotFoundException) {
-                    Toast.makeText(this, R.string.bg_get_aerial_manual, Toast.LENGTH_LONG).show()
-                }
-            }
-            .setNegativeButton(R.string.close, null)
-            .show()
-    }
-
-    private fun chooseWallpaperApp() {
-        val installed = WallpaperApps.installed(this)
-        if (installed.isEmpty()) {
-            offerAerialViews()
-            return
-        }
-        val current = installed.indexOfFirst { it.component == Backdrop.app(this) }
-        chooseOne(getString(R.string.bg_which_app), installed.map { it.name }, current) {
-            Backdrop.setApp(this, installed[it].component)
-            changed()
-        }
-    }
-
-    private fun addOwnFromTv() {
-        // Lasting access where the TV allows it; otherwise TunaHome keeps its own copy
-        val open = Intent(Intent.ACTION_OPEN_DOCUMENT)
-            .addCategory(Intent.CATEGORY_OPENABLE)
-            .setType("*/*")
-            .putExtra(Intent.EXTRA_MIME_TYPES, arrayOf("video/*", "image/*"))
-        try {
-            @Suppress("DEPRECATION")
-            startActivityForResult(open, REQUEST_OWN_DOCUMENT)
-        } catch (e: ActivityNotFoundException) {
-            pick(REQUEST_OWN_COPY, "video/*")
-        }
-    }
-
-    private fun removeOwn() {
-        val own = Backdrop.videos(this)
-        val keep = BooleanArray(own.size) { true }
-        AlertDialog.Builder(this)
-            .setTitle(R.string.bg_remove_own_title)
-            .setMultiChoiceItems(own.map { it.shortName() }.toTypedArray(), keep) { _, which, ticked ->
-                keep[which] = ticked
-            }
-            .setPositiveButton(R.string.done) { _, _ ->
-                own.forEachIndexed { i, item ->
-                    if (!keep[i]) {
-                        Pictures.forgetVideo(this, item.uri)
-                    }
-                }
-                Backdrop.setVideos(this, own.filterIndexed { i, _ -> keep[i] })
-                build()
-            }
-            .setNegativeButton(R.string.cancel, null)
-            .show()
-    }
 
     // ------------------------------------------------------------------ theme and colours
 
-    private fun coloursPage() {
-        val chosenName = getString(TunaTheme.nameOf(TunaTheme.chosen(this)))
-        val showing = TunaTheme.current(this)
-        val themeSummary = if (showing != TunaTheme.chosen(this)) {
-            getString(R.string.set_theme_season_showing, chosenName, getString(TunaTheme.nameOf(showing)))
-        } else {
-            chosenName
-        }
-        row(R.string.set_theme, themeSummary) {
-            val ids = TunaTheme.IDS
-            chooseOne(
-                getString(R.string.set_theme), ids.map { getString(TunaTheme.nameOf(it)) },
-                ids.indexOf(TunaTheme.chosen(this))
-            ) {
-                TunaTheme.setChosen(this, ids[it])
-                changed()
-            }
-        }
-        val seasonal = TunaTheme.seasonal(this)
-        row(
-            R.string.set_seasonal,
-            getString(if (seasonal) R.string.set_seasonal_on else R.string.set_seasonal_off)
-        ) {
-            TunaTheme.setSeasonal(this, !seasonal)
-            changed()
-        }
-        choice(R.string.set_accent, Look.ACCENT)
-        choice(R.string.set_text_colour, Look.TEXT_COLOUR)
-    }
-
     // ------------------------------------------------------------------ sections
 
-    private fun sectionsPage() {
-        // Now playing: off until switched on, and it needs notification access
-        val npOn = NowPlaying.SHOW.get(this)
-        val npAllowed = NowPlaying.allowed(this)
-        row(
-            R.string.np_title,
-            getString(when {
-                !npOn -> R.string.np_off
-                npAllowed -> R.string.np_on
-                else -> R.string.np_needs_access
-            })
-        ) {
-            NowPlaying.SHOW.set(this, !npOn)
-            if (!npOn && !NowPlaying.allowed(this)) explainNowPlaying()
-            changed()
-        }
-        if (npOn && !npAllowed) {
-            row(R.string.np_allow, getString(R.string.np_allow_summary)) { explainNowPlaying() }
-        }
-        val all = Rows.load(this)
-        all.forEachIndexed { index, section ->
-            val lines = linesName(section.lines)
-            var summary = if (section.visible) getString(R.string.section_shown, lines)
-            else getString(R.string.section_hidden)
-            if (section.visible && section.cardSize >= 0) {
-                summary += getString(R.string.section_own_size, cardSizeName(section.cardSize))
-            }
-            if (section.visible && !section.ownOrder && section.sort != Rows.SORT_OWN) {
-                summary += " · " + getString(Rows.SORT_NAMES[section.sort])
-            }
-            row(section.name(this), summary) { sectionMenu(section.id, index, all.size) }
-        }
-        row(R.string.section_add, getString(R.string.section_add_summary)) {
-            askForText(R.string.section_add, "") { title ->
-                Rows.add(this, title)
-                changed()
-            }
-        }
-        heading(R.string.heading_all_sections)
-        choice(R.string.set_header_gap, Look.HEADER_GAP)
-        switch(R.string.set_double_press, Look.DOUBLE_PRESS, R.string.double_press_on, R.string.off)
-        switch(R.string.set_controller_jumps, Look.CONTROLLER_JUMPS, R.string.controller_jumps_on, R.string.off)
-        switch(R.string.set_remember_place, Look.REMEMBER_PLACE, R.string.remember_place_on, R.string.remember_place_off)
-        heading(R.string.heading_side_menu)
-        choice(R.string.set_side_menu, Look.SIDE_MENU)
-        if (Look.SIDE_MENU.get(this) != Look.MENU_OFF) {
-            switch(R.string.set_side_menu_shortcuts, Look.SIDE_MENU_SHORTCUTS, R.string.shown, R.string.hidden)
-        }
-        heading(R.string.heading_section_look)
-        choice(R.string.set_row_titles, Look.ROW_TITLES)
-        choice(R.string.set_row_gap, Look.ROW_GAP)
-        choice(R.string.set_section_position, Look.SECTION_POSITION)
-        choice(R.string.set_section_panel, Look.SECTION_PANEL)
-        choice(R.string.set_row_scroll, Look.ROW_SCROLL)
-        choice(R.string.set_start_on, Look.START_ON)
-    }
-
-    /** A card size by name; -1 is the size set for every card. */
-    private fun cardSizeName(index: Int): String {
-        val i = if (index in Look.CARD_SCALES.indices) index
-        else Look.CARD_SCALES.indexOfFirst { it == Look.tileScale(this) }.coerceAtLeast(0)
-        return getString(Look.CARD_SIZE.names[i])
-    }
-
-    /** How to give TunaHome notification access: the TV's screen if it has one, or one adb command. */
-    private fun explainNowPlaying() {
-        AlertDialog.Builder(this)
-            .setTitle(R.string.np_allow)
-            .setMessage(getString(R.string.np_allow_body, NowPlaying.ADB_COMMAND))
-            .setPositiveButton(R.string.np_open_access) { _, _ ->
-                try {
-                    startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS))
-                } catch (e: Exception) {
-                    Toast.makeText(this, R.string.np_no_screen, Toast.LENGTH_LONG).show()
-                }
-            }
-            .setNegativeButton(R.string.close, null)
-            .show()
-    }
-
-    private fun linesName(lines: Int): String =
+    internal fun linesName(lines: Int): String =
         if (lines == Rows.WRAP) getString(R.string.lines_wrap)
         else resources.getQuantityString(R.plurals.lines_count, lines, lines)
 
-    private fun sectionMenu(id: String, index: Int, count: Int) {
-        val section = Rows.load(this).firstOrNull { it.id == id } ?: return
-        val labels = ArrayList<String>()
-        val actions = ArrayList<() -> Unit>()
-
-        labels.add(getString(if (section.visible) R.string.section_hide else R.string.section_show))
-        actions.add { Rows.update(this, id) { it.visible = !it.visible }; changed() }
-
-        if (section.kind != Rows.NOW_PLAYING) labels.add(getString(R.string.section_lines, linesName(section.lines)))
-        if (section.kind != Rows.NOW_PLAYING) actions.add {
-            val options = (1..Rows.MAX_LINES).toList() + Rows.WRAP
-            chooseOne(
-                getString(R.string.section_lines_title, section.name(this)),
-                options.map { linesName(it) }, options.indexOf(section.lines)
-            ) { which ->
-                Rows.update(this, id) { it.lines = options[which] }
-                changed()
-            }
-        }
-
-        if (section.kind == Rows.FAVOURITES || section.custom) {
-            labels.add(getString(R.string.link_add_here))
-            actions.add {
-                addLink { key ->
-                    if (section.kind == Rows.FAVOURITES) {
-                        Prefs.setFavourites(this, Prefs.favourites(this).apply { add(key) })
-                    } else {
-                        Rows.update(this, id) { it.apps.add(key) }
-                    }
-                    changed()
-                }
-            }
-        }
-
-        if (!section.ownOrder) {
-            labels.add(getString(R.string.section_sort, getString(Rows.SORT_NAMES[section.sort])))
-            actions.add {
-                chooseOne(
-                    getString(R.string.section_sort_title, section.name(this)),
-                    Rows.SORT_NAMES.map { getString(it) }, section.sort
-                ) { which ->
-                    Rows.update(this, id) { it.sort = which }
-                    changed()
-                }
-            }
-        }
-
-        if (section.kind != Rows.NOW_PLAYING) {
-            val styles = listOf(getString(R.string.section_style_same)) + Look.TILE_STYLE.names.map { getString(it) }
-            labels.add(getString(R.string.section_style, styles[section.style + 1]))
-            actions.add {
-                chooseOne(getString(R.string.section_style_title, section.name(this)), styles, section.style + 1) { which ->
-                    Rows.update(this, id) { it.style = which - 1 }
-                    changed()
-                }
-            }
-        }
-
-        if (section.kind != Rows.NOW_PLAYING && section.lines == 1) {
-            labels.add(getString(R.string.section_spotlight, getString(if (section.spotlight) R.string.on else R.string.off)))
-            actions.add {
-                Rows.update(this, id) { it.spotlight = !it.spotlight }
-                changed()
-            }
-        }
-
-        if (section.kind == Rows.RECENT) {
-            labels.add(getString(R.string.recent_clear))
-            actions.add {
-                Prefs.clearRecent(this)
-                Look.touch(this)
-                Toast.makeText(this, R.string.recent_cleared, Toast.LENGTH_LONG).show()
-            }
-        }
-
-        if (section.kind != Rows.NOW_PLAYING) labels.add(getString(R.string.section_card_size, cardSizeName(section.cardSize)))
-        if (section.kind != Rows.NOW_PLAYING) actions.add {
-            val names = listOf(getString(R.string.card_size_usual, cardSizeName(-1))) +
-                Look.CARD_SIZE.names.map { getString(it) }
-            chooseOne(getString(R.string.section_card_size_title, section.name(this)), names, section.cardSize + 1) { which ->
-                Rows.update(this, id) { it.cardSize = which - 1 }
-                changed()
-            }
-        }
-
-        labels.add(getString(R.string.section_rename))
-        actions.add {
-            askForText(R.string.section_rename, section.name(this)) { title ->
-                Rows.update(this, id) { it.title = title }
-                changed()
-            }
-        }
-        if (!section.custom && section.title != null) {
-            labels.add(getString(R.string.section_usual_name))
-            actions.add { Rows.update(this, id) { it.title = null }; changed() }
-        }
-        if (index > 0) {
-            labels.add(getString(R.string.section_up))
-            actions.add { moveSection(id, -1) }
-        }
-        if (index < count - 1) {
-            labels.add(getString(R.string.section_down))
-            actions.add { moveSection(id, 1) }
-        }
-        if (section.custom) {
-            labels.add(getString(R.string.section_delete))
-            actions.add {
-                AlertDialog.Builder(this)
-                    .setTitle(section.name(this))
-                    .setMessage(R.string.section_delete_confirm)
-                    .setPositiveButton(R.string.section_delete) { _, _ ->
-                        val all = Rows.load(this)
-                        all.removeAll { it.id == id }
-                        Rows.save(this, all)
-                        focusIndex = 0
-                        changed()
-                    }
-                    .setNegativeButton(R.string.cancel, null)
-                    .show()
-            }
-        }
-
-        AlertDialog.Builder(this)
-            .setTitle(section.name(this))
-            .setItems(labels.toTypedArray()) { _, which -> actions[which]() }
-            .show()
-    }
-
-    private fun moveSection(id: String, by: Int) {
-        val all = Rows.load(this)
-        val from = all.indexOfFirst { it.id == id }
-        val to = from + by
-        if (from < 0 || to < 0 || to >= all.size) {
-            return
-        }
-        all.add(to, all.removeAt(from))
-        Rows.save(this, all)
-        focusIndex = to
-        changed()
-    }
-
     // ------------------------------------------------------------------ text
-
-    private fun textPage() {
-        row(R.string.set_font, Fonts.name(this, Look.font(this))) {
-            chooseFont(getString(R.string.set_font), Look.font(this), false) { Look.setFont(this, it ?: Fonts.STANDARD) }
-        }
-        row(
-            R.string.set_clock_font,
-            Look.clockFont(this)?.let { Fonts.name(this, it) } ?: getString(R.string.clock_font_same)
-        ) {
-            chooseFont(getString(R.string.set_clock_font), Look.clockFont(this), true) { Look.setClockFont(this, it) }
-        }
-        choice(R.string.set_text_size, Look.TEXT_SIZE)
-        switch(R.string.set_text_shadow, Look.TEXT_SHADOW)
-        row(
-            R.string.set_own_font,
-            getString(if (Fonts.hasCustom(this)) R.string.own_font_set else R.string.own_font_none)
-        ) {
-            if (!Fonts.hasCustom(this)) {
-                pick(REQUEST_FONT, "*/*")
-            } else {
-                val options = listOf(getString(R.string.own_font_replace), getString(R.string.own_font_remove))
-                chooseOne(getString(R.string.set_own_font), options, -1) {
-                    if (it == 0) {
-                        pick(REQUEST_FONT, "*/*")
-                    } else {
-                        Fonts.removeCustom(this)
-                        if (Look.font(this) == Fonts.CUSTOM) Look.setFont(this, Fonts.STANDARD)
-                        if (Look.clockFont(this) == Fonts.CUSTOM) Look.setClockFont(this, null)
-                        Look.touch(this)
-                        changed()
-                    }
-                }
-            }
-        }
-    }
-
-    /** The list of fonts, each name written in its own font. */
-    private fun chooseFont(title: String, current: String?, allowSame: Boolean, pick: (String?) -> Unit) {
-        val ids: List<String?> = (if (allowSame) listOf<String?>(null) else emptyList()) + Fonts.ids(this)
-        val names = ids.map { if (it == null) getString(R.string.clock_font_same) else Fonts.name(this, it) }
-        val context: Context = this
-        val adapter = object : ArrayAdapter<String>(this, android.R.layout.simple_list_item_single_choice, names) {
-            override fun getView(position: Int, convertView: View?, parent: ViewGroup): View {
-                val view = super.getView(position, convertView, parent) as TextView
-                val id = ids[position]
-                view.typeface = if (id == null || id == Fonts.STANDARD) android.graphics.Typeface.DEFAULT
-                else Fonts.typeface(context, id, 400) ?: android.graphics.Typeface.DEFAULT
-                return view
-            }
-        }
-        AlertDialog.Builder(this)
-            .setTitle(title)
-            .setSingleChoiceItems(adapter, ids.indexOf(current)) { dialog, which ->
-                dialog.dismiss()
-                pick(ids[which])
-                changed()
-            }
-            .setNegativeButton(R.string.cancel, null)
-            .show()
-    }
 
     // ------------------------------------------------------------------ app pictures
 
-    private fun picturesPage() {
-        previewRow()
-        // One list: TV pictures, the apps' own icons, or any icon pack on the TV
-        val packs = IconPacks.installed(this)
-        val usingPictures = Look.TILE_STYLE.get(this) == Look.TILE_BANNER
-        val coverage = IconPacks.covered
-        val chosenPack = IconPacks.chosen(this)
-        row(
-            R.string.set_icons,
-            if (!usingPictures && chosenPack != null && coverage != null)
-                getString(R.string.icon_pack_coverage, IconPacks.currentName(this), coverage.first, coverage.second)
-            else IconPacks.currentName(this)
-        ) {
-            val names = listOf(getString(R.string.icons_tv_pictures), getString(R.string.icons_app_icons)) +
-                packs.map { it.name } + getString(R.string.icons_get_more)
-            val current = when {
-                usingPictures -> 0
-                chosenPack == null -> 1
-                else -> 2 + packs.indexOfFirst { it.pkg == chosenPack }
-            }
-            chooseOne(getString(R.string.set_icons), names, current) { which ->
-                when {
-                    which == 0 -> IconPacks.useTvPictures(this)
-                    which == 1 -> IconPacks.useIcons(this, null)
-                    which < 2 + packs.size -> IconPacks.useIcons(this, packs[which - 2].pkg)
-                    else -> {
-                        openPackStore()
-                        return@chooseOne
-                    }
-                }
-                changed()
-            }
-        }
-        if (!usingPictures && chosenPack != null) {
-            val loadedHasFrame = try {
-                IconPacks.load(this, chosenPack).hasFrame
-            } catch (e: Exception) {
-                false
-            }
-            row(
-                R.string.set_pack_missing,
-                Look.PACK_MISSING.name(this) +
-                    if (Look.PACK_MISSING.get(this) == Look.MISSING_FRAME && !loadedHasFrame) getString(R.string.missing_no_frame) else ""
-            ) {
-                chooseOne(getString(R.string.set_pack_missing), Look.PACK_MISSING.names.map { getString(it) },
-                    Look.PACK_MISSING.get(this)) {
-                    Look.PACK_MISSING.set(this, it)
-                    Prefs.appsChanged = true
-                    changed()
-                }
-            }
-        }
-        if (!usingPictures) {
-            val inCard = Look.TILE_STYLE.get(this) == Look.TILE_ICON_NAME
-            row(R.string.set_name_in_card, getString(if (inCard) R.string.on else R.string.off)) {
-                Look.TILE_STYLE.set(this, if (inCard) Look.TILE_ICON else Look.TILE_ICON_NAME)
-                changed()
-            }
-        }
-        row(R.string.set_card_size, cardSizeName(-1)) {
-            chooseOne(getString(R.string.set_card_size), Look.CARD_SIZE.names.map { getString(it) },
-                Look.CARD_SCALES.indexOfFirst { it == Look.tileScale(this) }) {
-                Look.CARD_SIZE.set(this, it)
-                changed()
-            }
-        }
-        choice(R.string.set_card_shape, Look.CARD_SHAPE)
-        if (!usingPictures) {
-            choice(R.string.set_icon_fill, Look.ICON_FILL)
-            choice(R.string.set_icon_tint, Look.ICON_TINT)
-        }
-        row(R.string.pack_get, IconPackStore.status.ifEmpty { getString(R.string.pack_get_summary) }) { openPackStore() }
-        heading(R.string.heading_cards)
-        choice(R.string.set_tile_corners, Look.TILE_CORNERS)
-        choice(R.string.set_tile_card, Look.TILE_CARD)
-        switch(R.string.set_tile_edge, Look.TILE_EDGE, R.string.shown, R.string.hidden)
-        choice(R.string.set_tile_gap, Look.TILE_GAP)
-        choice(R.string.set_tile_names, Look.TILE_NAMES)
-        switch(R.string.set_new_badge, Look.NEW_BADGE, R.string.new_badge_on, R.string.off)
-        switch(R.string.set_shine, Look.SHINE, R.string.shine_on, R.string.off)
-        switch(R.string.set_scroll_names, Look.SCROLL_NAMES, R.string.scroll_names_on, R.string.off)
-        heading(R.string.heading_selected)
-        choice(R.string.set_focus_zoom, Look.FOCUS_ZOOM)
-        choice(R.string.set_focus_motion, Look.FOCUS_MOTION)
-        choice(R.string.set_focus_shadow, Look.FOCUS_SHADOW)
-        choice(R.string.set_focus_outline, Look.FOCUS_OUTLINE)
-        switch(R.string.set_dim_others, Look.DIM_OTHERS)
-        row(R.string.set_app_picture, getString(R.string.set_app_picture_summary)) {
-            Toast.makeText(this, R.string.set_app_picture_summary, Toast.LENGTH_LONG).show()
-        }
-    }
-
-    /** Free icon packs from F-Droid, each marked if it's already on the TV. */
-    private fun openPackStore() {
-        val offers = IconPackStore.CATALOGUE
-        val names = offers.map { offer ->
-            val about = getString(offer.about)
-            if (IconPackStore.isInstalled(this, offer.pkg)) getString(R.string.pack_entry_installed, offer.name, about)
-            else getString(R.string.pack_entry, offer.name, about)
-        }
-        AlertDialog.Builder(this)
-            .setTitle(R.string.pack_get)
-            .setItems(names.toTypedArray()) { _, which ->
-                val offer = offers[which]
-                if (IconPackStore.isInstalled(this, offer.pkg)) {
-                    IconPacks.useIcons(this, offer.pkg)
-                    changed()
-                    return@setItems
-                }
-                AlertDialog.Builder(this)
-                    .setTitle(offer.name)
-                    .setMessage(getString(R.string.pack_confirm, getString(offer.about), offer.source.label))
-                    .setPositiveButton(R.string.pack_download) { _, _ -> IconPackStore.get(this, offer) }
-                    .setNegativeButton(R.string.cancel, null)
-                    .show()
-            }
-            .setNegativeButton(R.string.close, null)
-            .show()
-    }
-
     // ------------------------------------------------------------------ layouts and backup
 
-    private fun layoutsPage() {
-        row(R.string.layout_save, getString(R.string.layout_save_summary)) {
-            askForText(R.string.layout_save, "") { name ->
-                work(R.string.layout_failed, { Layouts.save(it, name) }) {
-                    Toast.makeText(this, getString(R.string.layout_saved, name), Toast.LENGTH_LONG).show()
-                }
-            }
-        }
-        for (name in Layouts.saved(this)) {
-            row(name, getString(R.string.layout_entry_summary)) { layoutMenu(name) }
-        }
-        heading(R.string.heading_backup)
-        switch(R.string.set_auto_backup, Layouts.AUTO_BACKUP, R.string.auto_backup_on, R.string.off)
-        row(R.string.layout_export, getString(R.string.layout_export_summary)) {
-            work(R.string.layout_failed, { exportedName = Layouts.export(it, "backup") }) {
-                Toast.makeText(this, getString(R.string.layout_exported, exportedName), Toast.LENGTH_LONG).show()
-            }
-        }
-        row(R.string.layout_import, getString(R.string.layout_import_summary)) { importLayout() }
-        row(R.string.layout_auto, getString(R.string.layout_auto_summary)) {}
-    }
-
-    private var exportedName = ""
-
-    private fun layoutMenu(name: String) {
-        val options = listOf(getString(R.string.layout_use), getString(R.string.layout_update),
-            getString(R.string.layout_export_one), getString(R.string.layout_delete))
-        chooseOne(name, options, -1) { which ->
-            when (which) {
-                0 -> AlertDialog.Builder(this)
-                    .setTitle(getString(R.string.layout_use_title, name))
-                    .setMessage(R.string.layout_use_body)
-                    .setPositiveButton(R.string.layout_use) { _, _ ->
-                        work(R.string.layout_failed, { Layouts.load(it, name) }) { Layouts.restart(this) }
-                    }
-                    .setNegativeButton(R.string.cancel, null)
-                    .show()
-                1 -> work(R.string.layout_failed, { Layouts.save(it, name) }) {
-                    Toast.makeText(this, getString(R.string.layout_saved, name), Toast.LENGTH_LONG).show()
-                }
-                2 -> work(R.string.layout_failed, { ctx -> exportedName = Layouts.exportSaved(ctx, name) }) { Toast.makeText(this, getString(R.string.layout_exported, exportedName), Toast.LENGTH_LONG).show() }
-                else -> {
-                    Layouts.delete(this, name)
-                    build()
-                }
-            }
-        }
-    }
-
-    /** From this TV's Downloads (files TunaHome put there), or any file through a file manager. */
-    private fun importLayout() {
-        val found = Layouts.exported(this)
-        val names = found.map { it.first } + getString(R.string.layout_import_other)
-        chooseOne(getString(R.string.layout_import), names, -1) { which ->
-            if (which < found.size) {
-                confirmImport { work(R.string.layout_import_failed, { ctx ->
-                    ctx.contentResolver.openInputStream(found[which].second)?.use { Layouts.read(ctx, it) }
-                        ?: throw IllegalStateException("unreadable")
-                }) { Layouts.restart(this) } }
-            } else {
-                pick(REQUEST_LAYOUT, "*/*")
-            }
-        }
-    }
-
-    private fun confirmImport(then: () -> Unit) {
-        AlertDialog.Builder(this)
-            .setTitle(R.string.layout_import)
-            .setMessage(R.string.layout_use_body)
-            .setPositiveButton(R.string.layout_use) { _, _ -> then() }
-            .setNegativeButton(R.string.cancel, null)
-            .show()
-    }
-
-    /** Runs [job] off the main thread, then [then]; says [failure] if it went wrong. */
-    private fun work(failure: Int, job: (Context) -> Unit, then: () -> Unit) {
-        val app = applicationContext
-        thread(name = "TunaHome layouts") {
-            val ok = try {
-                job(app)
-                true
-            } catch (e: Throwable) {
-                false
-            }
-            runOnUiThread {
-                if (isDestroyed) return@runOnUiThread
-                if (ok) then() else Toast.makeText(this, failure, Toast.LENGTH_LONG).show()
-                if (!isDestroyed) build()
-            }
-        }
-    }
+    internal var exportedName = ""
 
     // ------------------------------------------------------------------ sounds and motion
 
-    private fun soundsPage() {
-        row(R.string.snd_set, Sounds.SET.name(this)) {
-            chooseOne(getString(R.string.snd_set), Sounds.SET.names.map { getString(it) }, Sounds.SET.get(this)) {
-                Sounds.SET.set(this, it)
-                // Play the one chosen, to hear it
-                Sounds.play(this, Sounds.SELECT)
-                changed()
-            }
-        }
-        if (Sounds.SET.get(this) != Sounds.SET_OFF) {
-            choice(R.string.snd_volume, Sounds.VOLUME) {
-                Sounds.play(this, Sounds.SELECT)
-                changed()
-            }
-            switch(R.string.snd_on_move, Sounds.ON_MOVE, R.string.snd_on_move_on, R.string.snd_on_move_off)
-        }
-        heading(R.string.heading_motion)
-        choice(R.string.set_animations, Look.ANIMATIONS)
-        choice(R.string.set_focus_motion, Look.FOCUS_MOTION)
-        choice(R.string.set_focus_shadow, Look.FOCUS_SHADOW)
-        choice(R.string.set_focus_zoom, Look.FOCUS_ZOOM)
-    }
-
     // ------------------------------------------------------------------ top of the screen
-
-    private fun topBarPage() {
-        switch(R.string.set_show_brand, Look.SHOW_BRAND, R.string.shown, R.string.hidden)
-        if (Look.SHOW_BRAND.get(this)) {
-            choice(R.string.set_brand_parts, Look.BRAND_PARTS)
-            choice(R.string.set_brand_size, Look.BRAND_SIZE)
-            if (Look.BRAND_PARTS.get(this) != Look.BRAND_LOGO) {
-                switch(R.string.set_show_version, Look.SHOW_VERSION, R.string.shown, R.string.hidden)
-            }
-        }
-        choice(R.string.set_header_gap, Look.HEADER_GAP)
-        choice(R.string.set_clock, Look.CLOCK)
-        choice(R.string.set_clock_face, Look.CLOCK_FACE)
-        choice(R.string.set_clock_size, Look.CLOCK_SIZE)
-        choice(R.string.set_date, Look.DATE)
-        choice(R.string.set_system_info, Look.SYSTEM_INFO)
-        switch(R.string.set_show_network, Look.SHOW_NETWORK, R.string.shown, R.string.hidden)
-        switch(R.string.set_show_vpn, Look.SHOW_VPN, R.string.vpn_shown, R.string.hidden)
-        switch(R.string.set_show_search, Look.SHOW_SEARCH_BUTTON, R.string.shown, R.string.hidden)
-        switch(R.string.set_show_update, Look.SHOW_UPDATE_BUTTON, R.string.shown, R.string.hidden)
-        switch(R.string.set_show_tv_settings, Look.SHOW_TV_SETTINGS_BUTTON, R.string.shown, R.string.hidden)
-        row(R.string.set_settings_button, getString(R.string.set_settings_button_summary)) {
-            Toast.makeText(this, R.string.set_settings_button_summary, Toast.LENGTH_LONG).show()
-        }
-    }
 
     // ------------------------------------------------------------------ shortcuts
 
-    private fun shortcutsPage() {
-        val all = Hotkeys.load(this)
-        row(R.string.shortcut_add, getString(R.string.shortcut_add_summary)) { addShortcut() }
-        for ((index, h) in all.withIndex()) {
-            val where = if (h.everywhere) getString(R.string.shortcut_everywhere_short) else getString(R.string.shortcut_home_short)
-            row(Hotkeys.triggerName(this, h), HotkeyActions.name(this, h.action, h.arg) + " · " + where) {
-                chooseOne(Hotkeys.triggerName(this, h),
-                    listOf(getString(R.string.shortcut_change_action), getString(R.string.shortcut_delete)), -1) { which ->
-                    val list = Hotkeys.load(this)
-                    if (which == 0) {
-                        chooseAction { action, arg ->
-                            list[index] = Hotkeys.Hotkey(h.keys, h.presses, h.everywhere, action, arg)
-                            Hotkeys.save(this, list)
-                            build()
-                        }
-                    } else {
-                        list.removeAt(index)
-                        Hotkeys.save(this, list)
-                        build()
-                    }
-                }
-            }
-        }
-        if (all.any { it.everywhere } && !HomeButtonService.isOn(this)) {
-            row(R.string.shortcut_needs_service, getString(R.string.shortcut_needs_service_summary)) {
-                explainHomeButton(false)
-            }
-        }
-        heading(R.string.heading_shortcut_tips)
-        row(R.string.shortcut_tip_title, getString(R.string.shortcut_tip)) {}
-    }
-
-    /** Step 1: which button (or two together). */
-    private fun addShortcut() {
-        val ways = listOf(getString(R.string.shortcut_way_press), getString(R.string.shortcut_way_home),
-            getString(R.string.shortcut_way_two))
-        chooseOne(getString(R.string.shortcut_add), ways, -1) { way ->
-            when (way) {
-                0 -> captureKeys(false) { keys -> choosePresses(keys) }
-                1 -> choosePresses(listOf(KeyEvent.KEYCODE_HOME))
-                else -> captureKeys(true) { keys -> chooseWhere(keys, 1) }
-            }
-        }
-    }
-
-    /** Waits for a button press (or two buttons together) and reports which. */
-    private fun captureKeys(two: Boolean, done: (List<Int>) -> Unit) {
-        val down = LinkedHashSet<Int>()
-        var finished = false
-        val dialog = AlertDialog.Builder(this)
-            .setTitle(if (two) R.string.capture_two_title else R.string.capture_title)
-            .setMessage(if (two) R.string.capture_two_body else R.string.capture_body)
-            .create()
-        dialog.setOnKeyListener { d, code, event ->
-            if (finished) {
-                return@setOnKeyListener true
-            }
-            if (event.action == KeyEvent.ACTION_DOWN && event.repeatCount == 0) {
-                down.add(code)
-                if (two && down.size >= 2) {
-                    finished = true
-                    d.dismiss()
-                    confirmKeys(down.take(2), two, done)
-                }
-            } else if (event.action == KeyEvent.ACTION_UP && !two && code in down) {
-                finished = true
-                d.dismiss()
-                confirmKeys(listOf(code), two, done)
-            } else if (event.action == KeyEvent.ACTION_UP && two) {
-                down.remove(code)
-            }
-            true
-        }
-        dialog.show()
-    }
-
-    private fun confirmKeys(keys: List<Int>, two: Boolean, done: (List<Int>) -> Unit) {
-        val name = keys.joinToString(" + ") { Hotkeys.keyName(this, it) }
-        AlertDialog.Builder(this)
-            .setTitle(getString(R.string.capture_got, name))
-            .setMessage(if (keys.any { it == KeyEvent.KEYCODE_DPAD_CENTER || it in DPAD }) getString(R.string.capture_dpad_warning) else null)
-            .setPositiveButton(R.string.capture_use) { _, _ -> done(keys) }
-            .setNeutralButton(R.string.capture_again) { _, _ -> captureKeys(two, done) }
-            .setNegativeButton(R.string.cancel, null)
-            .show()
-    }
-
-    /** Step 2: once, twice, three or four times, or held. */
-    private fun choosePresses(keys: List<Int>) {
-        val options = listOf(1, 2, 3, 4, Hotkeys.HOLD)
-        chooseOne(getString(R.string.shortcut_how, Hotkeys.keyName(this, keys[0])),
-            options.map { Hotkeys.pressesName(this, it) }, -1) { chooseWhere(keys, options[it]) }
-    }
-
-    /** Step 3: only on the home screen, or everywhere (Home and Back only). */
-    private fun chooseWhere(keys: List<Int>, presses: Int) {
-        val key = keys[0]
-        when {
-            keys.size == 1 && key == KeyEvent.KEYCODE_HOME -> {
-                if (presses == 1) {
-                    Toast.makeText(this, R.string.shortcut_home_once, Toast.LENGTH_LONG).show()
-                    return
-                }
-                chooseActionAndSave(keys, presses, true)
-            }
-            keys.size == 1 && Hotkeys.canBeEverywhere(key) -> {
-                chooseOne(getString(R.string.shortcut_where),
-                    listOf(getString(R.string.shortcut_where_home), getString(R.string.shortcut_where_everywhere)), -1) {
-                    chooseActionAndSave(keys, presses, it == 1)
-                }
-            }
-            else -> chooseActionAndSave(keys, presses, false)
-        }
-    }
-
-    private fun chooseActionAndSave(keys: List<Int>, presses: Int, everywhere: Boolean) {
-        chooseAction { action, arg ->
-            val list = Hotkeys.load(this)
-            // The same press again replaces the old shortcut
-            list.removeAll { it.keys.toSet() == keys.toSet() && it.presses == presses && it.everywhere == everywhere }
-            list.add(Hotkeys.Hotkey(keys, presses, everywhere, action, arg))
-            Hotkeys.save(this, list)
-            if (everywhere && !HomeButtonService.isOn(this)) {
-                explainHomeButton(false)
-            }
-            build()
-        }
-    }
-
-    /** Step 4: what it does (and which app or section, for those). */
-    private fun chooseAction(done: (String, String?) -> Unit) {
-        val actions = HotkeyActions.ALL
-        chooseOne(getString(R.string.shortcut_does), actions.map { getString(it.second) }, -1) { which ->
-            val action = actions[which].first
-            when (action) {
-                HotkeyActions.OPEN_APP -> {
-                    val apps = launchableApps()
-                    chooseOne(getString(R.string.act_open_app), apps.map { it.second }, -1) { done(action, apps[it].first) }
-                }
-                HotkeyActions.SECTION -> {
-                    val rows = Rows.load(this).filter { it.visible }
-                    chooseOne(getString(R.string.act_section), rows.map { it.name(this) }, -1) { done(action, rows[it].id) }
-                }
-                else -> done(action, null)
-            }
-        }
-    }
-
-    private fun launchableApps(): List<Pair<String, String>> {
-        val pm = packageManager
-        val found = LinkedHashMap<String, String>()
-        for (category in arrayOf(Intent.CATEGORY_LEANBACK_LAUNCHER, Intent.CATEGORY_LAUNCHER)) {
-            for (info in pm.queryIntentActivities(Intent(Intent.ACTION_MAIN).addCategory(category), 0)) {
-                val pkg = info.activityInfo?.packageName ?: continue
-                if (pkg != packageName && !found.containsKey(pkg)) {
-                    found[pkg] = info.loadLabel(pm).toString()
-                }
-            }
-        }
-        return found.entries.sortedBy { it.value.lowercase() }.map { it.key to it.value }
-    }
-
     // ------------------------------------------------------------------ weather
-
-    private fun weatherPage() {
-        switch(R.string.wx_show, Weather.SHOW, R.string.shown, R.string.hidden)
-        val place = Weather.place(this)
-        row(R.string.wx_location, place?.name ?: getString(R.string.wx_place_none)) { chooseWeatherPlace() }
-        if (!Weather.SHOW.get(this)) {
-            return
-        }
-        choice(R.string.wx_units, Weather.UNITS) { Weather.forget(); changed() }
-        choice(R.string.wx_detail, Weather.DETAIL)
-        choice(R.string.wx_icons, Weather.ICONS)
-        choice(R.string.wx_size, Weather.SIZE)
-        choice(R.string.wx_place, Weather.PLACE)
-        if (place != null) {
-            row(R.string.wx_update, Weather.status.ifEmpty { getString(R.string.wx_update_summary) }) {
-                Toast.makeText(this, R.string.wx_updating, Toast.LENGTH_SHORT).show()
-                Weather.refresh(this, force = true) { build() }
-                // Failures don't call back: show the status after a moment either way
-                list.postDelayed({ if (!isDestroyed) build() }, 4000)
-            }
-        }
-        row(R.string.wx_credit, getString(R.string.wx_credit_summary)) {}
-    }
-
-    private fun chooseWeatherPlace() {
-        val options = arrayListOf(getString(R.string.wx_search), getString(R.string.wx_from_internet))
-        if (Weather.place(this) != null) {
-            options.add(getString(R.string.wx_remove_place))
-        }
-        chooseOne(getString(R.string.wx_location), options, -1) { which ->
-            when (which) {
-                0 -> askForText(R.string.wx_search, "") { text -> searchWeatherPlace(text) }
-                1 -> inBackgroundPlace(R.string.wx_from_internet_failed) { Weather.fromInternetAddress()?.let { listOf(it) } ?: emptyList() }
-                else -> {
-                    Weather.setPlace(this, null)
-                    changed()
-                }
-            }
-        }
-    }
-
-    private fun searchWeatherPlace(text: String) {
-        inBackgroundPlace(R.string.wx_search_none) { Weather.search(text) }
-    }
-
-    /** Finds places off the main thread; one is used straight away, several are offered. */
-    private fun inBackgroundPlace(failure: Int, find: () -> List<Weather.Place>) {
-        Toast.makeText(this, R.string.wx_finding, Toast.LENGTH_SHORT).show()
-        thread(name = "TunaHome weather place") {
-            val found = try {
-                find()
-            } catch (e: Exception) {
-                emptyList()
-            }
-            runOnUiThread {
-                if (isDestroyed) {
-                    return@runOnUiThread
-                }
-                when {
-                    found.isEmpty() -> Toast.makeText(this, failure, Toast.LENGTH_LONG).show()
-                    found.size == 1 -> usePlace(found[0])
-                    else -> chooseOne(getString(R.string.wx_which), found.map { it.name }, -1) { usePlace(found[it]) }
-                }
-            }
-        }
-    }
-
-    private fun usePlace(place: Weather.Place) {
-        Weather.setPlace(this, place)
-        Weather.refresh(this, force = true) { build() }
-        changed()
-    }
 
     // ------------------------------------------------------------------ apps
 
-    /** Every app needs the PIN between two hours: off, or a start then an end. */
-    private fun chooseLockedHours() {
-        val hourNames = (0..23).map { AppLock.hourName(this, it) }
-        val current = AppLock.lockedHours(this)
-        chooseOne(getString(R.string.lock_hours), listOf(getString(R.string.lock_hours_off), getString(R.string.lock_hours_set)),
-            if (current == null) 0 else 1) { which ->
-            if (which == 0) {
-                AppLock.setLockedHours(this, null)
-                Look.touch(this)
-                build()
-                return@chooseOne
-            }
-            chooseOne(getString(R.string.lock_hours_from), hourNames, current?.first ?: 21) { from ->
-                chooseOne(getString(R.string.lock_hours_to), hourNames, current?.second ?: 7) { to ->
-                    if (from == to) {
-                        Toast.makeText(this, R.string.lock_hours_same, Toast.LENGTH_LONG).show()
-                    } else {
-                        AppLock.setLockedHours(this, from to to)
-                        Look.touch(this)
-                        build()
-                    }
-                }
-            }
-        }
-    }
-
-    private fun appsPage() {
-        val hiddenCount = Prefs.hidden(this).size
-        row(
-            R.string.set_hidden,
-            if (hiddenCount == 0) getString(R.string.set_hidden_none)
-            else resources.getQuantityString(R.plurals.set_hidden_count, hiddenCount, hiddenCount)
-        ) { chooseHidden() }
-
-        heading(R.string.heading_lock)
-        if (!AppLock.hasPin(this)) {
-            row(R.string.lock_set_pin, getString(R.string.lock_set_pin_summary)) {
-                AppLock.choosePin(this) { build() }
-            }
-        } else {
-            val locked = AppLock.locked(this).size
-            row(
-                R.string.lock_apps,
-                if (locked == 0) getString(R.string.lock_apps_none)
-                else resources.getQuantityString(R.plurals.lock_apps_count, locked, locked)
-            ) { AppLock.ask(this, getString(R.string.lock_apps)) { chooseLocked() } }
-            val hours = AppLock.lockedHours(this)
-            row(
-                R.string.lock_hours,
-                if (hours == null) getString(R.string.lock_hours_off)
-                else getString(R.string.lock_hours_on, AppLock.hourName(this, hours.first), AppLock.hourName(this, hours.second))
-            ) { AppLock.ask(this, getString(R.string.lock_hours)) { chooseLockedHours() } }
-            val settingsLocked = AppLock.settingsLocked(this)
-            row(
-                R.string.lock_settings,
-                getString(if (settingsLocked) R.string.lock_settings_on else R.string.lock_settings_off)
-            ) {
-                AppLock.ask(this, getString(R.string.lock_settings)) {
-                    AppLock.setSettingsLocked(this, !settingsLocked)
-                    build()
-                }
-            }
-            row(R.string.lock_change_pin, getString(R.string.lock_change_pin_summary)) {
-                AppLock.ask(this, getString(R.string.lock_change_pin)) { AppLock.choosePin(this) { build() } }
-            }
-            row(R.string.lock_remove_pin, getString(R.string.lock_remove_pin_summary)) {
-                AppLock.ask(this, getString(R.string.lock_remove_pin)) {
-                    AppLock.removePin(this)
-                    Look.touch(this)
-                    changed()
-                }
-            }
-        }
-
-        heading(R.string.heading_order)
-        val ownOrder = Prefs.hasOwnOrder(this)
-        row(
-            R.string.set_order,
-            getString(if (ownOrder) R.string.set_order_own else R.string.set_order_az)
-        ) {
-            if (ownOrder) {
-                AlertDialog.Builder(this)
-                    .setTitle(R.string.set_order)
-                    .setMessage(R.string.set_order_confirm)
-                    .setPositiveButton(R.string.set_order_reset) { _, _ ->
-                        Prefs.clearOrder(this)
-                        build()
-                    }
-                    .setNegativeButton(R.string.cancel, null)
-                    .show()
-            } else {
-                Toast.makeText(this, R.string.set_order_az, Toast.LENGTH_LONG).show()
-            }
-        }
-    }
-
-    private fun chooseLocked() {
-        val locked = AppLock.locked(this).toList()
-        if (locked.isEmpty()) {
-            Toast.makeText(this, R.string.lock_apps_none, Toast.LENGTH_LONG).show()
-            return
-        }
-        val named = locked.map { it to appName(it) }.sortedBy { it.second.lowercase() }
-        val keep = BooleanArray(named.size) { true }
-        AlertDialog.Builder(this)
-            .setTitle(R.string.lock_apps_title)
-            .setMultiChoiceItems(named.map { it.second }.toTypedArray(), keep) { _, which, ticked ->
-                keep[which] = ticked
-            }
-            .setPositiveButton(R.string.done) { _, _ ->
-                AppLock.setLockedSet(this, named.filterIndexed { i, _ -> keep[i] }.map { it.first }.toSet())
-                Look.touch(this)
-                changed()
-            }
-            .setNegativeButton(R.string.cancel, null)
-            .show()
-    }
-
-    private fun appName(pkg: String): String = try {
+    internal fun appName(pkg: String): String = try {
         packageManager.getApplicationInfo(pkg, 0).loadLabel(packageManager).toString()
     } catch (e: Exception) {
         pkg
     }
 
-    private fun chooseHidden() {
-        val hidden = Prefs.hidden(this).toList()
-        if (hidden.isEmpty()) {
-            Toast.makeText(this, R.string.set_hidden_none, Toast.LENGTH_LONG).show()
-            return
-        }
-        val pm = packageManager
-        val named = hidden.map { pkg ->
-            val label = try {
-                pm.getApplicationInfo(pkg, 0).loadLabel(pm).toString()
-            } catch (e: Exception) {
-                pkg
-            }
-            pkg to label
-        }.sortedBy { it.second.lowercase() }
-        val keep = BooleanArray(named.size) { true }
-        AlertDialog.Builder(this)
-            .setTitle(R.string.set_hidden_title)
-            .setMultiChoiceItems(named.map { it.second }.toTypedArray(), keep) { _, which, ticked ->
-                keep[which] = ticked
-            }
-            .setPositiveButton(R.string.done) { _, _ ->
-                Prefs.setHidden(this, named.filterIndexed { i, _ -> keep[i] }.map { it.first }.toSet())
-                build()
-            }
-            .setNegativeButton(R.string.cancel, null)
-            .show()
-    }
-
     // ------------------------------------------------------------------ Home button
-
-    private fun homeButtonPage() {
-        val homeOn = HomeButtonService.isOn(this)
-        row(
-            R.string.set_home_button,
-            getString(if (homeOn) R.string.set_home_button_on else R.string.set_home_button_off)
-        ) { explainHomeButton(homeOn) }
-
-        val wake = Prefs.wakeApp(this)
-        row(
-            R.string.set_wake_app,
-            when {
-                wake == null -> getString(R.string.wake_nothing)
-                homeOn -> getString(R.string.wake_opens, appName(wake))
-                else -> getString(R.string.wake_needs_home, appName(wake))
-            }
-        ) { chooseWakeApp() }
-
-        val replace = Prefs.replaceStock(this)
-        row(
-            R.string.set_replace_stock,
-            getString(if (replace) R.string.set_replace_stock_on else R.string.set_replace_stock_off)
-        ) {
-            Prefs.setReplaceStock(this, !replace)
-            build()
-        }
-    }
-
-    /** Picks the app to open when the TV wakes up, from every app that can be opened. */
-    private fun chooseWakeApp() {
-        val pm = packageManager
-        val found = LinkedHashMap<String, String>()
-        for (category in arrayOf(Intent.CATEGORY_LEANBACK_LAUNCHER, Intent.CATEGORY_LAUNCHER)) {
-            for (info in pm.queryIntentActivities(Intent(Intent.ACTION_MAIN).addCategory(category), 0)) {
-                val pkg = info.activityInfo?.packageName ?: continue
-                if (pkg != packageName && !found.containsKey(pkg)) {
-                    found[pkg] = info.loadLabel(pm).toString()
-                }
-            }
-        }
-        val apps = found.entries.sortedBy { it.value.lowercase() }
-        val names = listOf(getString(R.string.wake_nothing)) + apps.map { it.value }
-        val current = apps.indexOfFirst { it.key == Prefs.wakeApp(this) } + 1
-        chooseOne(getString(R.string.set_wake_app), names, current) {
-            Prefs.setWakeApp(this, if (it == 0) null else apps[it - 1].key)
-            if (it != 0 && !HomeButtonService.isOn(this)) {
-                explainHomeButton(false)
-            }
-            build()
-        }
-    }
-
-    /** TunaHome never switches this on by itself: it explains, and opens the TV's own screen. */
-    private fun explainHomeButton(on: Boolean) {
-        AlertDialog.Builder(this)
-            .setTitle(R.string.set_home_button)
-            .setMessage(if (on) R.string.home_button_how_off else R.string.home_button_how_on)
-            .setPositiveButton(R.string.open_accessibility) { _, _ ->
-                try {
-                    startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
-                } catch (e: Exception) {
-                    HomeActivity.openTvSettings(this)
-                }
-            }
-            .setNegativeButton(R.string.close, null)
-            .show()
-    }
 
     // ------------------------------------------------------------------ updates
 
-    private fun updatesPage() {
-        row(R.string.set_update, getString(R.string.set_update_summary, BuildConfig.VERSION_NAME)) {
-            Updater.check(this, true)
-        }
-        val auto = Prefs.autoUpdateCheck(this)
-        row(
-            R.string.set_auto_update,
-            getString(if (auto) R.string.set_auto_update_on else R.string.set_auto_update_off)
-        ) {
-            Prefs.setAutoUpdateCheck(this, !auto)
-            build()
-        }
-        row(R.string.whats_new, getString(R.string.whats_new_summary, BuildConfig.VERSION_NAME)) {
-            ChangeLog.showCurrent(this)
-        }
-        val problem = CrashLog.read(this)
-        if (problem != null) {
-            row(R.string.set_last_problem, problem.lineSequence().drop(1).firstOrNull() ?: "") {
-                val view = android.widget.ScrollView(this)
-                val text = TextView(this)
-                text.text = problem
-                text.textSize = 11f
-                text.setTextIsSelectable(true)
-                text.setTextColor(themeColor(R.attr.tsText))
-                val pad = Math.round(Look.dp(this, 16f))
-                text.setPadding(pad, pad, pad, pad)
-                view.addView(text)
-                AlertDialog.Builder(this)
-                    .setTitle(R.string.set_last_problem)
-                    .setView(view)
-                    .setPositiveButton(R.string.close, null)
-                    .setNegativeButton(R.string.problem_clear) { _, _ ->
-                        CrashLog.clear(this)
-                        build()
-                    }
-                    .show()
-            }
-        }
-        row(R.string.set_about, getString(R.string.set_about_summary)) {
-            AlertDialog.Builder(this)
-                .setTitle(getString(R.string.version, BuildConfig.VERSION_NAME))
-                .setMessage(R.string.about_body)
-                .setPositiveButton(R.string.close, null)
-                .show()
-        }
-    }
-
     // ------------------------------------------------------------------ picking files
 
-    private fun pick(request: Int, type: String) {
+    internal fun pick(request: Int, type: String) {
         val intent = Intent(Intent.ACTION_GET_CONTENT).setType(type).addCategory(Intent.CATEGORY_OPENABLE)
         try {
             @Suppress("DEPRECATION")
@@ -1801,7 +334,7 @@ class SettingsActivity : BaseActivity() {
     }
 
     /** Runs [work] off the main thread; on success runs [then], otherwise says [failure]. */
-    private fun inBackground(failure: Int, work: (Context) -> Boolean, then: () -> Unit) {
+    internal fun inBackground(failure: Int, work: (Context) -> Boolean, then: () -> Unit) {
         val app = applicationContext
         thread(name = "TunaHome settings") {
             val ok = try {
@@ -1825,7 +358,7 @@ class SettingsActivity : BaseActivity() {
     }
 
     /** Copies a chosen video or picture into TunaHome, showing how far it has got. */
-    private fun copyOwn(uri: Uri) {
+    internal fun copyOwn(uri: Uri) {
         val type = contentResolver.getType(uri) ?: ""
         val isVideo = !type.startsWith("image/")
         val extension = when {
@@ -1874,15 +407,15 @@ class SettingsActivity : BaseActivity() {
         const val EXTRA_PAGE = "page"
         const val EXTRA_SECTION = "section"
         const val EXTRA_FOCUS = "focus"
-        private const val EXTRA_QUERY = "query"
+        internal const val EXTRA_QUERY = "query"
         const val SEARCH = "search"
 
         /** The pages a settings search looks through. */
-        private val SEARCHABLE = listOf(
+        internal val SEARCHABLE = listOf(
             "background", "sections", "colours", "text", "pictures", "top_bar", "sounds", "shortcuts",
             "weather", "apps", "home_button", "layouts", "updates", "fine",
         )
-        private const val STATE_FOCUS = "focus"
+        internal const val STATE_FOCUS = "focus"
 
         const val MAIN = "main"
         const val BACKGROUND = "background"
@@ -1918,12 +451,12 @@ class SettingsActivity : BaseActivity() {
             else -> R.string.settings
         }
 
-        private val DPAD = setOf(KeyEvent.KEYCODE_DPAD_UP, KeyEvent.KEYCODE_DPAD_DOWN,
+        internal val DPAD = setOf(KeyEvent.KEYCODE_DPAD_UP, KeyEvent.KEYCODE_DPAD_DOWN,
             KeyEvent.KEYCODE_DPAD_LEFT, KeyEvent.KEYCODE_DPAD_RIGHT)
-        private const val REQUEST_WALLPAPER = 2
-        private const val REQUEST_FONT = 3
-        private const val REQUEST_OWN_DOCUMENT = 4
-        private const val REQUEST_OWN_COPY = 5
-        private const val REQUEST_LAYOUT = 6
+        internal const val REQUEST_WALLPAPER = 2
+        internal const val REQUEST_FONT = 3
+        internal const val REQUEST_OWN_DOCUMENT = 4
+        internal const val REQUEST_OWN_COPY = 5
+        internal const val REQUEST_LAYOUT = 6
     }
 }
