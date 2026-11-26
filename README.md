@@ -23,6 +23,7 @@ To make the Home button open TunaHome, see [Making the Home button open TunaHome
 - **Side menu:** press Left on the first app of a line. It lists your sections (choose one to jump to it), then search, Quick changes, TunaHome settings, TV settings, network, Bluetooth, the sleep timer, screen saver settings, your saved layouts, installed apps and About this TV. Right or Back closes it. When closed it can show its icons down the left, or nothing.
 - **Controller shoulder buttons:** L1 and R1 jump a section up or down, L2 and R2 to the first or last app of the section. Page Up, Page Down, Home and End do the same on a keyboard.
 - **Shortcut keys:** double, triple or four presses of a button, or two buttons together, can open an app, jump to a section, search, play or pause, mute, put the TV to sleep, set the sleep timer, open Quick changes and more. Shortcuts on Home and Back work everywhere, not just on the home screen (they need the Home button setting).
+- **A pointer for phone apps:** apps made for phones often have buttons the D-pad can't reach. Give *Pointer for phone apps* a shortcut (Back pressed three times, say): the D-pad then moves an arrow over the screen, select taps where it points (hold for a long press), pushing past an edge scrolls, and Back turns it off. It works through the Home button setting, which taps for it; nothing on screen is read.
 - **Open apps:** press Home twice to see the apps you opened lately, most recent first, over whatever is on screen. Select one to switch back to it; hold select (or press Menu) to close it, or close them all. Android doesn't let other apps see what's running, so the list is what came to the front, through the Home button setting. The shortcut can be changed or removed under Shortcut keys.
 - **Search** with the keyboard or your voice, across apps, web links, Watch Next and PC games, with a way to search the rest of the TV.
 - **Voice commands** in voice search: "open Netflix", "watch Stranger Things" (from Watch Next or PC games, or else the TV's own search), "watch The Office on Netflix" (searches inside the app, where the app allows it), "find …", "go to Favourites", "sleep in 30 minutes", "cancel the sleep timer", "next background", "settings". The remote's voice button on the home screen can open these instead of the TV's assistant.
@@ -131,8 +132,9 @@ What the service does:
 - A Home press opens TunaHome.
 - If you turn on **Replace the usual home screen** in TunaHome settings, TunaHome also opens whenever the TV's own home screen appears, such as after Back out of an app or a restart. This is off to begin with.
 - It runs shortcuts set on Home and Back, the sleep timer and the Sleep shortcut, and opens your chosen app when the TV wakes up.
+- While you have the pointer for phone apps on, it moves the arrow with the D-pad and taps where it points.
 
-It only receives key presses and the name of the app that came to the front. It cannot read what is on screen, and it sends nothing anywhere.
+It only receives key presses and the name of the app that came to the front, and taps only for the pointer. It cannot read what is on screen, and it sends nothing anywhere. If the pointer says it can't tap, switch TunaHome off and on once on that accessibility screen so Android lets it.
 
 **While TunaReceive streams a game**, the service stops looking at button presses, so controller input goes straight to the game with no added delay. Home then opens the TV's own home screen (or TunaHome, if "Replace the usual home screen" is on), and shortcuts on Home and Back wait until the stream ends.
 

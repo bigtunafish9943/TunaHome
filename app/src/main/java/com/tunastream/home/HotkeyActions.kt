@@ -36,6 +36,7 @@ object HotkeyActions {
     const val PHONE = "phone_setup"
     const val WHO = "whos_watching"
     const val OPEN_APPS = "open_apps"
+    const val POINTER = "pointer"
 
     /**
      * Opens one page of TunaHome settings (the argument names it). Not offered as a shortcut:
@@ -58,6 +59,7 @@ object HotkeyActions {
         NEXT_BACKGROUND to R.string.act_next_background,
         IDLE to R.string.act_idle,
         OPEN_APPS to R.string.act_open_apps,
+        POINTER to R.string.act_pointer,
         RECENTS to R.string.act_recents,
         NOTIFICATIONS to R.string.act_notifications,
         SCREENSHOT to R.string.act_screenshot,
@@ -73,7 +75,7 @@ object HotkeyActions {
     )
 
     /** Actions that only the Home button service can do. */
-    private val NEEDS_SERVICE = setOf(RECENTS, NOTIFICATIONS, SLEEP, SCREENSHOT, BACK)
+    private val NEEDS_SERVICE = setOf(RECENTS, NOTIFICATIONS, SLEEP, SCREENSHOT, BACK, POINTER)
 
     /** Actions about the home screen itself: from elsewhere, TunaHome opens first. */
     private val ON_HOME_SCREEN = setOf(HOME_TOP, SIDE_MENU, SECTION, NEXT_BACKGROUND, IDLE, SLEEP_TIMER, QUICK, PHONE, WHO)
@@ -114,6 +116,10 @@ object HotkeyActions {
             val service = HomeButtonService.running
             if (service == null) {
                 Toast.makeText(context, R.string.act_needs_service, Toast.LENGTH_LONG).show()
+                return
+            }
+            if (action == POINTER) {
+                service.pointer.toggle()
                 return
             }
             val global = when (action) {

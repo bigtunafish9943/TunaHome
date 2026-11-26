@@ -794,7 +794,7 @@
 
     <!-- What Android shows on its accessibility screen -->
     <string name="home_service_summary">Opens TunaHome when you press Home.</string>
-    <string name="home_service_description">Lets TunaHome open when you press the Home button. It only watches for the Home button and for the TV\'s own home screen appearing. It cannot read what is on screen and sends nothing anywhere. Switch it off to return to the TV\'s usual home screen.</string>
+    <string name="home_service_description">Lets TunaHome open when you press the Home button, runs your shortcuts on Home and Back, and taps for the pointer when you switch it on. It sees button presses and which app is in front, nothing more: it cannot read what is on screen and sends nothing anywhere. Switch it off to return to the TV\'s usual home screen.</string>
 
     <!-- Themes -->
     <string name="theme_deepsea">Deep Sea</string>
@@ -1132,4 +1132,9 @@
     <string name="pt_mode_also">Also: %1$s Hz.</string>
     <string name="pt_mode_hdr">HDR: %1$s.</string>
     <string name="pt_keys">Left and Right: next pattern. Select: hide these notes. Back: leave.</string>
+    <string name="act_pointer">Pointer for phone apps</string>
+    <string name="pointer_on">Pointer on: the D-pad moves it, select taps, hold select for a long press, push past an edge to scroll. Back turns it off.</string>
+    <string name="pointer_off">Pointer off</string>
+    <string name="pointer_no_taps">The pointer can\'t tap yet: switch TunaHome\'s Home button off and on again in the TV\'s accessibility settings.</string>
+    <string name="pointer_needs_android_7">The pointer needs Android 7 or later.</string>
 </resources>

@@ -16,15 +16,20 @@ import android.view.accessibility.AccessibilityEvent
  * is an accessibility service the viewer switches on themselves in the TV's settings; switching
  * it off there is the whole undo. Nothing on the TV is disabled or removed.
  *
- * It does two things and nothing else:
+ * What it does:
  *  - a Home press opens TunaHome instead of the TV's own home screen;
  *  - if the viewer asked for it in Settings, the TV's own home screen appearing (after Back out
- *    of an app, or a restart) opens TunaHome too.
- * It asks Android for key presses and for which app came to the front. It cannot read the screen.
+ *    of an app, or a restart) opens TunaHome too;
+ *  - shortcuts on Home and Back, and the pointer for phone apps when the viewer switches it on.
+ * It asks Android for key presses, for which app came to the front, and to tap for the pointer.
+ * It cannot read the screen.
  */
 class HomeButtonService : AccessibilityService() {
     private var lastReplaced = 0L
     private var filteringKeys = true
+
+    /** The pointer for phone apps (a shortcut switches it on). */
+    internal val pointer by lazy { RemotePointer(this) }
 
     /**
      * While TunaReceive streams a game (or watches one), button presses go straight to it.
@@ -82,6 +87,7 @@ class HomeButtonService : AccessibilityService() {
     }
 
     override fun onDestroy() {
+        pointer.off(false)
         if (running === this) {
             running = null
         }
@@ -107,6 +113,9 @@ class HomeButtonService : AccessibilityService() {
     }
 
     override fun onKeyEvent(event: KeyEvent): Boolean {
+        if (pointer.onKey(event)) {
+            return true
+        }
         if (event.keyCode == KeyEvent.KEYCODE_HOME || event.keyCode == KeyEvent.KEYCODE_BACK) {
             if (hotkeys.onKey(event)) {
                 return true
@@ -138,7 +147,10 @@ class HomeButtonService : AccessibilityService() {
         // For Open apps: what came to the front
         OpenApps.note(this, pkg)
         when {
-            pkg == PcGames.RECEIVER && cls in STREAMING_SCREENS -> setKeyFiltering(false)
+            pkg == PcGames.RECEIVER && cls in STREAMING_SCREENS -> {
+                pointer.off(false)
+                setKeyFiltering(false)
+            }
             // TunaReceive's own pop-ups over the stream leave things as they are
             pkg == PcGames.RECEIVER && !cls.startsWith("com.limelight.") -> {}
             else -> setKeyFiltering(true)

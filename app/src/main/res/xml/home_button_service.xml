@@ -1,10 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Only what the Home button needs: key presses, and which app came to the front.
-     It cannot read what is on screen. -->
+<!-- Key presses and which app came to the front, for the Home button and shortcuts; taps, for
+     the pointer when the viewer switches it on. It cannot read what is on screen. -->
 <accessibility-service xmlns:android="http://schemas.android.com/apk/res/android"
     android:accessibilityEventTypes="typeWindowStateChanged"
     android:accessibilityFeedbackType="feedbackGeneric"
     android:accessibilityFlags="flagRequestFilterKeyEvents"
+    android:canPerformGestures="true"
     android:canRequestFilterKeyEvents="true"
     android:canRetrieveWindowContent="false"
     android:description="@string/home_service_description"
