@@ -45,6 +45,19 @@
   .progress { height: 6px; background: var(--panel2); border-radius: 3px; overflow: hidden; margin-top: 8px; }
   .progress div { height: 100%; width: 0; background: var(--accent); transition: width .2s; }
   .empty { color: var(--soft); font-size: 14px; padding: 6px 0; }
+  .row { flex-wrap: wrap; }
+  .row .name { flex: 1 1 110px; }
+  .tools { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+  .tools select { width: auto; padding: 7px; font-size: 14px; }
+  .grip { touch-action: none; user-select: none; -webkit-user-select: none; cursor: grab; color: var(--soft); font-size: 22px; padding: 4px 6px; line-height: 1; flex: none; }
+  .row.dragging { background: var(--panel2); border-radius: 10px; box-shadow: 0 8px 22px rgba(0,0,0,.45); position: relative; z-index: 2; }
+  .face { width: 52px; height: 52px; border-radius: 50%; flex: none; display: grid; place-items: center; font-weight: 700; font-size: 22px; color: #fff; object-fit: cover; }
+  .swatches { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
+  .swatches button { width: 32px; height: 32px; border-radius: 50%; border: 2px solid transparent; padding: 0; }
+  .swatches button.on { border-color: var(--text); }
+  .choice { display: flex; gap: 8px; margin-top: 8px; }
+  .choice button { flex: 1; }
+  @media (max-width: 420px) { .row img { width: 48px; height: 30px; } }
 </style>
 </head>
 <body>
@@ -90,8 +103,16 @@ function signOut() {
   try { sessionStorage.removeItem("tunahome-token"); } catch (e) {}
   showLogin();
 }
+const iconVersion = {};
 function icon(key) {
-  return el("img", { src: "/icon/" + encodeURIComponent(key) + "?t=" + encodeURIComponent(token), alt: "", loading: "lazy", onerror: e => { e.target.style.visibility = "hidden"; } });
+  return el("img", { src: "/icon/" + encodeURIComponent(key) + "?t=" + encodeURIComponent(token) + (iconVersion[key] ? "&v=" + iconVersion[key] : ""), alt: "", loading: "lazy", onerror: e => { e.target.style.visibility = "hidden"; } });
+}
+// A file picker that opens straight away, for one picture
+function pickPicture(then) {
+  const input = el("input", { type: "file", accept: "image/*", style: "display:none" });
+  input.addEventListener("change", () => { if (input.files && input.files[0]) then(input.files[0]); input.remove(); });
+  document.body.append(input);
+  input.click();
 }
 
 // ---------------------------------------------------------------- signing in
@@ -126,14 +147,14 @@ async function load() {
 }
 
 function render() {
-  const tabs = [["sections", "Sections"], ["apps", "Apps"], ["link", "Add a link"], ["background", "Background"], ["look", "Look"]];
+  const tabs = [["sections", "Sections"], ["apps", "Apps"], ["people", "Who's watching"], ["link", "Add a link"], ["background", "Background"], ["look", "Look"]];
   const nav = el("nav");
-  for (const [id, name] of tabs) nav.append(el("button", { class: tab === id ? "on" : "", text: name, onclick: () => { tab = id; render(); window.scrollTo(0, 0); } }));
+  for (const [id, name] of tabs) nav.append(el("button", { class: tab === id ? "on" : "", text: name, onclick: () => { tab = id; if (id === "people") people = null; render(); window.scrollTo(0, 0); } }));
   const header = el("header", null,
     el("div", { class: "bar" }, el("h1", null, "Tuna", el("span", { text: "Home" }))),
     nav);
   const main = el("main");
-  ({ sections: sectionsTab, apps: appsTab, link: linkTab, background: backgroundTab, look: lookTab })[tab](main);
+  ({ sections: sectionsTab, apps: appsTab, people: peopleTab, link: linkTab, background: backgroundTab, look: lookTab })[tab](main);
   app.replaceChildren(header, main);
 }
 
@@ -163,20 +184,72 @@ function sectionsTab(main) {
       card.append(el("p", { class: "empty", text: "No apps here yet." }));
     } else {
       if (s.sorted) card.append(el("p", { class: "note", text: "Sorted on the TV. Moving an app here puts it in your own order." }));
+      card.append(el("p", { class: "note", text: "Drag ⠿ to put apps in order." }));
+      const box = el("div");
+      const targets = state.sections.filter(t => t.custom && t.id !== s.id);
       s.apps.forEach((a, i) => {
-        const row = el("div", { class: "row" }, icon(a.key), el("div", { class: "name", text: a.label }),
+        const tools = el("div", { class: "tools" },
           el("button", { class: "b", text: "▲", title: "Earlier", onclick: () => { if (i > 0) { [s.apps[i - 1], s.apps[i]] = [s.apps[i], s.apps[i - 1]]; saveOrderSoon(s); render(); } } }),
           el("button", { class: "b", text: "▼", title: "Later", onclick: () => { if (i < s.apps.length - 1) { [s.apps[i + 1], s.apps[i]] = [s.apps[i], s.apps[i + 1]]; saveOrderSoon(s); render(); } } }));
-        if (s.custom) row.append(el("button", { class: "b", text: "✕", title: "Take out", onclick: async () => {
+        if (s.custom && targets.length) {
+          const move = el("select", { title: "Move to another section" }, el("option", { value: "", text: "Move to…" }), ...targets.map(t => el("option", { value: t.id, text: t.name })));
+          move.addEventListener("change", async () => {
+            const to = state.sections.find(t => t.id === move.value); if (!to) return;
+            try {
+              await api("/api/move", { key: a.key, from: s.id, to: to.id });
+              s.apps.splice(s.apps.indexOf(a), 1);
+              if (!to.apps.some(x => x.key === a.key)) to.apps.push(a);
+              toast("Moved to " + to.name); render();
+            } catch (e) { toast("Couldn't move it"); move.value = ""; }
+          });
+          tools.append(move);
+        }
+        if (s.custom) tools.append(el("button", { class: "b", text: "✕", title: "Take out", onclick: async () => {
           if (s.id === "favourites") await api("/api/app", { key: a.key, favourite: false });
           else await api("/api/app", { key: a.key, removeFrom: s.id });
-          s.apps.splice(i, 1); toast("Taken out"); render();
+          s.apps.splice(s.apps.indexOf(a), 1); toast("Taken out"); render();
         } }));
-        card.append(row);
+        const grip = el("span", { class: "grip", text: "⠿", title: "Drag to move" });
+        const row = el("div", { class: "row", "data-key": a.key }, grip, icon(a.key), el("div", { class: "name", text: a.label }), tools);
+        grip.addEventListener("pointerdown", e => drag(e, grip, row, box, s));
+        box.append(row);
       });
+      card.append(box);
     }
     main.append(card);
   }
+}
+
+// Drags a row by its grip; the rest of the list makes room as it goes
+function drag(e, grip, row, box, section) {
+  e.preventDefault();
+  // Listened for on the whole page: moving the row in the list would lose a capture on the grip
+  row.classList.add("dragging");
+  const move = ev => {
+    if (ev.pointerId !== e.pointerId) return;
+    ev.preventDefault();
+    const others = [...box.querySelectorAll(".row[data-key]")].filter(r => r !== row);
+    const before = others.find(o => { const r = o.getBoundingClientRect(); return ev.clientY < r.top + r.height / 2; });
+    if (before) { if (row.nextElementSibling !== before) box.insertBefore(row, before); }
+    else if (others.length && others[others.length - 1].nextElementSibling !== row) others[others.length - 1].after(row);
+    if (ev.clientY < 90) window.scrollBy(0, -16); else if (ev.clientY > innerHeight - 70) window.scrollBy(0, 16);
+  };
+  const end = ev => {
+    if (ev.pointerId !== e.pointerId) return;
+    document.removeEventListener("pointermove", move);
+    document.removeEventListener("pointerup", end);
+    document.removeEventListener("pointercancel", end);
+    row.classList.remove("dragging");
+    const order = [...box.querySelectorAll(".row[data-key]")].map(r => r.dataset.key);
+    if (order.join("\n") !== section.apps.map(a => a.key).join("\n")) {
+      section.apps = order.map(k => section.apps.find(a => a.key === k));
+      saveOrderSoon(section);
+      render();
+    }
+  };
+  document.addEventListener("pointermove", move, { passive: false });
+  document.addEventListener("pointerup", end);
+  document.addEventListener("pointercancel", end);
 }
 
 let filter = "";
@@ -205,17 +278,120 @@ function appsTab(main) {
         await api("/api/app", { key: a.key, name: name.trim() ? name.trim() : null });
         a.label = name.trim() || a.label; toast("Renamed"); drawList();
       } });
-      const row = el("div", { class: "row" }, icon(a.key),
-        el("div", { class: "name" }, a.label, a.hidden ? el("small", { text: "  · hidden" }) : null), star, rename, hide);
+      const picture = el("button", { class: "b" + (a.ownIcon ? " on" : ""), text: "Picture", title: "Your own picture for this app", onclick: () => {
+        if (a.ownIcon && confirm("Go back to the app's own picture?\n\n(Cancel to send a different one.)")) {
+          api("/api/icon/remove", { key: a.key }).then(() => { a.ownIcon = false; iconVersion[a.key] = Date.now(); toast("Its own picture again"); drawList(); })
+            .catch(() => toast("Couldn't change it"));
+          return;
+        }
+        pickPicture(file => {
+          toast("Sending…");
+          upload("/api/icon?key=" + encodeURIComponent(a.key), file, () => {})
+            .then(() => { a.ownIcon = true; iconVersion[a.key] = Date.now(); toast("New picture on the TV"); drawList(); })
+            .catch(() => toast("Couldn't use that picture"));
+        });
+      } });
+      const tools = el("div", { class: "tools" }, star, rename, hide, picture);
       if (own.length) {
-        const add = el("select", { style: "width:auto;padding:7px" }, el("option", { value: "", text: "Add to…" }), ...own.map(s => el("option", { value: s.id, text: s.name })));
+        const add = el("select", null, el("option", { value: "", text: "Add to…" }), ...own.map(s => el("option", { value: s.id, text: s.name })));
         add.addEventListener("change", async () => { if (!add.value) return; await api("/api/app", { key: a.key, addTo: add.value }); toast("Added"); add.value = ""; });
-        row.append(add);
+        tools.append(add);
       }
+      const row = el("div", { class: "row" }, icon(a.key),
+        el("div", { class: "name" }, a.label, a.hidden ? el("small", { text: "  · hidden" }) : null), tools);
       list.append(row);
     }
   }
   drawList();
+}
+
+// ---------------------------------------------------------------- who's watching
+
+let people = null;
+const pins = {};
+function face(p) {
+  if (p.photo) return el("img", { class: "face", alt: "", src: "/photo/" + encodeURIComponent(p.id) + "?t=" + encodeURIComponent(token) + "&v=" + (p.v || 0) });
+  return el("div", { class: "face", style: "background:" + p.colour, text: (p.name.trim()[0] || "?").toUpperCase() });
+}
+// A locked person's changes need their PIN (asked once while this page is open)
+async function withPin(p, action) {
+  if (p.locked && !pins[p.id]) {
+    const pin = prompt(p.name + "'s PIN");
+    if (!pin) return;
+    try { await api("/api/person", { do: "check", id: p.id, pin }); pins[p.id] = pin; }
+    catch (e) { toast(e.message === "pin" ? "That PIN isn't right" : "Couldn't reach the TV"); return; }
+  }
+  try { await action(pins[p.id] || ""); }
+  catch (e) { toast(e.message === "pin" ? "That PIN isn't right" : "Couldn't change it"); }
+}
+async function peopleTab(main) {
+  if (!people) {
+    main.append(el("p", { class: "empty", text: "Loading…" }));
+    try { people = await api("/api/people"); } catch (e) { main.replaceChildren(el("p", { class: "empty", text: "Couldn't reach the TV." })); return; }
+    if (tab === "people") render();
+    return;
+  }
+  const redraw = async () => { people = await api("/api/people"); render(); };
+  main.append(el("p", { class: "note", text: "Each person gets their own TunaHome: sections, favourites, look and background. PINs are set on the TV." }));
+  for (const p of people.people) {
+    const card = el("div", { class: "card" });
+    card.append(el("div", { class: "row" }, face(p),
+      el("div", { class: "name" }, p.name, p.current ? el("small", { text: "  · watching now" }) : null, p.locked ? el("small", { text: "  · 🔒" }) : null)));
+    const tools = el("div", { class: "tools", style: "margin-top:8px" },
+      el("button", { class: "b", text: "Rename", onclick: () => withPin(p, async pin => {
+        const name = prompt("Name", p.name); if (!name || !name.trim()) return;
+        await api("/api/person", { do: "rename", id: p.id, pin, name: name.trim() }); toast("Renamed"); await redraw();
+      }) }),
+      el("button", { class: "b", text: p.photo ? "New photo" : "Add a photo", onclick: () => withPin(p, async pin => {
+        pickPicture(file => {
+          toast("Sending…");
+          upload("/api/person/photo?id=" + encodeURIComponent(p.id) + "&pin=" + encodeURIComponent(pin), file, () => {})
+            .then(async () => { toast("Photo on the TV"); people = await api("/api/people"); people.people.forEach(x => { if (x.id === p.id) x.v = Date.now(); }); render(); })
+            .catch(e => toast(e.message === "pin" ? "That PIN isn't right" : "Couldn't use that photo"));
+        });
+      }) }));
+    if (p.photo) tools.append(el("button", { class: "b", text: "No photo", onclick: () => withPin(p, async pin => {
+      await api("/api/person", { do: "nophoto", id: p.id, pin }); toast("Photo taken off"); await redraw();
+    }) }));
+    if (!p.current) tools.append(el("button", { class: "b", text: "Remove", onclick: () => withPin(p, async pin => {
+      if (!confirm("Remove " + p.name + " and their setup? This can't be undone.")) return;
+      await api("/api/person", { do: "remove", id: p.id, pin }); toast("Removed"); await redraw();
+    }) }));
+    card.append(tools);
+    const swatches = el("div", { class: "swatches" });
+    people.colours.forEach((c, i) => swatches.append(el("button", { class: c.toUpperCase() === p.colour.toUpperCase() ? "on" : "", style: "background:" + c, title: "Colour " + (i + 1),
+      onclick: () => withPin(p, async pin => { await api("/api/person", { do: "colour", id: p.id, pin, value: i }); await redraw(); }) })));
+    if (!p.photo) card.append(swatches);
+    main.append(card);
+  }
+
+  // Someone new
+  const none = people.people.length === 0;
+  const first = el("input", { placeholder: "For example: Dad" });
+  const name = el("input", { placeholder: "For example: Kids" });
+  let copy = true;
+  const copyBtn = el("button", { class: "b on", text: "Copy of this setup" });
+  const freshBtn = el("button", { class: "b", text: "Start fresh" });
+  copyBtn.addEventListener("click", () => { copy = true; copyBtn.className = "b on"; freshBtn.className = "b"; });
+  freshBtn.addEventListener("click", () => { copy = false; freshBtn.className = "b on"; copyBtn.className = "b"; });
+  main.append(el("div", { class: "card" },
+    el("h2", { text: none ? "Start Who's watching" : "Add someone", style: "margin:0 0 4px;font-size:17px" }),
+    none ? el("p", { class: "note", text: "The setup on the TV now becomes the first person's." }) : null,
+    none ? el("label", { text: "Whose is the setup on the TV now?" }) : null, none ? first : null,
+    el("label", { text: none ? "The next person" : "Name" }), name,
+    el("div", { class: "choice" }, copyBtn, freshBtn),
+    el("div", { style: "margin-top:14px" }, el("button", { class: "b primary", text: "Add", onclick: async () => {
+      if (none && !first.value.trim()) { toast("Type the first name"); return; }
+      if (!name.value.trim()) { toast("Type a name"); return; }
+      try { await api("/api/person", { do: "add", first: first.value.trim(), name: name.value.trim(), copy }); toast(name.value.trim() + " added"); await redraw(); }
+      catch (e) { toast("Couldn't add them"); }
+    } }))));
+
+  if (!none) {
+    const ask = el("select", null, ...people.askNames.map((n, i) => { const o = el("option", { value: String(i), text: n }); if (i === people.ask) o.selected = true; return o; }));
+    ask.addEventListener("change", async () => { try { await api("/api/person", { do: "ask", value: parseInt(ask.value, 10) }); people.ask = parseInt(ask.value, 10); toast("Changed"); } catch (e) { toast("Couldn't change it"); } });
+    main.append(el("div", { class: "card" }, el("label", { text: "Ask who's watching", style: "margin-top:0" }), ask));
+  }
 }
 
 function linkTab(main) {
@@ -244,7 +420,7 @@ function backgroundTab(main) {
     for (let i = 0; i < files.length; i++) {
       const f = files[i];
       status.textContent = "Sending " + (i + 1) + " of " + files.length + ": " + f.name;
-      try { await upload(f, p => bar.style.width = Math.round(p * 100) + "%"); }
+      try { await upload("/api/background?type=" + encodeURIComponent(f.type || "application/octet-stream"), f, p => bar.style.width = Math.round(p * 100) + "%"); }
       catch (e) { status.textContent = "Couldn't send " + f.name; return; }
     }
     bar.style.width = "100%";
@@ -257,13 +433,17 @@ function backgroundTab(main) {
     el("div", { style: "margin-top:12px" }, input), progress, status));
 }
 
-function upload(file, onProgress) {
+function upload(address, file, onProgress) {
   return new Promise((resolve, reject) => {
     const x = new XMLHttpRequest();
-    x.open("POST", "/api/background?type=" + encodeURIComponent(file.type || "application/octet-stream"));
+    x.open("POST", address);
     x.setRequestHeader("X-Token", token);
     x.upload.onprogress = e => { if (e.lengthComputable) onProgress(e.loaded / e.total); };
-    x.onload = () => (x.status === 200 ? resolve() : reject(new Error(x.status)));
+    x.onload = () => {
+      if (x.status === 403 && /code/.test(x.responseText)) { signOut(); reject(new Error("code")); return; }
+      let error = null; try { error = JSON.parse(x.responseText).error; } catch (e) {}
+      x.status === 200 ? resolve() : reject(new Error(error || x.status));
+    };
     x.onerror = () => reject(new Error("network"));
     x.send(file);
   });
@@ -284,7 +464,15 @@ function lookTab(main) {
   main.append(card);
 }
 
-if (token) load(); else showLogin();
+// Opened from the QR code on the TV: the code comes with the address
+const fromQr = /[#&]code=(\d{6})/.exec(location.hash);
+if (fromQr) {
+  history.replaceState(null, "", location.pathname);
+  fetch("/api/login", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ code: fromQr[1] }) })
+    .then(r => r.ok ? r.json() : Promise.reject())
+    .then(j => { token = j.token; try { sessionStorage.setItem("tunahome-token", token); } catch (e) {} load(); })
+    .catch(() => showLogin("That code has changed. Type the one on the TV."));
+} else if (token) load(); else showLogin();
 </script>
 </body>
 </html>

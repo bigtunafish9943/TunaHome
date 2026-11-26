@@ -1096,4 +1096,8 @@
     <string name="phone_did_look">The look changed</string>
     <string name="phone_did_picture">A picture arrived for the background</string>
     <string name="phone_did_video">A video arrived for the background</string>
+    <string name="phone_qr">Or point the phone\'s camera here: it opens signed in</string>
+    <string name="phone_did_icon">A new icon for %1$s</string>
+    <string name="phone_did_move">%1$s moved to %2$s</string>
+    <string name="phone_did_person">Who\'s watching changed</string>
 </resources>

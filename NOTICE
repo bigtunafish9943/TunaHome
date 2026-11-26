@@ -21,8 +21,10 @@ Its themes, branding and self-updater follow TunaReceive
 author: the theme names and colours, the fish mark, and the update checks
 were carried over from that project.
 
-Libraries: AndroidX RecyclerView, AndroidX Media3 and the Kotlin
-standard library (all Apache License 2.0).
+Libraries: AndroidX RecyclerView, AndroidX Media3, AndroidX
+ProfileInstaller and the Kotlin standard library (all Apache License
+2.0). ZXing core (https://github.com/zxing/zxing, Apache License 2.0)
+draws the QR code on the phone setup screen.
 
 Icons: the small symbols (settings, TV, download, apps, folder, history,
 search, mic, play, pause, skip, music, star, lock, VPN key, Wi-Fi,

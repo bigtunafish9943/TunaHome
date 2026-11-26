@@ -97,12 +97,32 @@ class WhoActivity : BaseActivity() {
             gravity = Gravity.CENTER
         }
         circle.addView(letter, FrameLayout.LayoutParams(-1, -1))
+        // Their photo, if one was sent from a phone, in place of the letter
+        Profiles.photo(this, person.id)?.let { bitmap ->
+            val round = android.graphics.Bitmap.createBitmap(bitmap.width, bitmap.height, android.graphics.Bitmap.Config.ARGB_8888)
+            android.graphics.Canvas(round).drawOval(0f, 0f, bitmap.width.toFloat(), bitmap.height.toFloat(),
+                android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
+                    shader = android.graphics.BitmapShader(bitmap, android.graphics.Shader.TileMode.CLAMP, android.graphics.Shader.TileMode.CLAMP)
+                })
+            circle.addView(ImageView(this).apply {
+                setImageBitmap(round)
+                scaleType = ImageView.ScaleType.CENTER_CROP
+            }, FrameLayout.LayoutParams(-1, -1))
+            letter.visibility = View.GONE
+        }
         if (person.locked) {
             val lock = ImageView(this).apply {
                 setImageResource(R.drawable.ic_lock)
                 setColorFilter(0xFFFFFFFF.toInt())
+                // Readable on a photo too
+                background = GradientDrawable().apply {
+                    shape = GradientDrawable.OVAL
+                    setColor(0x99000000.toInt())
+                }
+                val p = (3 * dp).toInt()
+                setPadding(p, p, p, p)
             }
-            circle.addView(lock, FrameLayout.LayoutParams((22 * dp).toInt(), (22 * dp).toInt(), Gravity.BOTTOM or Gravity.END).apply {
+            circle.addView(lock, FrameLayout.LayoutParams((28 * dp).toInt(), (28 * dp).toInt(), Gravity.BOTTOM or Gravity.END).apply {
                 rightMargin = (14 * dp).toInt()
                 bottomMargin = (14 * dp).toInt()
             })

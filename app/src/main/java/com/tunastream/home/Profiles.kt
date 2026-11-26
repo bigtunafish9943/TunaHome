@@ -40,6 +40,33 @@ object Profiles {
 
     private fun fileOf(context: Context, id: String) = File(dir(context), "$id.zip")
 
+    private fun photoOf(context: Context, id: String) = File(dir(context), "$id-photo.png")
+
+    fun hasPhoto(context: Context, id: String): Boolean = photoOf(context, id).exists()
+
+    /** Someone's photo, square. Slow-ish: fine on the main thread for a handful of people. */
+    fun photo(context: Context, id: String): android.graphics.Bitmap? =
+        photoOf(context, id).takeIf { it.exists() }?.let { android.graphics.BitmapFactory.decodeFile(it.path) }
+
+    /** A photo for someone's circle, cut to a square from the middle. Slow: off the main thread. */
+    fun savePhoto(context: Context, id: String, uri: android.net.Uri): Boolean {
+        val picture = Pictures.decode(context, uri, PHOTO, PHOTO) ?: return false
+        val side = minOf(picture.width, picture.height)
+        val square = android.graphics.Bitmap.createBitmap(picture, (picture.width - side) / 2, (picture.height - side) / 2, side, side)
+        val sized = android.graphics.Bitmap.createScaledBitmap(square, PHOTO, PHOTO, true)
+        val target = photoOf(context, id)
+        val temp = File(target.path + ".tmp")
+        java.io.FileOutputStream(temp).use { sized.compress(android.graphics.Bitmap.CompressFormat.PNG, 100, it) }
+        target.delete()
+        return temp.renameTo(target)
+    }
+
+    fun removePhoto(context: Context, id: String) {
+        photoOf(context, id).delete()
+    }
+
+    private const val PHOTO = 320
+
     fun all(context: Context): List<Profile> {
         val found = ArrayList<Profile>()
         try {
@@ -132,11 +159,15 @@ object Profiles {
     fun remove(context: Context, id: String) {
         if (id == currentId(context)) return
         fileOf(context, id).delete()
+        photoOf(context, id).delete()
         val left = all(context).filter { it.id != id }
         save(context, left)
         if (left.size <= 1) {
             // Back to a single setup: nothing to choose between
-            left.firstOrNull()?.let { fileOf(context, it.id).delete() }
+            left.firstOrNull()?.let {
+                fileOf(context, it.id).delete()
+                photoOf(context, it.id).delete()
+            }
             save(context, emptyList())
             store(context).edit().remove("current").apply()
         }

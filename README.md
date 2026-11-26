@@ -86,10 +86,11 @@ With [TunaReceive](https://github.com/bigtunafish9943/TunaReceive) on the TV:
 
 ## Set up from your phone
 
-Typing on a TV is slow, so TunaHome can be set up from a phone on the same Wi-Fi. Open **Set up from your phone** (side menu, TunaHome settings, or a shortcut): the TV shows an address and a six-digit code. Open the address on your phone, type the code, and you can:
+Typing on a TV is slow, so TunaHome can be set up from a phone on the same Wi-Fi. Open **Set up from your phone** (side menu, TunaHome settings, or a shortcut): the TV shows an address, a six-digit code and a QR code. Point the phone's camera at the QR code and the page opens already signed in, or open the address and type the code. Then you can:
 
-- put apps in order in any section, show, hide and rename sections;
-- rename, hide or favourite any app and add it to a section of your own;
+- drag apps into order in any section (the arrows still work too), move apps between Favourites and your own sections, and show, hide and rename sections;
+- rename, hide or favourite any app, add it to a section of your own, and send a picture from the phone to use as its card;
+- set up Who's watching: add people, rename them, choose their colour, give each a photo, or remove them (a person with a PIN needs it typed first; PINs themselves are set on the TV);
 - add web links;
 - send pictures and videos from the phone as the background;
 - change the theme, highlight colour, cards, effects and more.
@@ -98,7 +99,7 @@ The changes show on the TV when you close its setup screen. The page only works 
 
 ## Who's watching
 
-Each person can have their own TunaHome: sections, favourites, look, background, app lock and what For you learns. Set it up in TunaHome settings, **Who's watching**: name yourself and the next person, who starts as a copy of your setup or fresh. Anyone can have a PIN, so children can't switch into a grown-up's TunaHome or change it. "Who's watching?" can appear when the TV wakes up or when TunaHome starts, and is always in the side menu.
+Each person can have their own TunaHome: sections, favourites, look, background, app lock and what For you learns. Set it up in TunaHome settings, **Who's watching**: name yourself and the next person, who starts as a copy of your setup or fresh. Anyone can have a PIN, so children can't switch into a grown-up's TunaHome or change it. Each person can have a photo, sent from a phone, in place of the coloured circle. "Who's watching?" can appear when the TV wakes up or when TunaHome starts, and is always in the side menu.
 
 ## Looking after your setup
 
@@ -150,7 +151,9 @@ For You, Recently opened, app use counts and everything else stay on the TV.
 
 ## Building
 
-GitHub Actions builds every push. Pushes to the default branch publish a release `v0.1.<run number>` with the APK attached, signed from the repo secrets `KEYSTORE_BASE64`, `KEYSTORE_PASSWORD`, `KEY_ALIAS` and `KEY_PASSWORD`. Without those secrets the build still runs, but the APK is signed with a throwaway key and no release is published. Before a release goes out, each build is run on an Android TV emulator: it goes through the main screens with remote button presses, takes a screenshot of each (kept with the build for 30 days), and stops the release if TunaHome stopped with an error or stopped answering. Release notes are made from the commit messages since the last release.
+GitHub Actions builds every push. Pushes to the default branch publish a release `v0.1.<run number>` with the APK attached, signed from the repo secrets `KEYSTORE_BASE64`, `KEYSTORE_PASSWORD`, `KEY_ALIAS` and `KEY_PASSWORD`. Without those secrets the build still runs, but the APK is signed with a throwaway key and no release is published. Before a release goes out, each build is run on an Android TV emulator: it goes through the main screens with remote button presses, takes a screenshot of each (kept with the build for 30 days), and stops the release if TunaHome stopped with an error or stopped answering. It also tries the snow, leaves, rain and storm effects, sets up Who's watching and switches person, checks that the phone setup page answers, and measures how quickly TunaHome starts from nothing. The screenshots are attached to each release.
+
+TunaHome comes with a start-up profile (`app/src/main/baseline-prof.txt`), so Android compiles its code ahead of time when it's installed and the home screen comes up sooner after a restart. It's written by hand to cover all of TunaHome's own code, rather than recorded on a device. Release notes are made from the commit messages since the last release.
 
 To build it yourself you need Java 17 and the Android SDK (platform 36):
 
@@ -164,7 +167,8 @@ TunaHome is written from scratch; it is not based on another launcher. It builds
 
 - [TunaReceive](https://github.com/bigtunafish9943/TunaReceive) (GPL-3.0, same author): the themes, the fish mark and the self-updater follow it.
 - [Projectivy Launcher's wallpaper plugin interface](https://github.com/spocky/projectivy-plugin-wallpaper-provider) (Apache 2.0), copied unchanged into `projectivyapi/`, so wallpaper apps such as Aerial Views can show their videos behind TunaHome.
-- AndroidX RecyclerView, AndroidX Media3 and the Kotlin standard library (Apache 2.0).
+- AndroidX RecyclerView, AndroidX Media3, AndroidX ProfileInstaller and the Kotlin standard library (Apache 2.0).
+- [ZXing](https://github.com/zxing/zxing) core (Apache 2.0), to draw the QR code on the phone setup screen.
 - [Google Fonts](https://github.com/google/fonts) (SIL Open Font License 1.1), trimmed to Latin characters; each font's licence is beside it in `app/src/main/assets/fonts/licences`.
 - Google's [Material icons and Material Symbols](https://github.com/google/material-design-icons) (Apache 2.0) for the small symbols; the weather icons are drawn from Material shapes.
 - Data and pictures from [Open-Meteo](https://open-meteo.com) (CC BY 4.0), Bing, Wikipedia and NASA, shown with their names.

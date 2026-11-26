@@ -1,0 +1,5 @@
+# Start-up profile: tells Android to compile TunaHome's own code ahead of time when it's
+# installed, instead of interpreting it on the first starts. Written by hand to cover all of
+# TunaHome's code (recording one needs a test device we can't run in the build).
+HSPLcom/tunastream/home/**->**(**)**
+Lcom/tunastream/home/**;

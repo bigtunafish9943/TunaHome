@@ -22,7 +22,7 @@ fun Activity.askForText(title: Int, start: String, url: Boolean = false, done: (
     val frame = FrameLayout(this)
     frame.setPadding(pad, pad / 2, pad, 0)
     frame.addView(box)
-    AlertDialog.Builder(this)
+    val dialog = AlertDialog.Builder(this)
         .setTitle(title)
         .setView(frame)
         .setPositiveButton(R.string.done) { _, _ ->
@@ -33,6 +33,17 @@ fun Activity.askForText(title: Int, start: String, url: Boolean = false, done: (
         }
         .setNegativeButton(R.string.cancel, null)
         .show()
+    // The keyboard's Done (or Enter) accepts it, as the Done button does
+    box.imeOptions = android.view.inputmethod.EditorInfo.IME_ACTION_DONE
+    box.setOnEditorActionListener { _, action, event ->
+        val enter = event?.keyCode == android.view.KeyEvent.KEYCODE_ENTER && event.action == android.view.KeyEvent.ACTION_DOWN
+        if (action == android.view.inputmethod.EditorInfo.IME_ACTION_DONE || enter) {
+            dialog.getButton(AlertDialog.BUTTON_POSITIVE)?.performClick()
+            true
+        } else {
+            false
+        }
+    }
     box.requestFocus()
 }
 

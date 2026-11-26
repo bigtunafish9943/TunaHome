@@ -34,6 +34,7 @@ object HotkeyActions {
     const val SLEEP_TIMER = "sleep_timer"
     const val QUICK = "quick_changes"
     const val PHONE = "phone_setup"
+    const val WHO = "whos_watching"
 
     /**
      * Opens one page of TunaHome settings (the argument names it). Not offered as a shortcut:
@@ -63,6 +64,7 @@ object HotkeyActions {
         BACK to R.string.act_back,
         QUICK to R.string.quick_title,
         PHONE to R.string.phone_title,
+        WHO to R.string.page_profiles,
         SETTINGS to R.string.act_settings,
         TV_SETTINGS to R.string.act_tv_settings,
         UPDATES to R.string.act_updates,
@@ -72,7 +74,7 @@ object HotkeyActions {
     private val NEEDS_SERVICE = setOf(RECENTS, NOTIFICATIONS, SLEEP, SCREENSHOT, BACK)
 
     /** Actions about the home screen itself: from elsewhere, TunaHome opens first. */
-    private val ON_HOME_SCREEN = setOf(HOME_TOP, SIDE_MENU, SECTION, NEXT_BACKGROUND, IDLE, SLEEP_TIMER, QUICK, PHONE)
+    private val ON_HOME_SCREEN = setOf(HOME_TOP, SIDE_MENU, SECTION, NEXT_BACKGROUND, IDLE, SLEEP_TIMER, QUICK, PHONE, WHO)
 
     const val EXTRA_ACTION = "hotkey_action"
     const val EXTRA_ARG = "hotkey_arg"
@@ -126,7 +128,7 @@ object HotkeyActions {
             return
         }
         when (action) {
-            HOME_TOP, SIDE_MENU, SECTION, NEXT_BACKGROUND, IDLE, SLEEP_TIMER, QUICK, PHONE -> home?.hotkey(action, arg)
+            HOME_TOP, SIDE_MENU, SECTION, NEXT_BACKGROUND, IDLE, SLEEP_TIMER, QUICK, PHONE, WHO -> home?.hotkey(action, arg)
             SEARCH, VOICE -> context.startActivity(Intent(context, SearchActivity::class.java)
                 .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                 .putExtra(SearchActivity.EXTRA_VOICE, action == VOICE))

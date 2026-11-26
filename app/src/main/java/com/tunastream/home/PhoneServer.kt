@@ -38,6 +38,8 @@ class PhoneServer(private val context: Context, private val said: (String) -> Un
     private val tokens = java.util.Collections.synchronizedSet(HashSet<String>())
     private var server: ServerSocket? = null
     private var wrong = 0
+    /** Wrong PINs for someone's profile: after five, no more tries until the screen opens again. */
+    private var wrongPins = 0
     private val icons = java.util.concurrent.ConcurrentHashMap<String, ByteArray>()
 
     private fun newCode() = (100000 + SecureRandom().nextInt(900000)).toString()
@@ -145,6 +147,12 @@ class PhoneServer(private val context: Context, private val said: (String) -> Un
             r.method == "GET" && (r.path == "/" || r.path == "/index.html") ->
                 send(out, 200, "text/html; charset=utf-8", context.assets.open("phone/index.html").use { it.readBytes() })
             r.method == "POST" && r.path == "/api/login" -> login(r, out)
+            r.path.startsWith("/photo/") -> {
+                if ((r.query["t"] ?: "") !in tokens) return send(out, 403, "text/plain", "no".toByteArray())
+                val file = java.io.File(java.io.File(context.filesDir, "profiles"), r.path.removePrefix("/photo/").filter { it.isLetterOrDigit() } + "-photo.png")
+                if (!file.exists()) send(out, 404, "text/plain", "none".toByteArray())
+                else send(out, 200, "image/png", file.readBytes())
+            }
             r.path.startsWith("/icon/") -> {
                 if ((r.query["t"] ?: "") !in tokens) return send(out, 403, "text/plain", "no".toByteArray())
                 val png = icon(r.path.removePrefix("/icon/"))
@@ -207,6 +215,18 @@ class PhoneServer(private val context: Context, private val said: (String) -> Un
         "/api/link" -> link(r.json())
         "/api/look" -> look(r.json())
         "/api/background" -> background(r)
+        "/api/move" -> move(r.json())
+        "/api/icon" -> ownIcon(r)
+        "/api/icon/remove" -> r.json().getString("key").let { key ->
+            Pictures.removeTile(context, key)
+            icons.remove(key)
+            Apps.forget()
+            done(context.getString(R.string.phone_did_icon, label(key)))
+            JSONObject().put("ok", true)
+        }
+        "/api/people" -> people()
+        "/api/person" -> person(r.json())
+        "/api/person/photo" -> personPhoto(r)
         else -> JSONObject().put("error", "unknown")
     }
 
@@ -262,7 +282,7 @@ class PhoneServer(private val context: Context, private val said: (String) -> Un
         val everyApp = JSONArray()
         all.sortedBy { it.label.lowercase() }.forEach {
             everyApp.put(entry(it.pkg, it.label).put("hidden", it.pkg in hidden).put("renamed", names.containsKey(it.pkg))
-                .put("favourite", it.pkg in favourites).put("link", it.isLink))
+                .put("favourite", it.pkg in favourites).put("link", it.isLink).put("ownIcon", Pictures.hasTile(context, it.pkg)))
         }
 
         val looks = JSONArray()
@@ -405,6 +425,136 @@ class PhoneServer(private val context: Context, private val said: (String) -> Un
         return JSONObject().put("ok", true)
     }
 
+    private fun label(key: String) = apps().firstOrNull { it.pkg == key }?.label ?: key
+
+    /** Moves an app from one of the viewer's own sections (or Favourites) to another. */
+    private fun move(j: JSONObject): JSONObject {
+        val key = j.getString("key")
+        val rows = Rows.load(context)
+        val from = rows.firstOrNull { it.id == j.optString("from") }
+        val to = rows.firstOrNull { it.id == j.getString("to") } ?: return JSONObject().put("error", "section")
+        if (from?.id == to.id) return JSONObject().put("ok", true)
+        when {
+            from == null -> {}
+            from.kind == Rows.FAVOURITES -> Prefs.setFavourites(context, Prefs.favourites(context).apply { remove(key) })
+            from.custom -> Rows.update(context, from.id, restyle = false) { it.apps.remove(key) }
+        }
+        when {
+            to.kind == Rows.FAVOURITES -> Prefs.setFavourites(context, Prefs.favourites(context).apply { if (key !in this) add(key) })
+            to.custom -> Rows.update(context, to.id, restyle = false) { if (key !in it.apps) it.apps.add(key) }
+            else -> return JSONObject().put("error", "section")
+        }
+        done(context.getString(R.string.phone_did_move, label(key), to.name(context)))
+        return JSONObject().put("ok", true)
+    }
+
+    /** Reads an upload into a file of its own, no bigger than [max]. Null if it didn't all arrive. */
+    private fun receive(r: Request, max: Long, into: java.io.File): Boolean {
+        if (r.length <= 0 || r.length > max) return false
+        var left = r.length
+        FileOutputStream(into).use { out ->
+            val buf = ByteArray(64 * 1024)
+            while (left > 0) {
+                val n = r.input.read(buf, 0, minOf(buf.size.toLong(), left).toInt())
+                if (n < 0) break
+                out.write(buf, 0, n)
+                left -= n
+            }
+        }
+        return left == 0L
+    }
+
+    /** A picture from the phone for one app's card. */
+    private fun ownIcon(r: Request): JSONObject {
+        val key = r.query["key"] ?: return JSONObject().put("error", "key")
+        if (apps().none { it.pkg == key }) return JSONObject().put("error", "app")
+        val temp = java.io.File(context.cacheDir, "phone-icon.tmp")
+        try {
+            if (!receive(r, MAX_PICTURE, temp)) return JSONObject().put("error", "size")
+            if (!Pictures.saveTile(context, key, Uri.fromFile(temp))) return JSONObject().put("error", "picture")
+        } finally {
+            temp.delete()
+        }
+        icons.remove(key)
+        Apps.forget()
+        done(context.getString(R.string.phone_did_icon, label(key)))
+        return JSONObject().put("ok", true)
+    }
+
+    // ------------------------------------------------------------------ who's watching
+
+    private fun people(): JSONObject {
+        val list = JSONArray()
+        val currentId = Profiles.currentId(context)
+        Profiles.all(context).forEach {
+            list.put(JSONObject().put("id", it.id).put("name", it.name).put("colour", String.format("#%06X", it.colour and 0xFFFFFF))
+                .put("locked", it.locked).put("current", it.id == currentId).put("photo", Profiles.hasPhoto(context, it.id)))
+        }
+        val colours = JSONArray()
+        Profiles.COLOURS.forEach { colours.put(String.format("#%06X", it and 0xFFFFFF)) }
+        return JSONObject().put("people", list).put("colours", colours)
+            .put("ask", Profiles.ask(context))
+            .put("askNames", JSONArray(Profiles.ASK_NAMES.map { context.getString(it) }))
+    }
+
+    /** Someone's own changes need their PIN, if they have one (wrong guesses run out). */
+    private fun unlocked(id: String, pin: String?): Profiles.Profile? {
+        val person = Profiles.all(context).firstOrNull { it.id == id } ?: return null
+        if (!person.locked) return person
+        synchronized(this) {
+            if (wrongPins >= 5 || pin.isNullOrEmpty()) return null
+            if (Profiles.pinMatches(person, pin)) return person
+            wrongPins++
+        }
+        return null
+    }
+
+    private fun person(j: JSONObject): JSONObject {
+        val name = j.optString("name").trim()
+        when (j.getString("do")) {
+            "add" -> {
+                if (name.isEmpty()) return JSONObject().put("error", "name")
+                if (Profiles.all(context).isEmpty()) {
+                    val first = j.optString("first").trim()
+                    if (first.isEmpty()) return JSONObject().put("error", "first")
+                    Profiles.begin(context, first)
+                }
+                Profiles.add(context, name, copy = j.optBoolean("copy", true))
+            }
+            "ask" -> Profiles.setAsk(context, j.getInt("value").coerceIn(0, Profiles.ASK_NAMES.size - 1))
+            else -> {
+                val id = j.getString("id")
+                val person = unlocked(id, j.optString("pin")) ?: return JSONObject().put("error", "pin")
+                when (j.getString("do")) {
+                    "rename" -> if (name.isNotEmpty()) Profiles.rename(context, person.id, name)
+                    "colour" -> Profiles.COLOURS.getOrNull(j.getInt("value"))?.let { Profiles.setColour(context, person.id, it) }
+                    "nophoto" -> Profiles.removePhoto(context, person.id)
+                    "remove" -> {
+                        if (person.id == Profiles.currentId(context)) return JSONObject().put("error", "current")
+                        Profiles.remove(context, person.id)
+                    }
+                    "check" -> {}
+                    else -> return JSONObject().put("error", "unknown")
+                }
+            }
+        }
+        done(context.getString(R.string.phone_did_person))
+        return JSONObject().put("ok", true)
+    }
+
+    private fun personPhoto(r: Request): JSONObject {
+        val person = unlocked(r.query["id"] ?: "", r.query["pin"]) ?: return JSONObject().put("error", "pin")
+        val temp = java.io.File(context.cacheDir, "phone-photo.tmp")
+        try {
+            if (!receive(r, MAX_PICTURE, temp)) return JSONObject().put("error", "size")
+            if (!Profiles.savePhoto(context, person.id, Uri.fromFile(temp))) return JSONObject().put("error", "picture")
+        } finally {
+            temp.delete()
+        }
+        done(context.getString(R.string.phone_did_person))
+        return JSONObject().put("ok", true)
+    }
+
     private fun done(what: String) {
         changed = true
         Prefs.appsChanged = true
@@ -434,6 +584,7 @@ class PhoneServer(private val context: Context, private val said: (String) -> Un
         private val PORTS = 8686..8696
         private const val MAX_JSON = 256 * 1024
         private const val MAX_UPLOAD = 600L * 1024 * 1024
+        private const val MAX_PICTURE = 30L * 1024 * 1024
 
         /** The looks the phone page offers, by name. */
         private val LOOKS: Map<String, Pair<Int, Look.Choice>> by lazy {

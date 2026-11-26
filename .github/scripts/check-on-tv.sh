@@ -119,6 +119,26 @@ sleep 4
 key KEYCODE_BACK
 shot 17-leaves 3
 
+# Rain, then a storm: the list opens on Leaves, rain is two above it and storm one below rain
+home quick_changes
+sleep 2
+for i in $(seq 13); do adb shell input keyevent KEYCODE_DPAD_DOWN; done
+key KEYCODE_DPAD_CENTER
+sleep 1
+key KEYCODE_DPAD_UP KEYCODE_DPAD_UP KEYCODE_DPAD_CENTER
+sleep 4
+key KEYCODE_BACK
+shot 17b-rain 3
+home quick_changes
+sleep 2
+for i in $(seq 13); do adb shell input keyevent KEYCODE_DPAD_DOWN; done
+key KEYCODE_DPAD_CENTER
+sleep 1
+key KEYCODE_DPAD_DOWN KEYCODE_DPAD_CENTER
+sleep 4
+key KEYCODE_BACK
+shot 17c-storm 3
+
 # Set up from your phone: the TV screen, and its web page answering
 home phone_setup
 shot 18-phone-setup 4
@@ -132,6 +152,47 @@ if [ "$page" != "200" ] || [ "$denied" != "403" ]; then
   phone_ok=0
 fi
 key KEYCODE_BACK
+
+# Who's watching: start it with "Sam" (this setup) and add "Kids" as a copy, then switch to Kids
+home settings_page profiles
+sleep 3
+key KEYCODE_DPAD_CENTER
+sleep 2
+adb shell input text Sam
+key KEYCODE_ENTER
+sleep 2
+adb shell input text Kids
+key KEYCODE_ENTER
+sleep 2
+key KEYCODE_DPAD_CENTER
+shot 20-people 5
+key KEYCODE_BACK
+home whos_watching
+shot 21-whos-watching 4
+# The chooser only stays open when there are two people or more
+switched=1
+if ! adb shell dumpsys activity activities | grep -q "WhoActivity"; then
+  echo "Who's watching wasn't set up as expected"
+  switched=0
+fi
+key KEYCODE_DPAD_RIGHT KEYCODE_DPAD_CENTER
+# TunaHome starts again in Kids' setup
+sleep 10
+adb shell am start -n "$PKG/.HomeActivity" > /dev/null
+shot 22-as-kids 6
+
+# How quickly TunaHome starts from nothing, before and after the start-up profile is used
+start_time() {
+  adb shell am force-stop $PKG
+  sleep 2
+  adb shell am start -W -n "$PKG/.HomeActivity" | tr -d '\r' | awk -F': ' '/TotalTime/ {print $2}'
+}
+before=$(start_time); sleep 3; before2=$(start_time)
+adb shell cmd package compile -m speed-profile -f $PKG > /dev/null 2>&1 || true
+sleep 3
+after=$(start_time); sleep 3; after2=$(start_time)
+echo "Cold start: ${before}ms, ${before2}ms without the profile; ${after}ms, ${after2}ms with it"
+sleep 3
 
 # The screen saver, as the TV would start it
 adb shell settings put secure screensaver_components "$PKG/.Screensaver" || true
@@ -158,6 +219,9 @@ fi
 if [ "$phone_ok" = 0 ]; then
   problems=1
 fi
+if [ "$switched" = 0 ]; then
+  problems=1
+fi
 if [ -z "$(adb shell pidof $PKG | tr -d '\r')" ]; then
   echo "TunaHome isn't running at the end of the check"
   problems=1
@@ -166,6 +230,8 @@ fi
 if [ -n "${GITHUB_STEP_SUMMARY:-}" ]; then
   if [ "$problems" = 0 ]; then
     echo "TunaHome ran on an Android TV emulator through every main screen without a problem." >> "$GITHUB_STEP_SUMMARY"
+    echo "" >> "$GITHUB_STEP_SUMMARY"
+    echo "Start from nothing: ${before}ms and ${before2}ms before the start-up profile, ${after}ms and ${after2}ms after." >> "$GITHUB_STEP_SUMMARY"
   else
     echo "TunaHome had a problem on the Android TV emulator: see this job's log and the tv-check files." >> "$GITHUB_STEP_SUMMARY"
   fi

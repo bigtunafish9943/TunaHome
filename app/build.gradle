@@ -72,5 +72,9 @@ dependencies {
     implementation 'androidx.media3:media3-exoplayer:1.8.0'
     implementation 'androidx.media3:media3-exoplayer-hls:1.8.0'
     implementation 'androidx.media3:media3-exoplayer-dash:1.8.0'
+    // The QR code on "Set up from your phone"
+    implementation 'com.google.zxing:core:3.5.3'
+    // Installs the start-up profile on the TV, so TunaHome's code is compiled ahead of time
+    implementation 'androidx.profileinstaller:profileinstaller:1.4.1'
     implementation 'androidx.media3:media3-ui:1.8.0'
 }
