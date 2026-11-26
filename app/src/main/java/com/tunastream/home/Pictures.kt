@@ -227,6 +227,13 @@ object Pictures {
      * Copies a chosen video into TunaHome, for TVs whose file chooser can't give lasting access.
      * Returns its address, or null. Slow: call from a background thread.
      */
+    /** A new file for a background sent from elsewhere (the phone setup page). */
+    fun newBackgroundFile(context: Context, extension: String): File {
+        val dir = videoDir(context)
+        dir.mkdirs()
+        return File(dir, "background-" + System.currentTimeMillis() + "." + extension)
+    }
+
     fun copyVideo(context: Context, uri: Uri, extension: String, progress: (Long) -> Unit): String? {
         val dir = videoDir(context)
         dir.mkdirs()

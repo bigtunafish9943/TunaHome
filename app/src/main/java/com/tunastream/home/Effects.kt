@@ -183,8 +183,8 @@ class EffectsView @JvmOverloads constructor(
                 r(2f, 3.5f) * dp, r(0f, 6.28f), 0f, r(1.5f, 3f), Color.rgb(220, 255, 120))
             Effects.Kind.STARS -> Bit(r(0f, w), r(0f, 0.65f * h), 0f, 0f, r(0.8f, 2.2f) * dp, r(0f, 6.28f), 0f, r(0.6f, 2f),
                 Color.WHITE)
-            Effects.Kind.FOG -> Bit(if (anywhere) r(0f, w) else -300 * dp, r(0.2f * h, h), r(8f, 20f) * dp, 0f,
-                r(220f, 420f) * dp, 0f, 0f, 0f, Color.WHITE)
+            Effects.Kind.FOG -> Bit(if (anywhere) r(0f, w) else -300 * dp, r(0.35f * h, 1.05f * h), r(10f, 24f) * dp, 0f,
+                r(180f, 340f) * dp, 0f, 0f, 0f, Color.WHITE)
             Effects.Kind.NONE -> Bit(0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f, 0)
         }
     }
@@ -269,7 +269,8 @@ class EffectsView @JvmOverloads constructor(
                 Effects.Kind.FOG -> {
                     b.x += b.vx * dt
                     paint.style = Paint.Style.FILL
-                    paint.shader = RadialGradient(b.x, b.y, b.size, Color.argb(26, 255, 255, 255),
+                    // Faint, low wisps: the screen stays clear above them
+                    paint.shader = RadialGradient(b.x, b.y, b.size, Color.argb(13, 255, 255, 255),
                         Color.TRANSPARENT, Shader.TileMode.CLAMP)
                     canvas.drawCircle(b.x, b.y, b.size, paint)
                     paint.shader = null

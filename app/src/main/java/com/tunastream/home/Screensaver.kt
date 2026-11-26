@@ -140,7 +140,11 @@ class Screensaver : DreamService() {
             // The same distance from the edges in every corner, inside the TV's safe area
             val side = Math.round(48 * resources.displayMetrics.density)
             val top = Math.round(40 * resources.displayMetrics.density)
-            params.setMargins(side, top, side, top)
+            // Start and end (not left and right): Android lets these win over left and right
+            params.marginStart = side
+            params.marginEnd = side
+            params.topMargin = top
+            params.bottomMargin = top
             params.gravity = when (corner) {
                 0 -> Gravity.BOTTOM or Gravity.END
                 1 -> Gravity.TOP or Gravity.END

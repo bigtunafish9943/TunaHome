@@ -24,6 +24,7 @@ To make the Home button open TunaHome, see [Making the Home button open TunaHome
 - **Controller shoulder buttons:** L1 and R1 jump a section up or down, L2 and R2 to the first or last app of the section. Page Up, Page Down, Home and End do the same on a keyboard.
 - **Shortcut keys:** double, triple or four presses of a button, or two buttons together, can open an app, jump to a section, search, play or pause, mute, put the TV to sleep, set the sleep timer, open Quick changes and more. Shortcuts on Home and Back work everywhere, not just on the home screen (they need the Home button setting).
 - **Search** with the keyboard or your voice, across apps, web links, Watch Next and PC games, with a way to search the rest of the TV.
+- **Voice commands** in voice search: "open Netflix", "watch Stranger Things" (from Watch Next or PC games, or else the TV's own search), "watch The Office on Netflix" (searches inside the app, where the app allows it), "find …", "go to Favourites", "sleep in 30 minutes", "cancel the sleep timer", "next background", "settings". The remote's voice button on the home screen can open these instead of the TV's assistant.
 - **Top of the screen:** the TunaHome name and logo, the clock (as numbers, with hands, or both), the date, the weather, free storage and memory, network and VPN icons, and buttons for search, updates, TV settings and TunaHome settings. Each can be shown or hidden.
 - **Idle mode:** after a few minutes with no button pressed, everything but the background (and the clock, if you like) fades away. Any button brings it back.
 - **Sleep timer:** the TV goes to sleep after 15 minutes to 3 hours, with a warning a minute before; the time left shows beside the clock. Needs the Home button setting.
@@ -35,7 +36,7 @@ Favourites, TV apps and Mobile apps are there to begin with. These can be switch
 
 - **For you:** the apps you usually open at this time of day, learnt as you use TunaHome.
 - **Recently opened**, newest first.
-- **Watch Next:** what you were watching, with how far through you are, refreshed every few minutes.
+- **Watch Next:** what you were watching, with how far through you are, refreshed every few minutes. Rest on a show and its **preview** plays silently behind the apps, where its app gives one.
 - **PC games** from TunaReceive (see [With TunaReceive](#with-tunareceive)).
 - **Now playing:** what's playing, with its picture and controls. Needs notification access (TunaHome settings explains how); TunaHome uses it only to see what's playing, and doesn't read or keep notifications.
 - **Sideloaded apps:** apps that didn't come from the Play Store.
@@ -67,6 +68,10 @@ Choosing a file needs an app on the TV that can browse files, such as a file man
 - The background can **follow the app you're on** (its TV picture fades in, sharp or blurred) and **drift** a little as you scroll.
 - Videos are silent and stop as soon as you open an app.
 
+### Moving effects
+
+Snow, rain, a storm with lightning, autumn leaves, bats, fireflies, stars (with the odd shooting star) or fog, drifting behind your apps. They can **follow the weather** outside (rain when it's raining, stars on a clear night), **follow the season** (snow in the Winter theme, leaves in Autumn, bats at Halloween, fireflies in Summer), either of those, or stay as you choose. How many is adjustable, and they can show on the screen saver too. Off to begin with.
+
 ### Icon packs
 
 Icon packs made for phone launchers work, including those already on the TV. TunaHome can also download free, open-source packs from [F-Droid](https://f-droid.org) and [IzzyOnDroid](https://apt.izzysoft.de/fdroid/) and install them for you (Android asks you to confirm). Apps a pack doesn't cover can keep their own icon, be framed to match, or be drawn as white or highlight-coloured line art.
@@ -78,6 +83,22 @@ With [TunaReceive](https://github.com/bigtunafish9943/TunaReceive) on the TV:
 - **PC games** shows your PC's games with box art, most recently played first; select one to start it. Games hidden in TunaReceive stay hidden, and locking TunaReceive in TunaHome's app lock locks its games too. Open TunaReceive once so it lists a PC's games. Needs a TunaReceive that shares its games list; without TunaReceive the section simply doesn't show.
 - **While a game streams**, TunaHome stops looking at button presses, so controller input goes straight to the game with no added delay (see below).
 - TunaReceive can be the app that **opens when the TV wakes up**.
+
+## Set up from your phone
+
+Typing on a TV is slow, so TunaHome can be set up from a phone on the same Wi-Fi. Open **Set up from your phone** (side menu, TunaHome settings, or a shortcut): the TV shows an address and a six-digit code. Open the address on your phone, type the code, and you can:
+
+- put apps in order in any section, show, hide and rename sections;
+- rename, hide or favourite any app and add it to a section of your own;
+- add web links;
+- send pictures and videos from the phone as the background;
+- change the theme, highlight colour, cards, effects and more.
+
+The changes show on the TV when you close its setup screen. The page only works while that screen is open, only from your home network, and only after the code is typed; five wrong codes make a new one.
+
+## Who's watching
+
+Each person can have their own TunaHome: sections, favourites, look, background, app lock and what For you learns. Set it up in TunaHome settings, **Who's watching**: name yourself and the next person, who starts as a copy of your setup or fresh. Anyone can have a PIN, so children can't switch into a grown-up's TunaHome or change it. "Who's watching?" can appear when the TV wakes up or when TunaHome starts, and is always in the side menu.
 
 ## Looking after your setup
 
@@ -122,6 +143,8 @@ Nothing about you or your TV is collected. TunaHome only connects to:
 - **Bing, Wikipedia or NASA**, for the picture of the day, if you chose that background.
 - **F-Droid or IzzyOnDroid**, when you download an icon pack.
 - Web addresses you give it yourself, for pictures, videos and icons.
+
+**Set up from your phone** runs a small web page on the TV only while its screen is open, answering only on your home network and only after the code on the TV is typed.
 
 For You, Recently opened, app use counts and everything else stay on the TV.
 

@@ -1079,4 +1079,21 @@
         <item quantity="one">%1$d person</item>
         <item quantity="other">%1$d people</item>
     </plurals>
+    <string name="phone_title">Set up from your phone</string>
+    <string name="phone_summary">Arrange apps, rename, add links, send backgrounds and change the look from a phone on the same Wi-Fi</string>
+    <string name="phone_step_wifi">1.  Connect your phone to the same Wi-Fi as this TV.</string>
+    <string name="phone_step_open">2.  On the phone, open this address:</string>
+    <string name="phone_step_code">3.  Type this code:</string>
+    <string name="phone_back">Back closes this when you\'re done. The home screen then shows your changes.</string>
+    <string name="phone_failed">Couldn\'t start: try again in a moment</string>
+    <string name="phone_no_network">This TV isn\'t on a network</string>
+    <string name="phone_connected">A phone connected</string>
+    <string name="phone_new_code">Too many wrong codes: there\'s a new one</string>
+    <string name="phone_did_order">New order for %1$s</string>
+    <string name="phone_did_section">A section changed</string>
+    <string name="phone_did_app">An app changed</string>
+    <string name="phone_did_link">Link added: %1$s</string>
+    <string name="phone_did_look">The look changed</string>
+    <string name="phone_did_picture">A picture arrived for the background</string>
+    <string name="phone_did_video">A video arrived for the background</string>
 </resources>

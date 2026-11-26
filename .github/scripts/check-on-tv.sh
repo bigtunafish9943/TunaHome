@@ -107,22 +107,36 @@ key KEYCODE_DPAD_CENTER
 sleep 4
 key KEYCODE_BACK
 shot 16-snow 3
-# Then autumn leaves (the 8th choice)
+# Then autumn leaves: the list opens on the current choice (Snow), three above leaves
 home quick_changes
 sleep 2
 for i in $(seq 13); do adb shell input keyevent KEYCODE_DPAD_DOWN; done
 key KEYCODE_DPAD_CENTER
 sleep 1
-for i in $(seq 7); do adb shell input keyevent KEYCODE_DPAD_DOWN; done
+for i in $(seq 3); do adb shell input keyevent KEYCODE_DPAD_DOWN; done
 key KEYCODE_DPAD_CENTER
 sleep 4
 key KEYCODE_BACK
 shot 17-leaves 3
 
+# Set up from your phone: the TV screen, and its web page answering
+home phone_setup
+shot 18-phone-setup 4
+adb forward tcp:8686 tcp:8686 || true
+page=$(curl -s -o /dev/null -w "%{http_code}" --max-time 10 http://127.0.0.1:8686/ || echo none)
+denied=$(curl -s -o /dev/null -w "%{http_code}" --max-time 10 -X POST -d '{"code":"000000"}' http://127.0.0.1:8686/api/login || echo none)
+echo "Phone page: $page, wrong code: $denied"
+phone_ok=1
+if [ "$page" != "200" ] || [ "$denied" != "403" ]; then
+  echo "The phone setup page didn't answer as it should"
+  phone_ok=0
+fi
+key KEYCODE_BACK
+
 # The screen saver, as the TV would start it
 adb shell settings put secure screensaver_components "$PKG/.Screensaver" || true
 if adb shell am start -n com.android.systemui/.Somnambulator > /dev/null 2>&1; then
-  shot 18-screen-saver 8
+  shot 19-screen-saver 8
   key KEYCODE_BACK
 fi
 
@@ -139,6 +153,9 @@ fi
 if grep -q "ANR in $PKG" "$OUT/logcat.txt"; then
   echo "TunaHome stopped answering:"
   grep -A 10 "ANR in $PKG" "$OUT/logcat.txt" | head -30
+  problems=1
+fi
+if [ "$phone_ok" = 0 ]; then
   problems=1
 fi
 if [ -z "$(adb shell pidof $PKG | tr -d '\r')" ]; then

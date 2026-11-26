@@ -200,6 +200,9 @@ class SettingsActivity : BaseActivity() {
 
     internal fun mainPage() {
         row(R.string.settings_search, getString(R.string.settings_search_summary)) { askSearch() }
+        row(R.string.phone_title, getString(R.string.phone_summary)) {
+            startActivity(Intent(this, PhoneSetupActivity::class.java))
+        }
         pageRow(BACKGROUND, backgroundSummary())
         pageRow(SECTIONS, sectionsSummary())
         pageRow(

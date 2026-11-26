@@ -110,6 +110,7 @@ class HomeActivity : BaseActivity() {
             }
             HotkeyActions.SLEEP_TIMER -> chooseSleep()
             HotkeyActions.QUICK -> quickCustomise()
+            HotkeyActions.PHONE -> openPhoneSetup()
             HotkeyActions.SETTINGS_PAGE -> openTunaHomeSettings(arg)
         }
     }

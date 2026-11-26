@@ -64,6 +64,7 @@ internal fun HomeActivity.refreshMenu() {
                 WhoActivity.start(this)
             })
         }
+        entries.add(SideMenu.Entry(R.drawable.ic_phone, getString(R.string.phone_title), null) { openPhoneSetup() })
         entries.add(SideMenu.Entry(R.drawable.ic_tune, getString(R.string.quick_title), null) {
             quickCustomise()
         })
@@ -146,6 +147,16 @@ internal fun HomeActivity.openTunaHomeSettings(page: String? = null) {
     }
     if (AppLock.settingsLocked(this)) {
         AppLock.ask(this, getString(R.string.tunahome_settings)) { startActivity(open) }
+    } else {
+        startActivity(open)
+    }
+}
+
+/** Set up from your phone (behind the settings lock, as it changes settings). */
+internal fun HomeActivity.openPhoneSetup() {
+    val open = Intent(this, PhoneSetupActivity::class.java)
+    if (AppLock.settingsLocked(this)) {
+        AppLock.ask(this, getString(R.string.phone_title)) { startActivity(open) }
     } else {
         startActivity(open)
     }

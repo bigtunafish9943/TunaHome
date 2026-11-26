@@ -1,0 +1,290 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>TunaHome</title>
+<style>
+  :root {
+    --bg: #12161d; --panel: #1b212b; --panel2: #232b37; --text: #eef2f7; --soft: #9aa6b6;
+    --accent: #f5a23c; --good: #43c59e; --line: #2c3542;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); font: 16px/1.4 system-ui, -apple-system, Segoe UI, Roboto, sans-serif; }
+  header { position: sticky; top: 0; z-index: 5; background: rgba(18,22,29,.96); backdrop-filter: blur(8px); border-bottom: 1px solid var(--line); }
+  .bar { display: flex; align-items: center; gap: 10px; padding: 12px 16px 6px; }
+  .bar h1 { font-size: 20px; margin: 0; font-weight: 700; }
+  .bar h1 span { color: var(--accent); }
+  nav { display: flex; gap: 6px; overflow-x: auto; padding: 6px 12px 10px; scrollbar-width: none; }
+  nav::-webkit-scrollbar { display: none; }
+  nav button { flex: none; background: var(--panel); color: var(--soft); border: 1px solid var(--line); border-radius: 999px; padding: 8px 14px; font: inherit; font-size: 14px; }
+  nav button.on { background: var(--accent); color: #1b1206; border-color: var(--accent); font-weight: 600; }
+  main { padding: 12px 16px 80px; max-width: 760px; margin: 0 auto; }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 16px; padding: 14px; margin: 0 0 14px; }
+  .head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .head h2 { font-size: 17px; margin: 0; flex: 1; min-width: 120px; }
+  .note { color: var(--soft); font-size: 13px; margin: 6px 0 0; }
+  .row { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-top: 1px solid var(--line); }
+  .row:first-of-type { border-top: none; }
+  .row img { height: 36px; width: 64px; object-fit: contain; border-radius: 6px; background: var(--panel2); flex: none; }
+  .row .name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .row .name small { color: var(--soft); }
+  button.b { background: var(--panel2); color: var(--text); border: 1px solid var(--line); border-radius: 10px; padding: 7px 10px; font: inherit; font-size: 14px; min-width: 38px; }
+  button.b:active { transform: scale(.96); }
+  button.primary { background: var(--accent); color: #1b1206; border-color: var(--accent); font-weight: 600; }
+  button.on { border-color: var(--accent); color: var(--accent); }
+  input, select { width: 100%; background: var(--panel2); color: var(--text); border: 1px solid var(--line); border-radius: 10px; padding: 11px 12px; font: inherit; }
+  label { display: block; font-size: 14px; color: var(--soft); margin: 12px 0 6px; }
+  .login { max-width: 360px; margin: 18vh auto 0; text-align: center; padding: 0 20px; }
+  .login h1 { font-size: 26px; margin: 0 0 6px; } .login h1 span { color: var(--accent); }
+  .login input { text-align: center; font-size: 28px; letter-spacing: 8px; margin: 18px 0 12px; }
+  .login button { width: 100%; padding: 13px; font-size: 17px; }
+  .toast { position: fixed; left: 50%; bottom: 22px; transform: translateX(-50%); background: var(--good); color: #062018; padding: 10px 16px; border-radius: 999px; font-weight: 600; opacity: 0; transition: opacity .25s; pointer-events: none; max-width: 90vw; }
+  .toast.show { opacity: 1; }
+  .switch { display: inline-flex; align-items: center; gap: 6px; font-size: 14px; color: var(--soft); }
+  .progress { height: 6px; background: var(--panel2); border-radius: 3px; overflow: hidden; margin-top: 8px; }
+  .progress div { height: 100%; width: 0; background: var(--accent); transition: width .2s; }
+  .empty { color: var(--soft); font-size: 14px; padding: 6px 0; }
+</style>
+</head>
+<body>
+<div id="app"></div>
+<div class="toast" id="toast"></div>
+<script>
+"use strict";
+let token = null;
+try { token = sessionStorage.getItem("tunahome-token"); } catch (e) {}
+let state = null;
+let tab = "sections";
+const app = document.getElementById("app");
+
+function el(tag, props, ...kids) {
+  const e = document.createElement(tag);
+  if (props) for (const [k, v] of Object.entries(props)) {
+    if (k === "class") e.className = v;
+    else if (k.startsWith("on")) e.addEventListener(k.slice(2), v);
+    else if (k === "text") e.textContent = v;
+    else e.setAttribute(k, v);
+  }
+  for (const k of kids) if (k != null) e.append(k);
+  return e;
+}
+function toast(text) {
+  const t = document.getElementById("toast");
+  t.textContent = text; t.classList.add("show");
+  clearTimeout(toast.timer); toast.timer = setTimeout(() => t.classList.remove("show"), 1800);
+}
+async function api(path, body) {
+  const r = await fetch(path, {
+    method: body === undefined ? "GET" : "POST",
+    headers: { "X-Token": token || "", "Content-Type": "application/json" },
+    body: body === undefined ? undefined : JSON.stringify(body),
+  });
+  if (r.status === 403) { signOut(); throw new Error("code"); }
+  const j = await r.json();
+  if (j.error) throw new Error(j.error);
+  return j;
+}
+function signOut() {
+  token = null;
+  try { sessionStorage.removeItem("tunahome-token"); } catch (e) {}
+  showLogin();
+}
+function icon(key) {
+  return el("img", { src: "/icon/" + encodeURIComponent(key) + "?t=" + encodeURIComponent(token), alt: "", loading: "lazy", onerror: e => { e.target.style.visibility = "hidden"; } });
+}
+
+// ---------------------------------------------------------------- signing in
+
+function showLogin(message) {
+  app.replaceChildren();
+  const code = el("input", { inputmode: "numeric", autocomplete: "one-time-code", maxlength: "6", placeholder: "······" });
+  const go = async () => {
+    try {
+      const r = await fetch("/api/login", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ code: code.value.trim() }) });
+      if (!r.ok) { showLogin("That code isn't right. Check the TV."); return; }
+      token = (await r.json()).token;
+      try { sessionStorage.setItem("tunahome-token", token); } catch (e) {}
+      load();
+    } catch (e) { showLogin("Couldn't reach the TV. Is its setup screen still open?"); }
+  };
+  code.addEventListener("keydown", e => { if (e.key === "Enter") go(); });
+  app.append(el("div", { class: "login" },
+    el("h1", null, "Tuna", el("span", { text: "Home" })),
+    el("div", { class: "note", text: "Type the code shown on the TV." }),
+    code,
+    el("button", { class: "b primary", onclick: go, text: "Connect" }),
+    message ? el("p", { class: "note", text: message }) : null));
+  code.focus();
+}
+
+// ---------------------------------------------------------------- the page
+
+async function load() {
+  try { state = await api("/api/state"); render(); }
+  catch (e) { if (token) showLogin("Couldn't reach the TV. Is its setup screen still open?"); }
+}
+
+function render() {
+  const tabs = [["sections", "Sections"], ["apps", "Apps"], ["link", "Add a link"], ["background", "Background"], ["look", "Look"]];
+  const nav = el("nav");
+  for (const [id, name] of tabs) nav.append(el("button", { class: tab === id ? "on" : "", text: name, onclick: () => { tab = id; render(); window.scrollTo(0, 0); } }));
+  const header = el("header", null,
+    el("div", { class: "bar" }, el("h1", null, "Tuna", el("span", { text: "Home" }))),
+    nav);
+  const main = el("main");
+  ({ sections: sectionsTab, apps: appsTab, link: linkTab, background: backgroundTab, look: lookTab })[tab](main);
+  app.replaceChildren(header, main);
+}
+
+const saving = {};
+function saveOrderSoon(section) {
+  clearTimeout(saving[section.id]);
+  saving[section.id] = setTimeout(async () => {
+    try { await api("/api/order", { section: section.id, keys: section.apps.map(a => a.key) }); section.sorted = false; toast("Order saved"); }
+    catch (e) { toast("Couldn't save"); }
+  }, 500);
+}
+
+function sectionsTab(main) {
+  main.append(el("p", { class: "note", text: "Changes show on the TV when you close its setup screen." }));
+  for (const s of state.sections) {
+    const card = el("div", { class: "card" });
+    const shown = el("button", { class: "b" + (s.visible ? " on" : ""), text: s.visible ? "Shown" : "Hidden",
+      onclick: async () => { s.visible = !s.visible; await api("/api/section", { id: s.id, visible: s.visible }); toast(s.visible ? "Shown" : "Hidden"); render(); } });
+    const rename = el("button", { class: "b", text: "Rename", onclick: async () => {
+      const name = prompt("Name for this section", s.name);
+      if (name && name.trim()) { await api("/api/section", { id: s.id, name: name.trim() }); s.name = name.trim(); toast("Renamed"); render(); }
+    } });
+    card.append(el("div", { class: "head" }, el("h2", { text: s.name }), rename, shown));
+    if (!s.canOrder) {
+      card.append(el("p", { class: "note", text: "Fills itself on the TV." }));
+    } else if (s.apps.length === 0) {
+      card.append(el("p", { class: "empty", text: "No apps here yet." }));
+    } else {
+      if (s.sorted) card.append(el("p", { class: "note", text: "Sorted on the TV. Moving an app here puts it in your own order." }));
+      s.apps.forEach((a, i) => {
+        const row = el("div", { class: "row" }, icon(a.key), el("div", { class: "name", text: a.label }),
+          el("button", { class: "b", text: "▲", title: "Earlier", onclick: () => { if (i > 0) { [s.apps[i - 1], s.apps[i]] = [s.apps[i], s.apps[i - 1]]; saveOrderSoon(s); render(); } } }),
+          el("button", { class: "b", text: "▼", title: "Later", onclick: () => { if (i < s.apps.length - 1) { [s.apps[i + 1], s.apps[i]] = [s.apps[i], s.apps[i + 1]]; saveOrderSoon(s); render(); } } }));
+        if (s.custom) row.append(el("button", { class: "b", text: "✕", title: "Take out", onclick: async () => {
+          if (s.id === "favourites") await api("/api/app", { key: a.key, favourite: false });
+          else await api("/api/app", { key: a.key, removeFrom: s.id });
+          s.apps.splice(i, 1); toast("Taken out"); render();
+        } }));
+        card.append(row);
+      });
+    }
+    main.append(card);
+  }
+}
+
+let filter = "";
+function appsTab(main) {
+  const search = el("input", { placeholder: "Find an app", value: filter });
+  search.addEventListener("input", () => { filter = search.value; drawList(); });
+  main.append(search);
+  const list = el("div", { class: "card", style: "margin-top:12px" });
+  main.append(list);
+  const own = state.sections.filter(s => s.custom && s.id !== "favourites");
+  function drawList() {
+    list.replaceChildren();
+    const f = filter.trim().toLowerCase();
+    const apps = state.apps.filter(a => !f || a.label.toLowerCase().includes(f));
+    if (!apps.length) list.append(el("p", { class: "empty", text: "No apps match." }));
+    for (const a of apps) {
+      const star = el("button", { class: "b" + (a.favourite ? " on" : ""), text: "★", title: "Favourite", onclick: async () => {
+        a.favourite = !a.favourite; await api("/api/app", { key: a.key, favourite: a.favourite }); toast(a.favourite ? "In Favourites" : "Out of Favourites"); drawList();
+      } });
+      const hide = el("button", { class: "b", text: a.hidden ? "Show" : "Hide", onclick: async () => {
+        a.hidden = !a.hidden; await api("/api/app", { key: a.key, hidden: a.hidden }); toast(a.hidden ? "Hidden" : "Shown"); drawList();
+      } });
+      const rename = el("button", { class: "b", text: "Rename", onclick: async () => {
+        const name = prompt("Name on the TV (empty for its own name)", a.label);
+        if (name === null) return;
+        await api("/api/app", { key: a.key, name: name.trim() ? name.trim() : null });
+        a.label = name.trim() || a.label; toast("Renamed"); drawList();
+      } });
+      const row = el("div", { class: "row" }, icon(a.key),
+        el("div", { class: "name" }, a.label, a.hidden ? el("small", { text: "  · hidden" }) : null), star, rename, hide);
+      if (own.length) {
+        const add = el("select", { style: "width:auto;padding:7px" }, el("option", { value: "", text: "Add to…" }), ...own.map(s => el("option", { value: s.id, text: s.name })));
+        add.addEventListener("change", async () => { if (!add.value) return; await api("/api/app", { key: a.key, addTo: add.value }); toast("Added"); add.value = ""; });
+        row.append(add);
+      }
+      list.append(row);
+    }
+  }
+  drawList();
+}
+
+function linkTab(main) {
+  const name = el("input", { placeholder: "For example: Cooking channel" });
+  const address = el("input", { placeholder: "youtube.com/@channel, or any web address", inputmode: "url" });
+  const where = el("select", null, ...state.sections.filter(s => s.custom).map(s => el("option", { value: s.id, text: s.name })));
+  main.append(el("div", { class: "card" },
+    el("h2", { text: "A web link as a card", style: "margin:0 0 4px;font-size:17px" }),
+    el("p", { class: "note", text: "A website, a YouTube channel, a Plex library or any app link. It shows the picture of the app that opens it." }),
+    el("label", { text: "Address" }), address,
+    el("label", { text: "Name" }), name,
+    el("label", { text: "Put it in" }), where,
+    el("div", { style: "margin-top:14px" }, el("button", { class: "b primary", text: "Add link", onclick: async () => {
+      if (!address.value.trim()) { toast("Type an address"); return; }
+      try { await api("/api/link", { name: name.value, address: address.value, section: where.value }); toast("Link added"); name.value = ""; address.value = ""; state = await api("/api/state"); }
+      catch (e) { toast("Couldn't add it"); }
+    } }))));
+}
+
+function backgroundTab(main) {
+  const input = el("input", { type: "file", accept: "image/*,video/*", multiple: "multiple" });
+  const status = el("div", { class: "note" });
+  const bar = el("div", null); const progress = el("div", { class: "progress" }, bar);
+  input.addEventListener("change", async () => {
+    const files = Array.from(input.files || []);
+    for (let i = 0; i < files.length; i++) {
+      const f = files[i];
+      status.textContent = "Sending " + (i + 1) + " of " + files.length + ": " + f.name;
+      try { await upload(f, p => bar.style.width = Math.round(p * 100) + "%"); }
+      catch (e) { status.textContent = "Couldn't send " + f.name; return; }
+    }
+    bar.style.width = "100%";
+    status.textContent = files.length + (files.length === 1 ? " sent." : " sent.") + " Your background is now your own pictures and videos.";
+    toast("Sent to the TV");
+  });
+  main.append(el("div", { class: "card" },
+    el("h2", { text: "Pictures and videos from this phone", style: "margin:0 0 4px;font-size:17px" }),
+    el("p", { class: "note", text: "They're kept on the TV and shown behind your apps, in turn. Videos play silently." }),
+    el("div", { style: "margin-top:12px" }, input), progress, status));
+}
+
+function upload(file, onProgress) {
+  return new Promise((resolve, reject) => {
+    const x = new XMLHttpRequest();
+    x.open("POST", "/api/background?type=" + encodeURIComponent(file.type || "application/octet-stream"));
+    x.setRequestHeader("X-Token", token);
+    x.upload.onprogress = e => { if (e.lengthComputable) onProgress(e.loaded / e.total); };
+    x.onload = () => (x.status === 200 ? resolve() : reject(new Error(x.status)));
+    x.onerror = () => reject(new Error("network"));
+    x.send(file);
+  });
+}
+
+function lookTab(main) {
+  const card = el("div", { class: "card" });
+  card.append(el("p", { class: "note", text: "These show on the TV when you close its setup screen." }));
+  for (const l of state.looks) {
+    const sel = el("select", null, ...(l.current < 0 ? [el("option", { value: "-1", text: "Choose…" })] : []),
+      ...l.options.map((o, i) => { const opt = el("option", { value: String(i), text: o }); if (i === l.current) opt.selected = true; return opt; }));
+    sel.addEventListener("change", async () => {
+      const v = parseInt(sel.value, 10); if (v < 0) return;
+      try { await api("/api/look", { id: l.id, value: v }); if (l.current >= 0) l.current = v; toast("Changed"); } catch (e) { toast("Couldn't change it"); }
+    });
+    card.append(el("label", { text: l.title }), sel);
+  }
+  main.append(card);
+}
+
+if (token) load(); else showLogin();
+</script>
+</body>
+</html>
