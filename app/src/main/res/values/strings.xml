@@ -1143,4 +1143,13 @@
     <string name="info_battery">%1$s %2$d%%</string>
     <string name="info_battery_low">%1$s battery low: %2$d%%</string>
     <string name="sleep_extended">Still watching: the sleep timer moved on %1$d minutes.</string>
+    <string name="usage_title">Your week on the TV</string>
+    <string name="usage_summary">How long each app was on screen this week. Kept on the TV only.</string>
+    <string name="usage_total">This week: %1$s on screen</string>
+    <string name="usage_minutes">%1$d min</string>
+    <string name="usage_hours">%1$d h %2$d min</string>
+    <string name="usage_none">Nothing counted yet. Apps are timed while they\'re on screen, from now on.</string>
+    <string name="usage_home_screen">Home screen</string>
+    <string name="usage_clear">Clear</string>
+    <string name="usage_needs_service">Apps are only timed with the Home button setting on.</string>
 </resources>

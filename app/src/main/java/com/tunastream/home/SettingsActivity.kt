@@ -245,6 +245,7 @@ class SettingsActivity : BaseActivity() {
         row(R.string.tv_settings, getString(R.string.set_tv_settings_summary)) {
             HomeActivity.openTvSettings(this)
         }
+        row(R.string.usage_title, getString(R.string.usage_summary)) { UsageLog.show(this) }
         row(R.string.picture_test, getString(R.string.picture_test_summary)) {
             startActivity(android.content.Intent(this, PictureTestActivity::class.java))
         }

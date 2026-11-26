@@ -65,7 +65,12 @@ class HomeButtonService : AccessibilityService() {
     /** Opens the app the viewer chose when the TV wakes up. */
     private val wakeReceiver = object : android.content.BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
+            if (intent.action == Intent.ACTION_SCREEN_OFF) {
+                UsageLog.screen(context, false)
+                return
+            }
             if (intent.action == Intent.ACTION_SCREEN_ON) {
+                UsageLog.screen(context, true)
                 // Give the TV a moment to finish waking, so its own home screen doesn't land on top
                 android.os.Handler(mainLooper).postDelayed({
                     // Who's watching first, if asked for; otherwise the app chosen for waking up
@@ -79,7 +84,9 @@ class HomeButtonService : AccessibilityService() {
         super.onServiceConnected()
         running = this
         OpenApps.addDefaultShortcut(this)
-        registerReceiver(wakeReceiver, android.content.IntentFilter(Intent.ACTION_SCREEN_ON))
+        registerReceiver(wakeReceiver, android.content.IntentFilter(Intent.ACTION_SCREEN_ON).apply {
+            addAction(Intent.ACTION_SCREEN_OFF)
+        })
         // Switched on by Android just after the TV started: that's a wake-up too
         if (SystemClock.elapsedRealtime() < 3 * 60 * 1000) {
             android.os.Handler(mainLooper).postDelayed({ openWakeApp() }, 4000)
@@ -149,6 +156,7 @@ class HomeButtonService : AccessibilityService() {
         val cls = event.className?.toString() ?: ""
         // For Open apps: what came to the front
         OpenApps.note(this, pkg)
+        UsageLog.front(this, pkg)
         when {
             pkg == PcGames.RECEIVER && cls in STREAMING_SCREENS -> {
                 pointer.off(false)
