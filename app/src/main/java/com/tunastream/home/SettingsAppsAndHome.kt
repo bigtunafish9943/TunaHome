@@ -100,7 +100,7 @@ internal fun SettingsActivity.appsPage() {
         getString(if (ownOrder) R.string.set_order_own else R.string.set_order_az)
     ) {
         if (ownOrder) {
-            AlertDialog.Builder(this)
+            QuietDialog.Builder(this)
                 .setTitle(R.string.set_order)
                 .setMessage(R.string.set_order_confirm)
                 .setPositiveButton(R.string.set_order_reset) { _, _ ->
@@ -123,7 +123,7 @@ internal fun SettingsActivity.chooseLocked() {
     }
     val named = locked.map { it to appName(it) }.sortedBy { it.second.lowercase() }
     val keep = BooleanArray(named.size) { true }
-    AlertDialog.Builder(this)
+    QuietDialog.Builder(this)
         .setTitle(R.string.lock_apps_title)
         .setMultiChoiceItems(named.map { it.second }.toTypedArray(), keep) { _, which, ticked ->
             keep[which] = ticked
@@ -153,7 +153,7 @@ internal fun SettingsActivity.chooseHidden() {
         pkg to label
     }.sortedBy { it.second.lowercase() }
     val keep = BooleanArray(named.size) { true }
-    AlertDialog.Builder(this)
+    QuietDialog.Builder(this)
         .setTitle(R.string.set_hidden_title)
         .setMultiChoiceItems(named.map { it.second }.toTypedArray(), keep) { _, which, ticked ->
             keep[which] = ticked
@@ -219,7 +219,7 @@ internal fun SettingsActivity.chooseWakeApp() {
 
 /** TunaHome never switches this on by itself: it explains, and opens the TV's own screen. */
 internal fun SettingsActivity.explainHomeButton(on: Boolean) {
-    AlertDialog.Builder(this)
+    QuietDialog.Builder(this)
         .setTitle(R.string.set_home_button)
         .setMessage(if (on) R.string.home_button_how_off else R.string.home_button_how_on)
         .setPositiveButton(R.string.open_accessibility) { _, _ ->
@@ -260,7 +260,7 @@ internal fun SettingsActivity.updatesPage() {
             val pad = Math.round(Look.dp(this, 16f))
             text.setPadding(pad, pad, pad, pad)
             view.addView(text)
-            AlertDialog.Builder(this)
+            QuietDialog.Builder(this)
                 .setTitle(R.string.set_last_problem)
                 .setView(view)
                 .setPositiveButton(R.string.close, null)
@@ -272,7 +272,7 @@ internal fun SettingsActivity.updatesPage() {
         }
     }
     row(R.string.set_about, getString(R.string.set_about_summary)) {
-        AlertDialog.Builder(this)
+        QuietDialog.Builder(this)
             .setTitle(getString(R.string.version, BuildConfig.VERSION_NAME))
             .setMessage(R.string.about_body)
             .setPositiveButton(R.string.close, null)

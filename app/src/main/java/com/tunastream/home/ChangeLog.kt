@@ -97,7 +97,7 @@ object ChangeLog {
         text.isFocusable = true
         val scroll = ScrollView(activity)
         scroll.addView(text)
-        AlertDialog.Builder(activity)
+        QuietDialog.Builder(activity)
             .setTitle(title)
             .setView(scroll)
             .setPositiveButton(R.string.close, null)

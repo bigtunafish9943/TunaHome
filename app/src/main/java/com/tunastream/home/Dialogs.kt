@@ -22,7 +22,7 @@ fun Activity.askForText(title: Int, start: String, url: Boolean = false, done: (
     val frame = FrameLayout(this)
     frame.setPadding(pad, pad / 2, pad, 0)
     frame.addView(box)
-    val dialog = AlertDialog.Builder(this)
+    val dialog = QuietDialog.Builder(this)
         .setTitle(title)
         .setView(frame)
         .setPositiveButton(R.string.done) { _, _ ->
@@ -49,7 +49,7 @@ fun Activity.askForText(title: Int, start: String, url: Boolean = false, done: (
 
 /** A short list of named options with the current one marked; picking one applies it. */
 fun Activity.chooseOne(title: CharSequence, names: List<CharSequence>, current: Int, pick: (Int) -> Unit) {
-    AlertDialog.Builder(this)
+    QuietDialog.Builder(this)
         .setTitle(title)
         .setSingleChoiceItems(names.toTypedArray(), current) { dialog, which ->
             dialog.dismiss()

@@ -68,7 +68,7 @@ internal fun SettingsActivity.addShortcut() {
 internal fun SettingsActivity.captureKeys(two: Boolean, done: (List<Int>) -> Unit) {
     val down = LinkedHashSet<Int>()
     var finished = false
-    val dialog = AlertDialog.Builder(this)
+    val dialog = QuietDialog.Builder(this)
         .setTitle(if (two) R.string.capture_two_title else R.string.capture_title)
         .setMessage(if (two) R.string.capture_two_body else R.string.capture_body)
         .create()
@@ -97,7 +97,7 @@ internal fun SettingsActivity.captureKeys(two: Boolean, done: (List<Int>) -> Uni
 
 internal fun SettingsActivity.confirmKeys(keys: List<Int>, two: Boolean, done: (List<Int>) -> Unit) {
     val name = keys.joinToString(" + ") { Hotkeys.keyName(this, it) }
-    AlertDialog.Builder(this)
+    QuietDialog.Builder(this)
         .setTitle(getString(R.string.capture_got, name))
         .setMessage(if (keys.any { it == KeyEvent.KEYCODE_DPAD_CENTER || it in SettingsActivity.DPAD }) getString(R.string.capture_dpad_warning) else null)
         .setPositiveButton(R.string.capture_use) { _, _ -> done(keys) }

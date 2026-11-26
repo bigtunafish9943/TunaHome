@@ -46,7 +46,7 @@ internal fun HomeActivity.openFolder(id: String) {
         dialog.dismiss()
         Launch.open(this, app, failed = { reload() })
     }, { app ->
-        AlertDialog.Builder(this)
+        QuietDialog.Builder(this)
             .setTitle(app.label)
             .setItems(arrayOf(getString(R.string.folder_take_out), getString(R.string.menu_app_info))) { _, which ->
                 if (which == 0) {
@@ -67,7 +67,7 @@ internal fun HomeActivity.openFolder(id: String) {
     val pad = Math.round(Look.dp(this, 16f))
     list.setPadding(pad, pad, pad, pad)
     adapter.submit(inside)
-    dialog = AlertDialog.Builder(this)
+    dialog = QuietDialog.Builder(this)
         .setTitle(folder.name)
         .setView(list)
         .setNegativeButton(R.string.close, null)
@@ -79,7 +79,7 @@ internal fun HomeActivity.openFolder(id: String) {
 internal fun HomeActivity.putInFolder(app: AppEntry, row: Rows.Row) {
     val folders = Folders.load(this)
     val names = folders.map { it.name } + getString(R.string.folder_new)
-    AlertDialog.Builder(this)
+    QuietDialog.Builder(this)
         .setTitle(getString(R.string.folder_put_title, app.label))
         .setItems(names.toTypedArray()) { _, which ->
             if (which < folders.size) {
@@ -126,7 +126,7 @@ internal fun HomeActivity.folderMenu(card: AppEntry, row: Rows.Row) {
         Folders.save(this, list)
         show()
     }
-    AlertDialog.Builder(this)
+    QuietDialog.Builder(this)
         .setTitle(card.label)
         .setItems(labels.toTypedArray()) { _, which -> actions[which]() }
         .show()
@@ -251,7 +251,7 @@ internal fun HomeActivity.showMenu(app: AppEntry, row: Rows.Row) {
         }
         labels.add(getString(R.string.link_delete))
         actions.add {
-            AlertDialog.Builder(this)
+            QuietDialog.Builder(this)
                 .setTitle(getString(R.string.link_delete_title, app.label))
                 .setPositiveButton(R.string.link_delete) { _, _ ->
                     Links.remove(this, app.pkg)
@@ -261,7 +261,7 @@ internal fun HomeActivity.showMenu(app: AppEntry, row: Rows.Row) {
                 .setNegativeButton(R.string.cancel, null)
                 .show()
         }
-        AlertDialog.Builder(this)
+        QuietDialog.Builder(this)
             .setTitle(app.label)
             .setItems(labels.toTypedArray()) { _, which -> actions[which]() }
             .show()
@@ -291,7 +291,7 @@ internal fun HomeActivity.showMenu(app: AppEntry, row: Rows.Row) {
         startOrExplain(Intent(Intent.ACTION_DELETE, Uri.parse("package:" + app.pkg)))
     }
 
-    AlertDialog.Builder(this)
+    QuietDialog.Builder(this)
         .setTitle(app.label)
         .setItems(labels.toTypedArray()) { _, which -> actions[which]() }
         .show()
@@ -335,7 +335,7 @@ internal fun HomeActivity.watchNextMenu(item: AppEntry) {
         labels.add(getString(R.string.watch_next_bring_back))
         actions.add { setWatchNextLeftOut(null, false) }
     }
-    AlertDialog.Builder(this)
+    QuietDialog.Builder(this)
         .setTitle(item.label)
         .setItems(labels.toTypedArray()) { _, which -> actions[which]() }
         .show()
@@ -360,7 +360,7 @@ internal fun HomeActivity.setWatchNextLeftOut(appPkg: String?, out: Boolean) {
 internal fun HomeActivity.addToRow(app: AppEntry) {
     val own = Rows.load(this).filter { it.custom && app.pkg !in it.apps }
     val names = own.map { it.name(this) } + getString(R.string.row_new)
-    AlertDialog.Builder(this)
+    QuietDialog.Builder(this)
         .setTitle(getString(R.string.menu_add_to_row_title, app.label))
         .setItems(names.toTypedArray()) { _, which ->
             if (which < own.size) {
@@ -390,7 +390,7 @@ internal fun HomeActivity.pictureMenu(app: AppEntry) {
         labels.add(0, getString(R.string.pick_from_pack))
     }
     val offset = if (labels[0] == getString(R.string.pick_from_pack)) 1 else 0
-    AlertDialog.Builder(this)
+    QuietDialog.Builder(this)
         .setTitle(getString(R.string.picture_title, app.label))
         .setItems(labels.toTypedArray()) { _, chosen ->
             if (offset == 1 && chosen == 0) {
@@ -438,7 +438,7 @@ internal fun HomeActivity.choosePicture(app: AppEntry) {
         startActivityForResult(Pictures.pickerIntent(), HomeActivity.REQUEST_TILE_PICTURE)
     } catch (e: Exception) {
         choosingPictureFor = null
-        AlertDialog.Builder(this)
+        QuietDialog.Builder(this)
             .setMessage(R.string.wallpaper_no_picker)
             .setPositiveButton(android.R.string.ok, null)
             .show()

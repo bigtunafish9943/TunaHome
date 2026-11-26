@@ -195,7 +195,7 @@ class OpenAppsActivity : BaseActivity() {
     }
 
     private fun closeMenu(pkg: String, label: String) {
-        AlertDialog.Builder(this)
+        QuietDialog.Builder(this)
             .setTitle(label)
             .setItems(arrayOf(getString(R.string.open_apps_close), getString(R.string.open_apps_close_all))) { _, which ->
                 if (which == 0) close(listOf(pkg)) else close(OpenApps.list(this))

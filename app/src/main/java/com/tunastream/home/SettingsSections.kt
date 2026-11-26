@@ -92,7 +92,7 @@ internal fun SettingsActivity.cardSizeName(index: Int): String {
 
 /** How to give TunaHome notification access: the TV's screen if it has one, or one adb command. */
 internal fun SettingsActivity.explainNowPlaying() {
-    AlertDialog.Builder(this)
+    QuietDialog.Builder(this)
         .setTitle(R.string.np_allow)
         .setMessage(getString(R.string.np_allow_body, NowPlaying.ADB_COMMAND))
         .setPositiveButton(R.string.np_open_access) { _, _ ->
@@ -213,7 +213,7 @@ internal fun SettingsActivity.sectionMenu(id: String, index: Int, count: Int) {
     if (section.custom) {
         labels.add(getString(R.string.section_delete))
         actions.add {
-            AlertDialog.Builder(this)
+            QuietDialog.Builder(this)
                 .setTitle(section.name(this))
                 .setMessage(R.string.section_delete_confirm)
                 .setPositiveButton(R.string.section_delete) { _, _ ->
@@ -228,7 +228,7 @@ internal fun SettingsActivity.sectionMenu(id: String, index: Int, count: Int) {
         }
     }
 
-    AlertDialog.Builder(this)
+    QuietDialog.Builder(this)
         .setTitle(section.name(this))
         .setItems(labels.toTypedArray()) { _, which -> actions[which]() }
         .show()

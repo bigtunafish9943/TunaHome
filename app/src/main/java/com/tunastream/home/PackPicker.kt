@@ -103,7 +103,7 @@ object PackPicker {
         grid.setSelector(android.R.drawable.list_selector_background)
         grid.setBackgroundColor(Color.TRANSPARENT)
 
-        val dialog = AlertDialog.Builder(activity)
+        val dialog = QuietDialog.Builder(activity)
             .setTitle(activity.getString(R.string.pick_title, app.label))
             .setView(layout)
             .setNegativeButton(R.string.cancel, null)

@@ -98,7 +98,7 @@ internal fun SettingsActivity.chooseFont(title: String, current: String?, allowS
             return view
         }
     }
-    AlertDialog.Builder(this)
+    QuietDialog.Builder(this)
         .setTitle(title)
         .setSingleChoiceItems(adapter, ids.indexOf(current)) { dialog, which ->
             dialog.dismiss()
@@ -209,7 +209,7 @@ internal fun SettingsActivity.openPackStore() {
         if (IconPackStore.isInstalled(this, offer.pkg)) getString(R.string.pack_entry_installed, offer.name, about)
         else getString(R.string.pack_entry, offer.name, about)
     }
-    AlertDialog.Builder(this)
+    QuietDialog.Builder(this)
         .setTitle(R.string.pack_get)
         .setItems(names.toTypedArray()) { _, which ->
             val offer = offers[which]
@@ -218,7 +218,7 @@ internal fun SettingsActivity.openPackStore() {
                 changed()
                 return@setItems
             }
-            AlertDialog.Builder(this)
+            QuietDialog.Builder(this)
                 .setTitle(offer.name)
                 .setMessage(getString(R.string.pack_confirm, getString(offer.about), offer.source.label))
                 .setPositiveButton(R.string.pack_download) { _, _ -> IconPackStore.get(this, offer) }

@@ -166,7 +166,7 @@ object Updater {
     }
 
     private fun offer(activity: Activity, release: Release) {
-        AlertDialog.Builder(activity)
+        QuietDialog.Builder(activity)
             .setTitle(activity.getString(R.string.update_available_title, release.version))
             .setMessage(activity.getString(R.string.update_available_body, BuildConfig.VERSION_NAME))
             .setPositiveButton(R.string.update_now) { _, _ -> startUpdate(activity, release) }
@@ -195,7 +195,7 @@ object Updater {
         if (!canInstall(activity)) {
             // Android asks once whether TunaHome may install apps; send the viewer to that switch
             pendingAfterPermission = release
-            AlertDialog.Builder(activity)
+            QuietDialog.Builder(activity)
                 .setTitle(R.string.update_permission_title)
                 .setMessage(R.string.update_permission_body)
                 .setPositiveButton(R.string.update_permission_open) { _, _ ->
@@ -222,7 +222,7 @@ object Updater {
         }
 
         val cancelled = booleanArrayOf(false)
-        val progress = AlertDialog.Builder(activity)
+        val progress = QuietDialog.Builder(activity)
             .setTitle(activity.getString(R.string.update_downloading_title, release.version))
             .setMessage(activity.getString(R.string.update_downloading, 0))
             .setCancelable(false)
@@ -255,7 +255,7 @@ object Updater {
                     return@post
                 }
                 if (done == null) {
-                    AlertDialog.Builder(activity)
+                    QuietDialog.Builder(activity)
                         .setTitle(R.string.update_failed_title)
                         .setMessage(failure ?: activity.getString(R.string.update_check_failed))
                         .setPositiveButton(android.R.string.ok, null)

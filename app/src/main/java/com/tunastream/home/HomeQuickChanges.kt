@@ -93,7 +93,7 @@ internal fun HomeActivity.quickCustomise() {
     actions.add {
         startActivity(Intent(this, SettingsActivity::class.java))
     }
-    AlertDialog.Builder(this)
+    QuietDialog.Builder(this)
         .setTitle(R.string.quick_title)
         .setItems(labels.toTypedArray()) { _, which -> actions[which]() }
         .show()

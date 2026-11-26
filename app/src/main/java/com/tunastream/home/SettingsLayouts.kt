@@ -46,7 +46,7 @@ internal fun SettingsActivity.layoutMenu(name: String) {
         getString(R.string.layout_export_one), getString(R.string.layout_delete))
     chooseOne(name, options, -1) { which ->
         when (which) {
-            0 -> AlertDialog.Builder(this)
+            0 -> QuietDialog.Builder(this)
                 .setTitle(getString(R.string.layout_use_title, name))
                 .setMessage(R.string.layout_use_body)
                 .setPositiveButton(R.string.layout_use) { _, _ ->
@@ -83,7 +83,7 @@ internal fun SettingsActivity.importLayout() {
 }
 
 internal fun SettingsActivity.confirmImport(then: () -> Unit) {
-    AlertDialog.Builder(this)
+    QuietDialog.Builder(this)
         .setTitle(R.string.layout_import)
         .setMessage(R.string.layout_use_body)
         .setPositiveButton(R.string.layout_use) { _, _ -> then() }

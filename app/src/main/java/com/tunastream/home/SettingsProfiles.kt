@@ -126,7 +126,7 @@ private fun SettingsActivity.personMenu(person: Profiles.Profile) {
     if (!isCurrent) {
         labels.add(getString(R.string.who_remove, person.name))
         actions.add(guarded {
-            AlertDialog.Builder(this)
+            QuietDialog.Builder(this)
                 .setTitle(getString(R.string.who_remove_title, person.name))
                 .setMessage(R.string.who_remove_body)
                 .setPositiveButton(R.string.who_remove_yes) { _, _ ->
@@ -137,7 +137,7 @@ private fun SettingsActivity.personMenu(person: Profiles.Profile) {
                 .show()
         })
     }
-    AlertDialog.Builder(this)
+    QuietDialog.Builder(this)
         .setTitle(person.name)
         .setItems(labels.toTypedArray()) { _, which -> actions[which]() }
         .show()
@@ -153,7 +153,7 @@ private fun SettingsActivity.choosePersonPin(then: (String) -> Unit) {
     val pad = Math.round(Look.dp(this, 20f))
     val frame = FrameLayout(this).apply { setPadding(pad, pad / 2, pad, 0) }
     frame.addView(box)
-    AlertDialog.Builder(this)
+    QuietDialog.Builder(this)
         .setTitle(R.string.who_set_pin)
         .setMessage(R.string.who_pin_body)
         .setView(frame)

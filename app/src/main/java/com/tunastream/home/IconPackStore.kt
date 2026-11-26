@@ -98,7 +98,7 @@ object IconPackStore {
     fun get(activity: Activity, offer: Offer) {
         if (!canInstall(activity)) {
             afterPermission = offer
-            AlertDialog.Builder(activity)
+            QuietDialog.Builder(activity)
                 .setTitle(R.string.pack_permission_title)
                 .setMessage(R.string.update_permission_body)
                 .setPositiveButton(R.string.update_permission_open) { _, _ ->
@@ -116,7 +116,7 @@ object IconPackStore {
         }
 
         val cancelled = booleanArrayOf(false)
-        val progress = AlertDialog.Builder(activity)
+        val progress = QuietDialog.Builder(activity)
             .setTitle(activity.getString(R.string.pack_downloading, offer.name))
             .setMessage(activity.getString(R.string.bg_copied_mb, 0))
             .setCancelable(false)
@@ -151,7 +151,7 @@ object IconPackStore {
                 }
                 if (done == null) {
                     if (!activity.isFinishing && !activity.isDestroyed) {
-                        AlertDialog.Builder(activity)
+                        QuietDialog.Builder(activity)
                             .setTitle(R.string.pack_failed_title)
                             .setMessage(activity.getString(R.string.pack_failed_body, failure ?: ""))
                             .setPositiveButton(R.string.close, null)

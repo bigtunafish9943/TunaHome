@@ -183,7 +183,7 @@ internal fun SettingsActivity.chooseBackground() {
 
 /** No wallpaper app on the TV: say what one is and offer Aerial Views. */
 internal fun SettingsActivity.offerAerialViews() {
-    AlertDialog.Builder(this)
+    QuietDialog.Builder(this)
         .setTitle(R.string.bg_app)
         .setMessage(R.string.bg_no_apps_body)
         .setPositiveButton(R.string.bg_get_aerial) { _, _ ->
@@ -228,7 +228,7 @@ internal fun SettingsActivity.addOwnFromTv() {
 internal fun SettingsActivity.removeOwn() {
     val own = Backdrop.videos(this)
     val keep = BooleanArray(own.size) { true }
-    AlertDialog.Builder(this)
+    QuietDialog.Builder(this)
         .setTitle(R.string.bg_remove_own_title)
         .setMultiChoiceItems(own.map { it.shortName() }.toTypedArray(), keep) { _, which, ticked ->
             keep[which] = ticked

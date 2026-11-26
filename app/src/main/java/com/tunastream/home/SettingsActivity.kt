@@ -294,7 +294,7 @@ class SettingsActivity : BaseActivity() {
             @Suppress("DEPRECATION")
             startActivityForResult(intent, request)
         } catch (e: ActivityNotFoundException) {
-            AlertDialog.Builder(this)
+            QuietDialog.Builder(this)
                 .setMessage(R.string.wallpaper_no_picker)
                 .setPositiveButton(android.R.string.ok, null)
                 .show()
@@ -373,7 +373,7 @@ class SettingsActivity : BaseActivity() {
             type.contains("matroska") -> "mkv"
             else -> "mp4"
         }
-        val progress = AlertDialog.Builder(this)
+        val progress = QuietDialog.Builder(this)
             .setTitle(R.string.bg_copying)
             .setMessage(getString(R.string.bg_copied_mb, 0))
             .setCancelable(false)

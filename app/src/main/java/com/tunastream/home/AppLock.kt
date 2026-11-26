@@ -123,7 +123,7 @@ object AppLock {
             return
         }
         val (box, frame) = pinBox(activity)
-        AlertDialog.Builder(activity)
+        QuietDialog.Builder(activity)
             .setTitle(title)
             .setMessage(R.string.lock_enter)
             .setView(frame)
@@ -142,7 +142,7 @@ object AppLock {
     /** Sets a new PIN (typed twice), then runs [then]. */
     fun choosePin(activity: Activity, then: () -> Unit) {
         val (first, frame) = pinBox(activity)
-        AlertDialog.Builder(activity)
+        QuietDialog.Builder(activity)
             .setTitle(R.string.lock_new_pin)
             .setMessage(R.string.lock_new_pin_body)
             .setView(frame)
@@ -153,7 +153,7 @@ object AppLock {
                     return@setPositiveButton
                 }
                 val (second, frame2) = pinBox(activity)
-                AlertDialog.Builder(activity)
+                QuietDialog.Builder(activity)
                     .setTitle(R.string.lock_repeat_pin)
                     .setView(frame2)
                     .setPositiveButton(R.string.done) { _, _ ->

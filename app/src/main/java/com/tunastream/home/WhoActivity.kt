@@ -194,7 +194,7 @@ class WhoActivity : BaseActivity() {
             val pad = (20 * activity.resources.displayMetrics.density).toInt()
             val frame = FrameLayout(activity).apply { setPadding(pad, pad / 2, pad, 0) }
             frame.addView(box)
-            AlertDialog.Builder(activity)
+            QuietDialog.Builder(activity)
                 .setTitle(activity.getString(R.string.who_pin_title, person.name))
                 .setView(frame)
                 .setPositiveButton(android.R.string.ok) { _, _ ->
