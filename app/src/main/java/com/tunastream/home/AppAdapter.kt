@@ -460,7 +460,20 @@ class AppAdapter(
             val showBanner = wideImage != null
             banner.setImageDrawable(wideImage)
             banner.visibility = if (showBanner) View.VISIBLE else View.GONE
-            icon.setImageDrawable(if (showBanner) null else app.own ?: app.icon)
+            val shown = if (showBanner) null else app.own ?: app.icon
+            icon.setImageDrawable(shown)
+            if (tiles.fullBleed) {
+                // Edge to edge, except a drawing on nothing (line-art packs): that is shown
+                // whole, in proportion, rather than blown up and cut off
+                if (shown is IconShape.LineArt) {
+                    icon.scaleType = ImageView.ScaleType.FIT_CENTER
+                    val pad = Math.round(Math.min(tiles.width, tiles.height) * (if (big) 2 else 1) * 0.14f)
+                    icon.setPadding(pad, pad, pad, pad)
+                } else {
+                    icon.scaleType = ImageView.ScaleType.CENTER_CROP
+                    icon.setPadding(0, 0, 0, 0)
+                }
+            }
             icon.visibility = if (showBanner) View.GONE else View.VISIBLE
             cardLabel.visibility = if (tiles.style == Look.TILE_ICON_NAME) View.VISIBLE else View.GONE
             lockBadge.visibility = if (AppLock.isLocked(itemView.context, app.appPkg)) View.VISIBLE else View.GONE

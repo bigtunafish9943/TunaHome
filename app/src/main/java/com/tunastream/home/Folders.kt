@@ -80,7 +80,7 @@ object Folders {
             val x = (i % 2) * cell
             val y = (i / 2) * cell
             val copy = icon.constantState?.newDrawable()?.mutate() ?: icon
-            copy.setBounds(x + pad, y + pad, x + cell - pad, y + cell - pad)
+            IconShape.fitSquare(copy, x + pad, y + pad, cell - 2 * pad)
             copy.draw(canvas)
         }
         return BitmapDrawable(context.resources, bitmap)

@@ -312,7 +312,7 @@ object IconPacks {
             val inner = Math.round(size * scale)
             val offset = (size - inner) / 2
             val copy = icon.constantState?.newDrawable()?.mutate() ?: icon
-            copy.setBounds(offset, offset, offset + inner, offset + inner)
+            IconShape.fitBounds(copy, size, offset)
             copy.draw(canvas)
             mask?.let { name ->
                 drawable(name)?.let { m ->

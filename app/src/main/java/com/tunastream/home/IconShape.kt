@@ -13,6 +13,61 @@ object IconShape {
     private const val SIZE = 256
 
     /**
+     * A drawing on nothing (an icon pack's line art, a logo without a background), which would
+     * be blown up and cut off if made to fill a card: the card shows it whole, with a margin.
+     */
+    class LineArt(res: Resources, bitmap: Bitmap) : BitmapDrawable(res, bitmap)
+
+    /** [source] drawn as large as fits in a square, keeping its shape, [margin] of it left empty. */
+    private fun fitted(source: Bitmap, size: Int, margin: Float = 0f): Bitmap {
+        val out = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
+        val room = size * (1f - 2 * margin)
+        val scale = room / Math.max(source.width, source.height)
+        val w = source.width * scale
+        val h = source.height * scale
+        val left = (size - w) / 2
+        val top = (size - h) / 2
+        val paint = android.graphics.Paint(android.graphics.Paint.FILTER_BITMAP_FLAG or android.graphics.Paint.ANTI_ALIAS_FLAG)
+        Canvas(out).drawBitmap(source, null, android.graphics.RectF(left, top, left + w, top + h), paint)
+        return out
+    }
+
+    /** Where a drawable goes in a [size] square to keep its shape: as large as fits, in the middle. */
+    fun fitBounds(drawable: Drawable, size: Int, inset: Int = 0) = fitSquare(drawable, inset, inset, size - 2 * inset)
+
+    /** [drawable] as large as fits in the square at [x], [y] with sides [side], keeping its shape. */
+    fun fitSquare(drawable: Drawable, x: Int, y: Int, side: Int) {
+        val iw = drawable.intrinsicWidth
+        val ih = drawable.intrinsicHeight
+        if (iw <= 0 || ih <= 0 || iw == ih) {
+            drawable.setBounds(x, y, x + side, y + side)
+            return
+        }
+        val scale = side.toFloat() / Math.max(iw, ih)
+        val w = Math.round(iw * scale)
+        val h = Math.round(ih * scale)
+        val left = x + (side - w) / 2
+        val top = y + (side - h) / 2
+        drawable.setBounds(left, top, left + w, top + h)
+    }
+
+    /** How much of a picture is drawn on, 0 to 1. */
+    private fun coverage(bitmap: Bitmap): Float {
+        val w = bitmap.width
+        val h = bitmap.height
+        if (w == 0 || h == 0) {
+            return 0f
+        }
+        val px = IntArray(w * h)
+        bitmap.getPixels(px, 0, w, 0, 0, w, h)
+        var drawn = 0
+        for (p in px) {
+            if ((p ushr 24) > 160) drawn++
+        }
+        return drawn.toFloat() / px.size
+    }
+
+    /**
      * An icon with its empty border taken away, ready to fill a card. Modern icons come in two
      * layers bigger than what shows, so the middle of them is used; older ones are trimmed to
      * where their picture starts. Slow: call from a background thread.
@@ -20,12 +75,15 @@ object IconShape {
     fun fullBleed(res: Resources, icon: Drawable?): Drawable? {
         icon ?: return null
         return try {
-            val bitmap = if (Build.VERSION.SDK_INT >= 26 && icon is AdaptiveIconDrawable) {
-                layers(icon)
-            } else {
-                trimmed(icon)
+            if (Build.VERSION.SDK_INT >= 26 && icon is AdaptiveIconDrawable) {
+                return BitmapDrawable(res, layers(icon))
             }
-            bitmap?.let { BitmapDrawable(res, it) } ?: icon
+            val bitmap = trimmed(icon) ?: return icon
+            // Line art or a logo on nothing: shown whole, not stretched or cut to fill the card
+            if (coverage(bitmap) < 0.6f) {
+                return LineArt(res, fitted(bitmap, SIZE, 0.06f))
+            }
+            BitmapDrawable(res, bitmap)
         } catch (e: Exception) {
             icon
         }
@@ -51,7 +109,8 @@ object IconShape {
                 tint(bitmap, colour)
             } else {
                 val source = trimmed(icon) ?: return icon
-                canvas.drawBitmap(Bitmap.createScaledBitmap(source, size, size, true), 0f, 0f, null)
+                // Kept in shape: a wide logo stays wide instead of being squashed into a square
+                canvas.drawBitmap(fitted(source, size), 0f, 0f, null)
                 edges(bitmap, colour)
             }
             BitmapDrawable(res, bitmap)
@@ -70,7 +129,7 @@ object IconShape {
             val size = 192
             val bitmap = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
             val copy = icon.constantState?.newDrawable()?.mutate() ?: icon
-            copy.setBounds(0, 0, size, size)
+            fitBounds(copy, size)
             copy.draw(Canvas(bitmap))
             tint(bitmap, colour)
             BitmapDrawable(res, bitmap)
@@ -187,8 +246,18 @@ object IconShape {
 
     /** An older icon, cut down to where its picture is (most have see-through borders). */
     private fun trimmed(icon: Drawable): Bitmap? {
-        val w = icon.intrinsicWidth.takeIf { it > 0 }?.coerceIn(16, 512) ?: SIZE
-        val h = icon.intrinsicHeight.takeIf { it > 0 }?.coerceIn(16, 512) ?: SIZE
+        // Its own shape, at a workable size: a big or small picture is scaled as a whole, never
+        // one side more than the other
+        val iw = icon.intrinsicWidth.takeIf { it > 0 } ?: SIZE
+        val ih = icon.intrinsicHeight.takeIf { it > 0 } ?: SIZE
+        val big = Math.max(iw, ih)
+        val scale = when {
+            big > 512 -> 512f / big
+            big < 128 -> 128f / big
+            else -> 1f
+        }
+        val w = Math.max(1, Math.round(iw * scale))
+        val h = Math.max(1, Math.round(ih * scale))
         val full = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
         val copy = icon.constantState?.newDrawable()?.mutate() ?: icon
         copy.setBounds(0, 0, w, h)

@@ -18,7 +18,7 @@ import java.io.FileOutputStream
  * The real list loads straight after and replaces it. Thrown away if the look has changed.
  */
 object AppsOnDisk {
-    private const val VERSION = 1
+    private const val VERSION = 2  // 2: remembers icons drawn on nothing
 
     private fun dir(context: Context) = File(context.cacheDir, "apps")
 
@@ -56,6 +56,7 @@ object AppsOnDisk {
                     .put("colour", app.colour)
                     .put("banner", write(app.banner, File(fresh, "$i.b.png"), 640))
                     .put("icon", write(app.icon, File(fresh, "$i.i.png"), 256))
+                    .put("iconLine", app.icon is IconShape.LineArt)
                     .put("own", write(app.own, File(fresh, "$i.o.png"), 640))
                 list.put(o)
             }
@@ -96,7 +97,9 @@ object AppsOnDisk {
                         label = o.optString("label"),
                         launch = launch,
                         banner = picture("$i.b.png", "banner"),
-                        icon = picture("$i.i.png", "icon"),
+                        icon = if (o.optBoolean("iconLine")) {
+                            BitmapFactory.decodeFile(File(folder, "$i.i.png").path)?.let { IconShape.LineArt(context.resources, it) }
+                        } else picture("$i.i.png", "icon"),
                         tv = o.optBoolean("tv"),
                         own = picture("$i.o.png", "own"),
                         appPkg = o.optString("appPkg", o.getString("pkg")),
