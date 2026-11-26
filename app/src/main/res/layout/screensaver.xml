@@ -35,6 +35,12 @@
         android:background="#FF000000"
         android:visibility="gone" />
 
+    <!-- Snow, rain, leaves and other moving effects, when switched on -->
+    <com.tunastream.home.EffectsView
+        android:id="@+id/effects"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
+
     <TextView
         android:id="@+id/backdropCaption"
         style="@style/Shadowed"

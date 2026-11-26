@@ -34,6 +34,10 @@ class Screensaver : DreamService() {
 
     private fun showExtras() {
         val box = findViewById<View>(R.id.saverWeatherBox) ?: return
+        findViewById<EffectsView>(R.id.effects)?.let { fx ->
+            fx.amount = Effects.AMOUNT.get(this) / 100f
+            fx.kind = if (Effects.ON_SAVER.get(this)) Effects.kind(this) else Effects.Kind.NONE
+        }
         val now = Weather.current
         if (Weather.SHOW.get(this) && Weather.place(this) != null && now != null) {
             findViewById<ImageView>(R.id.saverWeatherIcon).setImageResource(Weather.icon(now.code, now.day))
@@ -108,11 +112,13 @@ class Screensaver : DreamService() {
         main.postDelayed(move, MOVE_EVERY_MS)
         main.removeCallbacks(extras)
         extras.run()
+        findViewById<EffectsView>(R.id.effects)?.start()
     }
 
     override fun onDreamingStopped() {
         main.removeCallbacks(move)
         main.removeCallbacks(extras)
+        findViewById<EffectsView>(R.id.effects)?.stop()
         backdrop?.stop()
         super.onDreamingStopped()
     }
@@ -131,6 +137,10 @@ class Screensaver : DreamService() {
         val place = {
             corner = (corner + 1) % 4
             val params = clock.layoutParams as FrameLayout.LayoutParams
+            // The same distance from the edges in every corner, inside the TV's safe area
+            val side = Math.round(48 * resources.displayMetrics.density)
+            val top = Math.round(40 * resources.displayMetrics.density)
+            params.setMargins(side, top, side, top)
             params.gravity = when (corner) {
                 0 -> Gravity.BOTTOM or Gravity.END
                 1 -> Gravity.TOP or Gravity.END

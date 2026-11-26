@@ -92,10 +92,37 @@ home home_top
 key KEYCODE_DPAD_RIGHT
 shot 14-home-neon 3
 
+home settings_page profiles
+shot 15-whos-watching 4
+key KEYCODE_BACK
+
+# Snow, through Quick changes: Effect is the 14th entry, Snow the 5th choice
+home quick_changes
+sleep 2
+for i in $(seq 13); do adb shell input keyevent KEYCODE_DPAD_DOWN; done
+key KEYCODE_DPAD_CENTER
+sleep 1
+for i in $(seq 4); do adb shell input keyevent KEYCODE_DPAD_DOWN; done
+key KEYCODE_DPAD_CENTER
+sleep 4
+key KEYCODE_BACK
+shot 16-snow 3
+# Then autumn leaves (the 8th choice)
+home quick_changes
+sleep 2
+for i in $(seq 13); do adb shell input keyevent KEYCODE_DPAD_DOWN; done
+key KEYCODE_DPAD_CENTER
+sleep 1
+for i in $(seq 7); do adb shell input keyevent KEYCODE_DPAD_DOWN; done
+key KEYCODE_DPAD_CENTER
+sleep 4
+key KEYCODE_BACK
+shot 17-leaves 3
+
 # The screen saver, as the TV would start it
 adb shell settings put secure screensaver_components "$PKG/.Screensaver" || true
 if adb shell am start -n com.android.systemui/.Somnambulator > /dev/null 2>&1; then
-  shot 15-screen-saver 8
+  shot 18-screen-saver 8
   key KEYCODE_BACK
 fi
 

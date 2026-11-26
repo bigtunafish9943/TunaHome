@@ -30,7 +30,11 @@ import java.util.zip.ZipOutputStream
 object Layouts {
     private const val PREFS_FILE = "prefs.json"
     /** Settings that belong to this TV and this moment, not to a layout. */
-    private val NOT_SAVED = setOf("changelog_seen_code", "update_last_check", "update_dismissed_code", "last_opened")
+    private val NOT_SAVED = setOf(
+        "changelog_seen_code", "update_last_check", "update_dismissed_code", "last_opened",
+        // The TV's own: the same whichever layout or person is in
+        "welcomed", "auto_backup_at", "replace_stock", "wake_app",
+    )
     private val FILES = listOf("wallpaper.jpg", "fonts/custom.ttf")
     private const val TILES = "tiles"
 
@@ -47,6 +51,20 @@ object Layouts {
 
     fun save(context: Context, name: String) {
         FileOutputStream(fileFor(context, name)).use { write(context, it) }
+    }
+
+    /** The current layout, into [file] (a person's setup, for Who's watching). */
+    fun saveTo(context: Context, file: File) {
+        FileOutputStream(file).use { write(context, it) }
+    }
+
+    /** A layout with nothing in it: loading it puts every setting back as it comes. */
+    fun saveEmpty(file: File) {
+        ZipOutputStream(FileOutputStream(file)).use { zip ->
+            zip.putNextEntry(ZipEntry(PREFS_FILE))
+            zip.write("{}".toByteArray())
+            zip.closeEntry()
+        }
     }
 
     fun delete(context: Context, name: String) {

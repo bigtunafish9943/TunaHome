@@ -44,7 +44,7 @@ internal fun HomeActivity.openFolder(id: String) {
     lateinit var dialog: AlertDialog
     val adapter = AppAdapter(tiles, Rows.WRAP, { app ->
         dialog.dismiss()
-        Launch.open(this, app) { reload() }
+        Launch.open(this, app, failed = { reload() })
     }, { app ->
         AlertDialog.Builder(this)
             .setTitle(app.label)

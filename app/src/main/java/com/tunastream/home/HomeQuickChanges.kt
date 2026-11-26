@@ -83,6 +83,7 @@ internal fun HomeActivity.quickCustomise() {
     choice(R.string.set_section_position, Look.SECTION_POSITION)
     choice(R.string.set_section_panel, Look.SECTION_PANEL)
     choice(R.string.set_clock_face, Look.CLOCK_FACE)
+    choice(R.string.set_fx, Effects.CHOICE)
     labels.add(getString(R.string.quick_fine))
     actions.add {
         startActivity(Intent(this, SettingsActivity::class.java)

@@ -37,6 +37,21 @@
         android:scaleType="centerCrop"
         android:visibility="gone" />
 
+    <!-- A Watch Next preview, playing silently while you rest on that show -->
+    <androidx.media3.ui.PlayerView
+        android:id="@+id/previewVideo"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:alpha="0"
+        android:descendantFocusability="blocksDescendants"
+        android:focusable="false"
+        android:importantForAccessibility="no"
+        android:visibility="gone"
+        app:resize_mode="zoom"
+        app:shutter_background_color="@android:color/transparent"
+        app:surface_type="texture_view"
+        app:use_controller="false" />
+
     <!-- Darkens the background so names and the clock stay readable -->
     <View
         android:id="@+id/backdropShade"
@@ -45,6 +60,12 @@
         android:alpha="0.3"
         android:background="#FF000000"
         android:visibility="gone" />
+
+    <!-- Snow, rain, leaves and other moving effects, when switched on -->
+    <com.tunastream.home.EffectsView
+        android:id="@+id/effects"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
 
     <!-- What the background shows, when a wallpaper app names it -->
     <TextView

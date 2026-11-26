@@ -154,6 +154,11 @@
             android:exported="false"
             android:screenOrientation="landscape" />
         <activity
+            android:name=".WhoActivity"
+            android:configChanges="keyboard|keyboardHidden|navigation|orientation|screenSize|screenLayout|uiMode"
+            android:exported="false"
+            android:screenOrientation="landscape" />
+        <activity
             android:name=".WelcomeActivity"
             android:configChanges="keyboard|keyboardHidden|navigation|orientation|screenSize|screenLayout|uiMode"
             android:exported="false"

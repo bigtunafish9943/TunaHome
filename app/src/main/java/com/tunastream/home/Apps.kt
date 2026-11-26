@@ -32,6 +32,8 @@ class AppEntry(
     val group: Int = Apps.OTHER,
     /** The main colour of its picture, for a glow in its own colour; 0 for none. */
     val colour: Int = 0,
+    /** A short preview video (Watch Next), played behind the apps while you rest on it. */
+    val preview: String? = null,
 ) {
     val isWatchNext: Boolean
         get() = pkg.startsWith("watchnext:")

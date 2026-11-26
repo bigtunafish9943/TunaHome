@@ -50,6 +50,7 @@ class HomeActivity : BaseActivity() {
     internal lateinit var backdrop: Backdrop
     internal lateinit var tiles: TileStyle
     internal lateinit var ambient: Ambient
+    internal lateinit var previews: Previews
     internal val sections = ArrayList<Section>()
 
     internal var apps: List<AppEntry> = emptyList()
@@ -159,6 +160,7 @@ class HomeActivity : BaseActivity() {
         )
         tiles = TileStyle(this)
         ambient = Ambient(findViewById(R.id.followBackdrop))
+        previews = Previews(findViewById(R.id.previewVideo))
         setUpDrift()
         sideMenu = SideMenu(this)
         if (sideMenu.showsRail) {
@@ -171,8 +173,9 @@ class HomeActivity : BaseActivity() {
         setUpAlignment()
         // Off the apps (on the buttons at the top): the usual background shows again
         scroll.viewTreeObserver.addOnGlobalFocusChangeListener { _, now ->
-            if (ambient.enabled && now != null && now.parent !is SectionList) {
-                ambient.focused(null)
+            if (now != null && now.parent !is SectionList) {
+                if (ambient.enabled) ambient.focused(null)
+                previews.focused(null)
             }
         }
         fadeWhenIdle.clear()
@@ -223,6 +226,15 @@ class HomeActivity : BaseActivity() {
         }
         hotkeyFromIntent(intent)
         WelcomeActivity.showIfNew(this)
+        Profiles.askIfWanted(this, Profiles.ASK_START)
+    }
+
+    /** Snow, rain, leaves or whatever is chosen, following the weather or season if asked. */
+    internal fun applyEffects() {
+        val view = findViewById<EffectsView>(R.id.effects)
+        view.amount = Effects.AMOUNT.get(this) / 100f
+        view.kind = Effects.kind(this)
+        view.visibility = if (view.kind == Effects.Kind.NONE) View.GONE else View.VISIBLE
     }
 
     /** Whether the look changed since this screen was built (for the files that extend it). */
@@ -261,6 +273,8 @@ class HomeActivity : BaseActivity() {
     override fun onStart() {
         super.onStart()
         backdrop.start()
+        applyEffects()
+        findViewById<EffectsView>(R.id.effects).start()
         watchNetwork()
         nowPlaying?.start()
         arrive()
@@ -289,7 +303,9 @@ class HomeActivity : BaseActivity() {
     /** Another app is in front: let go of the video player so that app can use the decoder. */
     override fun onStop() {
         backdrop.stop()
+        findViewById<EffectsView>(R.id.effects).stop()
         ambient.clear()
+        previews.clear()
         nowPlaying?.stop()
         networkCallback?.let {
             try {
@@ -306,7 +322,11 @@ class HomeActivity : BaseActivity() {
     internal val weatherHandler = Handler(Looper.getMainLooper())
     internal val weatherTick: Runnable = object : Runnable {
         override fun run() {
-            Weather.refresh(this@HomeActivity) { showWeather() }
+            Weather.refresh(this@HomeActivity) {
+                showWeather()
+                // The weather changed: so may the effect following it
+                applyEffects()
+            }
             weatherHandler.postDelayed(this, 30L * 60 * 1000)
         }
     }
@@ -476,6 +496,15 @@ class HomeActivity : BaseActivity() {
         }
     }
 
+    /** The voice or search button: TunaHome's own voice commands, if the viewer chose them. */
+    override fun onSearchRequested(): Boolean {
+        if (Look.MIC_TUNAHOME.get(this)) {
+            openSearch(true)
+            return true
+        }
+        return super.onSearchRequested()
+    }
+
     /** A home screen has nowhere to go back to, so Back returns to the top instead of closing. */
     @Deprecated("Deprecated in Java")
     @Suppress("OVERRIDE_DEPRECATION")
@@ -552,7 +581,10 @@ class HomeActivity : BaseActivity() {
                 RecyclerView.RecycledViewPool().apply { setMaxRecycledViews(0, 24) }
             })
             adapter.canMove = !row.ownOrder
-            adapter.onFocused = { app -> ambient.focused(app) }
+            adapter.onFocused = { app ->
+                ambient.focused(app)
+                previews.focused(app)
+            }
             adapter.onMoveStart = {
                 Toast.makeText(this, R.string.move_hint, Toast.LENGTH_SHORT).show()
             }
@@ -816,7 +848,7 @@ class HomeActivity : BaseActivity() {
             openFolder(app.pkg.removePrefix(Folders.PREFIX))
             return
         }
-        Launch.open(this, app) { reload() }
+        Launch.open(this, app, failed = { reload() })
     }
 
     // ------------------------------------------------------------------ folders

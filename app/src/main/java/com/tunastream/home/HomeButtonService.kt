@@ -62,7 +62,10 @@ class HomeButtonService : AccessibilityService() {
         override fun onReceive(context: Context, intent: Intent) {
             if (intent.action == Intent.ACTION_SCREEN_ON) {
                 // Give the TV a moment to finish waking, so its own home screen doesn't land on top
-                android.os.Handler(mainLooper).postDelayed({ openWakeApp() }, 1500)
+                android.os.Handler(mainLooper).postDelayed({
+                    // Who's watching first, if asked for; otherwise the app chosen for waking up
+                    if (!Profiles.askIfWanted(this@HomeButtonService, Profiles.ASK_WAKE)) openWakeApp()
+                }, 1500)
             }
         }
     }

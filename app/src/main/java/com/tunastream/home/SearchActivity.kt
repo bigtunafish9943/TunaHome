@@ -160,7 +160,16 @@ class SearchActivity : BaseActivity() {
         if (requestCode != REQUEST_VOICE || resultCode != RESULT_OK) {
             return
         }
-        val heard = data?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)?.firstOrNull() ?: return
+        var heard = data?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)?.firstOrNull() ?: return
+        // "Open Netflix", "watch … on Plex", "go to Favourites", "sleep in 30 minutes" and so on
+        when (val result = VoiceCommands.run(this, heard, apps)) {
+            is VoiceCommands.Result.Done -> {
+                finish()
+                return
+            }
+            is VoiceCommands.Result.Waiting -> return
+            is VoiceCommands.Result.Query -> heard = result.text
+        }
         query.setText(heard)
         query.setSelection(heard.length)
         // Spoken: go straight to the best match, ready to open with one press
@@ -170,21 +179,7 @@ class SearchActivity : BaseActivity() {
 
     /** The TV's own search (Google), for films, shows and anything that isn't an app. */
     private fun searchEverywhere() {
-        val text = query.text.toString().trim()
-        val intents = listOf(
-            Intent(Intent.ACTION_SEARCH).putExtra(SearchManager.QUERY, text).setPackage("com.google.android.katniss"),
-            Intent(Intent.ACTION_WEB_SEARCH).putExtra(SearchManager.QUERY, text),
-            Intent(Intent.ACTION_ASSIST).putExtra(SearchManager.QUERY, text),
-        )
-        for (intent in intents) {
-            try {
-                startActivity(intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
-                return
-            } catch (e: Exception) {
-                // Try the next way
-            }
-        }
-        Toast.makeText(this, R.string.search_everywhere_failed, Toast.LENGTH_LONG).show()
+        VoiceCommands.searchEverywhere(this, query.text.toString().trim())
     }
 
     /** Back from the results returns to the box first; from the box it closes. */

@@ -134,9 +134,13 @@ class WelcomeActivity : BaseActivity() {
     }
 
     private fun text(body: Int) {
-        val view = layoutInflater.inflate(R.layout.item_heading, list, false) as TextView
+        val view = TextView(this)
         view.setText(body)
-        view.isAllCaps = false
+        view.setTextColor(themeColor(R.attr.tsTextSecondary))
+        view.textSize = 16f
+        view.setLineSpacing(0f, 1.2f)
+        val pad = Math.round(Look.dp(this, 6f))
+        view.setPadding(pad, pad, pad, pad * 3)
         Look.styleText(view)
         list.addView(view)
     }

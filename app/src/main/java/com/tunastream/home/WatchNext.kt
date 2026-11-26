@@ -104,6 +104,7 @@ object WatchNext {
                         own = poster,
                         appPkg = pkg,
                         progress = progress,
+                        preview = text("preview_video_uri"),
                     )
                 )
                 if (found.size >= MAX * 2) {

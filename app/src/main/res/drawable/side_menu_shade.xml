@@ -1,9 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Behind the open side menu: dark at the edge, fading into the home screen -->
+<!-- Behind the open side menu: dark under its names, fading into the home screen past them -->
 <shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
     <gradient
         android:angle="0"
-        android:startColor="#E6000000"
-        android:centerColor="#99000000"
+        android:centerX="0.72"
+        android:startColor="#F5000000"
+        android:centerColor="#E0000000"
         android:endColor="#00000000" />
 </shape>

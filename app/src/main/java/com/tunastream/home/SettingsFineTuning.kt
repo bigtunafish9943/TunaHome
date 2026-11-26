@@ -147,6 +147,7 @@ internal fun SettingsActivity.finePage() {
     slider(R.string.fine_follow_dark, Ambient.FINE_DARK)
     slider(R.string.fine_panel, Look.FINE_PANEL)
     slider(R.string.fine_panel_corners, Look.FINE_PANEL_CORNERS)
+    slider(R.string.fx_amount, Effects.AMOUNT)
     row(R.string.fine_reset, getString(R.string.fine_reset_summary)) {
         Look.allFine().forEach { it.clear(this) }
         changed()

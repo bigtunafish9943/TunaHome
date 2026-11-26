@@ -380,6 +380,9 @@ object Look {
         intArrayOf(R.string.position_top, R.string.position_middle, R.string.position_free)
     )
 
+    /** The remote's voice button on the home screen: Google's assistant, or TunaHome's own commands. */
+    val MIC_TUNAHOME = Switch("look_mic_tunahome", false)
+
     /** Moving up or down into a section goes back to the app you were on there last. */
     val REMEMBER_PLACE = Switch("look_remember_place", true)
 
@@ -576,7 +579,7 @@ object Look {
     fun allFine(): List<Level> = listOf(
         FINE_CARD_SIZE, FINE_CORNERS, FINE_GAP, FINE_ZOOM, FINE_ROW_GAP, FINE_TEXT, FINE_CLOCK,
         FINE_GLOW, FINE_DIM_OTHERS, FINE_SPEED, FINE_SHINE, Backdrop.FINE_DIM, Ambient.FINE_DARK,
-        FINE_PANEL, FINE_PANEL_CORNERS,
+        FINE_PANEL, FINE_PANEL_CORNERS, Effects.AMOUNT,
     )
 
     fun dp(context: Context, value: Float): Float = value * context.resources.displayMetrics.density

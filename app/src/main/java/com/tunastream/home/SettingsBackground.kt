@@ -140,6 +140,13 @@ internal fun SettingsActivity.backgroundPage() {
         switch(R.string.set_idle_clock, Look.IDLE_CLOCK, R.string.idle_clock_on, R.string.idle_clock_off)
     }
 
+    heading(R.string.heading_fx)
+    choice(R.string.set_fx, Effects.CHOICE)
+    if (Effects.CHOICE.get(this) != Effects.OFF) {
+        slider(R.string.fx_amount, Effects.AMOUNT)
+        switch(R.string.fx_on_saver, Effects.ON_SAVER, R.string.on, R.string.off)
+    }
+
     heading(R.string.heading_screensaver)
     row(
         R.string.set_screensaver,

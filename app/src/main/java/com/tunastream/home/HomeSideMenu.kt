@@ -59,7 +59,12 @@ internal fun HomeActivity.refreshMenu() {
     if (Look.SIDE_MENU_SHORTCUTS.get(this)) {
         entries.add(SideMenu.Entry(0, "", null) {})
         entries.add(SideMenu.Entry(R.drawable.ic_search, getString(R.string.search), null) { openSearch(false) })
-        entries.add(SideMenu.Entry(R.drawable.ic_display, getString(R.string.quick_title), null) {
+        if (Profiles.inUse(this)) {
+            entries.add(SideMenu.Entry(R.drawable.ic_person, getString(R.string.who_menu, Profiles.current(this)?.name ?: ""), null) {
+                WhoActivity.start(this)
+            })
+        }
+        entries.add(SideMenu.Entry(R.drawable.ic_tune, getString(R.string.quick_title), null) {
             quickCustomise()
         })
         entries.add(SideMenu.Entry(R.drawable.ic_settings, getString(R.string.tunahome_settings), null) {

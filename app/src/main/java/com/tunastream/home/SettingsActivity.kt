@@ -117,6 +117,7 @@ class SettingsActivity : BaseActivity() {
             UPDATES -> updatesPage()
             SEARCH -> searchPage()
             FINE -> finePage()
+            PROFILES -> profilesPage()
             else -> mainPage()
         }
     }
@@ -232,6 +233,7 @@ class SettingsActivity : BaseActivity() {
             HOME_BUTTON,
             getString(if (HomeButtonService.isOn(this)) R.string.on else R.string.off)
         )
+        pageRow(PROFILES, profilesSummary())
         Layouts.saved(this).size.let { n ->
             pageRow(LAYOUTS, if (n == 0) getString(R.string.layouts_none_short)
                 else resources.getQuantityString(R.plurals.layouts_count, n, n))
@@ -413,7 +415,7 @@ class SettingsActivity : BaseActivity() {
         /** The pages a settings search looks through. */
         internal val SEARCHABLE = listOf(
             "background", "sections", "colours", "text", "pictures", "top_bar", "sounds", "shortcuts",
-            "weather", "apps", "home_button", "layouts", "updates", "fine",
+            "weather", "apps", "home_button", "layouts", "updates", "fine", "profiles",
         )
         internal const val STATE_FOCUS = "focus"
 
@@ -432,6 +434,7 @@ class SettingsActivity : BaseActivity() {
         const val HOME_BUTTON = "home_button"
         const val UPDATES = "updates"
         const val FINE = "fine"
+        const val PROFILES = "profiles"
 
         fun pageTitle(page: String): Int = when (page) {
             BACKGROUND -> R.string.page_background
@@ -448,6 +451,7 @@ class SettingsActivity : BaseActivity() {
             HOME_BUTTON -> R.string.page_home_button
             UPDATES -> R.string.page_updates
             FINE -> R.string.page_fine
+            PROFILES -> R.string.page_profiles
             else -> R.string.settings
         }
 
