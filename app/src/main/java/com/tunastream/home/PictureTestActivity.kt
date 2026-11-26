@@ -328,15 +328,21 @@ class PictureTestActivity : BaseActivity() {
                 s += " " + res.getString(R.string.pt_mode_also, rates)
             }
             if (Build.VERSION.SDK_INT >= 24) {
-                val hdr = d.hdrCapabilities?.supportedHdrTypes?.mapNotNull {
-                    when (it) {
-                        Display.HdrCapabilities.HDR_TYPE_DOLBY_VISION -> "Dolby Vision"
-                        Display.HdrCapabilities.HDR_TYPE_HDR10 -> "HDR10"
-                        Display.HdrCapabilities.HDR_TYPE_HLG -> "HLG"
-                        4 -> "HDR10+"
-                        else -> null
+                val types: IntArray = try {
+                    @Suppress("DEPRECATION")
+                    d.hdrCapabilities?.supportedHdrTypes ?: IntArray(0)
+                } catch (e: Exception) {
+                    IntArray(0)
+                }
+                val hdr = ArrayList<String>()
+                for (type in types) {
+                    when (type) {
+                        Display.HdrCapabilities.HDR_TYPE_DOLBY_VISION -> hdr.add("Dolby Vision")
+                        Display.HdrCapabilities.HDR_TYPE_HDR10 -> hdr.add("HDR10")
+                        Display.HdrCapabilities.HDR_TYPE_HLG -> hdr.add("HLG")
+                        4 -> hdr.add("HDR10+")
                     }
-                }.orEmpty()
+                }
                 if (hdr.isNotEmpty()) {
                     s += " " + res.getString(R.string.pt_mode_hdr, hdr.joinToString(", "))
                 }
