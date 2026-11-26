@@ -917,7 +917,7 @@
     <string name="sleep_title_left">Sleep timer: %1$d min left</string>
     <string name="sleep_off">Off</string>
     <string name="sleep_set">The TV will go to sleep in %1$s</string>
-    <string name="sleep_warning">TunaHome: the TV goes to sleep in a minute</string>
+    <string name="sleep_warning">TunaHome: the TV goes to sleep in a minute. Press any button to keep watching.</string>
     <string name="sleep_in">Sleep in %1$d min</string>
     <string name="sleep_menu_left">Sleep in %1$d min</string>
     <string name="act_sleep_timer">Sleep timer</string>
@@ -1142,4 +1142,5 @@
     <string name="battery_always">Always</string>
     <string name="info_battery">%1$s %2$d%%</string>
     <string name="info_battery_low">%1$s battery low: %2$d%%</string>
+    <string name="sleep_extended">Still watching: the sleep timer moved on %1$d minutes.</string>
 </resources>

@@ -3,6 +3,7 @@ package com.tunastream.home
 import android.accessibilityservice.AccessibilityService
 import android.app.Activity
 import android.content.Context
+import android.media.AudioManager
 import android.os.Build
 import android.os.Handler
 import android.os.Looper
@@ -12,7 +13,9 @@ import android.widget.Toast
 /**
  * Puts the TV to sleep after a while, for falling asleep to a film. Works while another app is
  * in front, through the Home button service (which keeps TunaHome running), so it needs that
- * switched on. A minute before, a message says it's about to happen.
+ * switched on. A minute before, a message says it's about to happen and the sound fades down;
+ * any button in that minute puts it off by 15 minutes (as a TV asks "still watching?"). The
+ * volume is put back afterwards, so the morning doesn't start silent.
  */
 object SleepTimer {
     private val CHOICES = intArrayOf(0, 15, 30, 45, 60, 90, 120, 180)
@@ -29,12 +32,67 @@ object SleepTimer {
         return if (left <= 0) 0 else ((left + 59_999) / 60_000).toInt()
     }
 
+    private const val FADE_STEPS = 12
+    private const val EXTEND_MINUTES = 15
+
+    /** The volume before the fade began; -1 when it isn't fading. */
+    private var volumeBefore = -1
+    private var fadeStep = 0
+
+    private fun audio(): AudioManager? = app?.getSystemService(AudioManager::class.java)?.takeIf { !it.isVolumeFixed }
+
     private val warn = Runnable {
         app?.let { Toast.makeText(it, R.string.sleep_warning, Toast.LENGTH_LONG).show() }
+        val audio = audio() ?: return@Runnable
+        volumeBefore = audio.getStreamVolume(AudioManager.STREAM_MUSIC)
+        fadeStep = 0
+        main.postDelayed(fade, 5_000L)
+    }
+
+    /** Down to a quarter of the volume over the last minute. */
+    private val fade: Runnable = object : Runnable {
+        override fun run() {
+            val audio = audio() ?: return
+            if (volumeBefore <= 0) return
+            fadeStep++
+            val target = volumeBefore - (volumeBefore * 3 / 4) * fadeStep / FADE_STEPS
+            try {
+                audio.setStreamVolume(AudioManager.STREAM_MUSIC, target.coerceAtLeast(1), 0)
+            } catch (e: Exception) {
+                return
+            }
+            if (fadeStep < FADE_STEPS) main.postDelayed(this, 5_000L)
+        }
+    }
+
+    private fun restoreVolume() {
+        main.removeCallbacks(fade)
+        val before = volumeBefore
+        volumeBefore = -1
+        if (before < 0) return
+        try {
+            audio()?.setStreamVolume(AudioManager.STREAM_MUSIC, before, 0)
+        } catch (e: Exception) {
+            // Do not disturb, or the TV keeps the volume itself
+        }
+    }
+
+    /**
+     * A button was pressed anywhere (from the Home button service). In the last minute, that
+     * means someone's still watching: the timer moves 15 minutes on.
+     */
+    fun pressed() {
+        if (endsAt == 0L || endsAt - SystemClock.elapsedRealtime() > 60_000L) return
+        val context = app ?: return
+        restoreVolume()
+        set(context, EXTEND_MINUTES)
+        Toast.makeText(context, context.getString(R.string.sleep_extended, EXTEND_MINUTES), Toast.LENGTH_LONG).show()
     }
 
     private val sleep = Runnable {
         endsAt = 0
+        // Back to how loud it was, once the screen is off
+        main.postDelayed({ restoreVolume() }, 4_000L)
         val service = HomeButtonService.running
         val done = Build.VERSION.SDK_INT >= 28 && service != null &&
             service.performGlobalAction(AccessibilityService.GLOBAL_ACTION_LOCK_SCREEN)
@@ -47,6 +105,7 @@ object SleepTimer {
         app = context.applicationContext
         main.removeCallbacks(warn)
         main.removeCallbacks(sleep)
+        restoreVolume()
         if (minutes <= 0) {
             endsAt = 0
             return

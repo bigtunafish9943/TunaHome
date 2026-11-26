@@ -113,6 +113,9 @@ class HomeButtonService : AccessibilityService() {
     }
 
     override fun onKeyEvent(event: KeyEvent): Boolean {
+        if (event.action == KeyEvent.ACTION_DOWN) {
+            SleepTimer.pressed()
+        }
         if (pointer.onKey(event)) {
             return true
         }
