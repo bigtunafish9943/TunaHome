@@ -73,6 +73,7 @@ class HomeButtonService : AccessibilityService() {
     override fun onServiceConnected() {
         super.onServiceConnected()
         running = this
+        OpenApps.addDefaultShortcut(this)
         registerReceiver(wakeReceiver, android.content.IntentFilter(Intent.ACTION_SCREEN_ON))
         // Switched on by Android just after the TV started: that's a wake-up too
         if (SystemClock.elapsedRealtime() < 3 * 60 * 1000) {
@@ -134,6 +135,8 @@ class HomeButtonService : AccessibilityService() {
         }
         val pkg = event.packageName?.toString() ?: return
         val cls = event.className?.toString() ?: ""
+        // For Open apps: what came to the front
+        OpenApps.note(this, pkg)
         when {
             pkg == PcGames.RECEIVER && cls in STREAMING_SCREENS -> setKeyFiltering(false)
             // TunaReceive's own pop-ups over the stream leave things as they are
@@ -182,7 +185,7 @@ class HomeButtonService : AccessibilityService() {
          */
         private val STREAMING_SCREENS = setOf("com.limelight.Game", "com.limelight.WatchActivity")
 
-        private val STOCK_HOME_SCREENS = setOf(
+        internal val STOCK_HOME_SCREENS = setOf(
             "com.google.android.tvlauncher",
             "com.google.android.apps.tv.launcherx",
             "com.google.android.leanbacklauncher",

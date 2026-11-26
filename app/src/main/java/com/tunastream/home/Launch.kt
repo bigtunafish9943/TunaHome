@@ -21,6 +21,7 @@ object Launch {
             if (!app.isInsideApp) {
                 Prefs.setLastOpened(activity, app.pkg)
                 Prefs.addRecent(activity, app.pkg)
+                OpenApps.note(activity, app.appPkg)
                 Prefs.addUse(activity, app.pkg)
                 Prefs.addHourUse(activity, app.pkg)
             }

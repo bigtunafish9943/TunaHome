@@ -35,6 +35,7 @@ object HotkeyActions {
     const val QUICK = "quick_changes"
     const val PHONE = "phone_setup"
     const val WHO = "whos_watching"
+    const val OPEN_APPS = "open_apps"
 
     /**
      * Opens one page of TunaHome settings (the argument names it). Not offered as a shortcut:
@@ -56,6 +57,7 @@ object HotkeyActions {
         MUTE to R.string.act_mute,
         NEXT_BACKGROUND to R.string.act_next_background,
         IDLE to R.string.act_idle,
+        OPEN_APPS to R.string.act_open_apps,
         RECENTS to R.string.act_recents,
         NOTIFICATIONS to R.string.act_notifications,
         SCREENSHOT to R.string.act_screenshot,
@@ -135,6 +137,8 @@ object HotkeyActions {
             SETTINGS -> context.startActivity(Intent(context, SettingsActivity::class.java)
                 .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
             TV_SETTINGS -> HomeActivity.openTvSettings(context)
+            OPEN_APPS -> context.startActivity(Intent(context, OpenAppsActivity::class.java)
+                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
             OPEN_APP -> {
                 val pm = context.packageManager
                 val launch = arg?.let { pm.getLeanbackLaunchIntentForPackage(it) ?: pm.getLaunchIntentForPackage(it) }
