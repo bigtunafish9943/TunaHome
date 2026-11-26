@@ -44,7 +44,8 @@ object Updater {
     private const val DOWNLOAD_PREFIX = "https://github.com/$REPO/releases/download/"
     private const val PREF_DISMISSED_CODE = "update_dismissed_code"
     private const val PREF_LAST_CHECK = "update_last_check"
-    private const val AUTO_CHECK_INTERVAL_MS = 6L * 60 * 60 * 1000
+    // Hourly: releases can come several in an evening, and waiting six hours left the TV well behind
+    private const val AUTO_CHECK_INTERVAL_MS = 60L * 60 * 1000
     private const val ACTION_INSTALL_RESULT = "com.tunastream.home.UPDATE_INSTALL_RESULT"
 
     /** A release waiting for the viewer to allow installs from TunaHome. */
@@ -109,7 +110,7 @@ object Updater {
 
     /**
      * Checks for an update and offers it. When [userAsked] is false this is the quiet check made
-     * when the home screen shows: at most every few hours, and a version the viewer said "Later"
+     * when the home screen shows: at most every hour, and a version the viewer said "Later"
      * to isn't offered again.
      */
     fun check(activity: Activity, userAsked: Boolean) {

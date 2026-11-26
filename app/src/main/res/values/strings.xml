@@ -462,7 +462,7 @@
 
     <!-- Updates -->
     <string name="set_auto_update">Check by itself</string>
-    <string name="set_auto_update_on">On. TunaHome looks for an update every few hours and asks before installing it.</string>
+    <string name="set_auto_update_on">On. TunaHome looks for an update every hour and asks before installing it.</string>
     <string name="set_auto_update_off">Off. Use Check for updates, or the Update button.</string>
     <string name="whats_new">What\'s new</string>
     <string name="whats_new_summary">What changed in TunaHome %1$s.</string>
