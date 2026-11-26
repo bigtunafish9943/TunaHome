@@ -73,6 +73,8 @@ What the service does:
 
 It only receives key presses and the name of the app that came to the front. It cannot read what is on screen, and it sends nothing anywhere.
 
+**While TunaReceive streams a game**, the service stops looking at button presses, so controller input goes straight to the game with no added delay. Home then opens the TV's own home screen (or TunaHome, if "Replace the usual home screen" is on), and shortcuts on Home and Back wait until the stream ends.
+
 **Safety net:** if TunaHome stops with an error twice within three minutes, the Home button lets the TV's own home screen open for a few minutes, so the TV is never left without one.
 
 Known limits: holding Home no longer reaches the TV's own long-press action while the service is on, and a TV update can stop this kind of override working.
