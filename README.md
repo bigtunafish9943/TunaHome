@@ -69,6 +69,7 @@ Choosing a file needs an app on the TV that can browse files, such as a file man
 ### Backgrounds
 
 - The theme's colours, your own picture, your own videos and pictures (from the TV or a web address), a picture of the day (Bing, Wikipedia or NASA), or a **wallpaper app such as Aerial Views**. Wallpaper apps made for Projectivy Launcher work with TunaHome the same way: pick which videos you want in the wallpaper app's own settings.
+- **A photo frame:** on TunaHome's phone page, send any number of photos and videos from your phone; they show behind your apps in turn and on TunaHome's screen saver, each picture slowly zooming in or out (*Slow zoom on pictures*).
 - How dark it is, how it fits the screen, how often pictures change, shuffled or in order, and the name of what's showing.
 - Brightness, contrast, colour strength and blur. Animated GIF and WebP pictures play (Android 9 and later).
 - The background can **follow the app you're on** (its TV picture fades in, sharp or blurred) and **drift** a little as you scroll.

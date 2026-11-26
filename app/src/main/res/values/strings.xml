@@ -1197,4 +1197,6 @@
     <string name="morning_continue">Continue watching: %1$s</string>
     <string name="morning_yesterday">Yesterday on the TV: %1$s</string>
     <string name="morning_hint">Press any button to go on</string>
+    <string name="bg_slow_zoom">Slow zoom on pictures</string>
+    <string name="bg_slow_zoom_on">On, like a photo frame</string>
 </resources>

@@ -139,6 +139,9 @@ class Backdrop(
         val FINE_DIM = Look.Level("fine_bg_dim", 0, 90, 5, R.string.fine_percent,
             { Math.round(DIM_ALPHA[DIM.get(it)] * 100) }, DIM)
 
+        /** Pictures in turn slowly zoom in and out, like a photo frame (still pictures only). */
+        val SLOW_ZOOM = Look.Switch("bg_slow_zoom", true)
+
         val SHUFFLE = Look.Switch("bg_shuffle", true)
         val SHOW_CAPTION = Look.Switch("bg_caption", false)
         val PLAY_VIDEOS = Look.Switch("bg_play_videos", true)
@@ -448,8 +451,26 @@ class Backdrop(
         player?.pause()
         video.visibility = View.GONE
         if (items.size > 1) {
-            main.postDelayed({ next() }, CHANGE_MS[CHANGE_EVERY.get(context)])
+            val every = CHANGE_MS[CHANGE_EVERY.get(context)]
+            main.postDelayed({ next() }, every)
+            slowZoom(drawable, every)
         }
+    }
+
+    private var zoomingIn = true
+
+    /**
+     * Photo-frame movement: each still picture zooms in a little over its time, the next one out
+     * again, so the movement never jumps back. On top of the drift's own enlargement.
+     */
+    private fun slowZoom(drawable: Drawable, ms: Long) {
+        if (!SLOW_ZOOM.get(context) || drawable is Animatable) return
+        val base = if (DRIFT.get(context)) 1.1f else 1f
+        val far = base * 1.08f
+        image.animate().cancel()
+        val target = if (zoomingIn) far else base
+        zoomingIn = !zoomingIn
+        image.animate().scaleX(target).scaleY(target).setDuration(ms + 800).setInterpolator(android.view.animation.LinearInterpolator()).start()
     }
 
     /** Fades from what was showing to [drawable]. */

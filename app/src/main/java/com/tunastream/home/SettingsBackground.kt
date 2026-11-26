@@ -123,6 +123,7 @@ internal fun SettingsActivity.backgroundPage() {
         if (source != Backdrop.SOURCE_PICTURE && source != Backdrop.SOURCE_DAILY) {
             choice(R.string.bg_change_every, Backdrop.CHANGE_EVERY)
             switch(R.string.bg_shuffle, Backdrop.SHUFFLE, R.string.bg_shuffle_on, R.string.bg_shuffle_off)
+            switch(R.string.bg_slow_zoom, Backdrop.SLOW_ZOOM, R.string.bg_slow_zoom_on, R.string.off)
             switch(R.string.bg_play_videos, Backdrop.PLAY_VIDEOS, R.string.bg_play_videos_on, R.string.bg_play_videos_off)
         }
         if (source == Backdrop.SOURCE_APP || source == Backdrop.SOURCE_DAILY) {
