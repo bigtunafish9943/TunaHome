@@ -120,27 +120,78 @@ object TwoUp {
         return options.toBundle()
     }
 
-    /** Apps TunaHome put in a window, until they're opened full screen again. */
+    /** Apps TunaHome put in a window, until they're opened full screen again, and since when. */
     private const val WINDOWED = "two_up_windowed"
+    private const val WINDOWED_BOOT = "two_up_windowed_boot"
 
-    private fun windowed(context: Context): MutableSet<String> =
-        HashSet(Prefs.of(context).getStringSet(WINDOWED, emptySet()) ?: emptySet())
+    /** When the TV last started, to the nearest minute: a restart puts every app back full screen. */
+    private fun bootMinute(): Long = (System.currentTimeMillis() - android.os.SystemClock.elapsedRealtime()) / 60_000
+
+    private fun windowed(context: Context): MutableSet<String> {
+        val prefs = Prefs.of(context)
+        if (Math.abs(prefs.getLong(WINDOWED_BOOT, 0) - bootMinute()) > 1) return HashSet()
+        return HashSet(prefs.getStringSet(WINDOWED, emptySet()) ?: emptySet())
+    }
 
     private fun setWindowed(context: Context, pkgs: Set<String>) {
-        Prefs.of(context).edit().putStringSet(WINDOWED, pkgs).apply()
+        Prefs.of(context).edit().putStringSet(WINDOWED, pkgs).putLong(WINDOWED_BOOT, bootMinute()).apply()
+    }
+
+    private val main = android.os.Handler(android.os.Looper.getMainLooper())
+
+    /**
+     * Presses one of the buttons Android draws at the top of an app's window (full screen, or
+     * close), as a tap through the Home button service. The bar is 42dp tall with two 32dp
+     * buttons at its right end: close at the very end, full screen beside it.
+     */
+    private fun pressWindowButton(context: Context, window: Rect, close: Boolean): Boolean {
+        val service = HomeButtonService.running ?: return false
+        if (Build.VERSION.SDK_INT < 24) return false
+        val dp = context.resources.displayMetrics.density
+        val x = window.right - dp * (if (close) 21f else 63f)
+        val y = window.top + dp * 21f
+        val path = android.graphics.Path().apply { moveTo(x, y) }
+        return try {
+            service.dispatchGesture(
+                android.accessibilityservice.GestureDescription.Builder()
+                    .addStroke(android.accessibilityservice.GestureDescription.StrokeDescription(path, 0, 60)).build(),
+                null, null,
+            )
+        } catch (e: Exception) {
+            false
+        }
+    }
+
+    /** Where TunaHome put this app's window. */
+    private fun windowOf(context: Context, pkg: String): Rect? {
+        val (big, small) = bounds(context, layout(context))
+        return when (pkg) {
+            first(context) -> big
+            second(context) -> small
+            else -> null
+        }
     }
 
     /**
      * An app keeps the window it was opened in for as long as Android keeps it, even when opened
-     * again normally. Opening one of Two at once's apps from TunaHome brings it back full screen.
-     * True when it was opened here.
+     * again normally. Opening one of Two at once's apps from TunaHome brings it back full screen:
+     * as a new copy, or for an app that allows only one, by pressing its window's full screen
+     * button. True when it was opened here.
      */
     fun takeBack(context: Context, pkg: String): Boolean {
         val set = windowed(context)
         if (pkg !in set || !ready(context)) return false
-        if (!launch(context, pkg, MODE_FULLSCREEN, null, newTask = true)) return false
+        val app = context.applicationContext
+        if (onlyOneCopy(app, pkg)) {
+            val window = windowOf(app, pkg) ?: return false
+            if (HomeButtonService.running == null) return false
+            if (!launch(app, pkg, MODE_FREEFORM, window, newTask = false)) return false
+            main.postDelayed({ pressWindowButton(app, window, close = false) }, 900)
+        } else if (!launch(app, pkg, MODE_FULLSCREEN, null, newTask = true)) {
+            return false
+        }
         set.remove(pkg)
-        setWindowed(context, set)
+        setWindowed(app, set)
         return true
     }
 
@@ -204,22 +255,45 @@ object TwoUp {
     }
 
     /**
-     * Back to one app, full screen (as a new copy: see [onlyOneCopy]). The other one is stopped
-     * once it's out of sight, so its window doesn't keep playing behind.
+     * Back to one app, full screen. With the Home button service on, the other app's window is
+     * closed with its close button and the first one's full screen button is pressed, so both are
+     * where they were before; without it, the first opens again full screen as a new copy and the
+     * other is stopped once it's out of sight.
      */
     fun end(context: Context) {
-        val keep = first(context) ?: return
-        val other = second(context)
-        if (!takeBack(context, keep)) launch(context, keep, MODE_FULLSCREEN, null, newTask = true)
-        if (other != null && other != keep) {
-            android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
-                try {
-                    (context.getSystemService(Context.ACTIVITY_SERVICE) as android.app.ActivityManager).killBackgroundProcesses(other)
-                } catch (e: Exception) {
-                    // Not allowed now: it stays paused behind
-                }
-            }, 3000)
+        val app = context.applicationContext
+        val keep = first(app) ?: return
+        val other = second(app)?.takeIf { it != keep }
+        val (big, small) = bounds(app, layout(app))
+        val set = windowed(app)
+        if (HomeButtonService.running != null && ready(app)) {
+            var at = 300L
+            if (other != null && other in set) {
+                main.postDelayed({ launch(app, other, MODE_FREEFORM, small, newTask = false) }, at)
+                main.postDelayed({ pressWindowButton(app, small, close = true) }, at + 900)
+                at += 1500
+            }
+            if (keep in set) {
+                main.postDelayed({ launch(app, keep, MODE_FREEFORM, big, newTask = false) }, at)
+                main.postDelayed({ pressWindowButton(app, big, close = false) }, at + 900)
+            } else {
+                main.postDelayed({ launch(app, keep, MODE_FULLSCREEN, null, newTask = false) }, at)
+            }
+        } else {
+            if (!takeBack(app, keep)) launch(app, keep, MODE_FULLSCREEN, null, newTask = true)
+            if (other != null) {
+                main.postDelayed({
+                    try {
+                        (app.getSystemService(Context.ACTIVITY_SERVICE) as android.app.ActivityManager).killBackgroundProcesses(other)
+                    } catch (e: Exception) {
+                        // Not allowed now: it stays paused behind
+                    }
+                }, 3000)
+            }
         }
+        set.remove(keep)
+        other?.let { set.remove(it) }
+        setWindowed(app, set)
     }
 }
 
