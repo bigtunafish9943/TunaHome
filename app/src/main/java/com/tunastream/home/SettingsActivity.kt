@@ -255,6 +255,9 @@ class SettingsActivity : BaseActivity() {
             else getString(R.string.link_summary)) {
             PcLink.manage(this) { build() }
         }
+        row(R.string.remote_title, getString(if (PhoneRemote.ON.get(this)) R.string.remote_summary_on else R.string.remote_summary)) {
+            PhoneRemote.manage(this) { build() }
+        }
         row(R.string.usage_title, getString(R.string.usage_summary)) { UsageLog.show(this) }
         row(R.string.picture_test, getString(R.string.picture_test_summary)) {
             startActivity(android.content.Intent(this, PictureTestActivity::class.java))

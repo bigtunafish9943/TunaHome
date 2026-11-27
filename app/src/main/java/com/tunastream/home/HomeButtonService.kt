@@ -116,6 +116,7 @@ class HomeButtonService : AccessibilityService() {
         OpenApps.addDefaultShortcut(this)
         guardHandler.postDelayed(guardTick, GUARD_TICK_MS)
         pcLink.start()
+        PhoneRemote.start(this)
         registerReceiver(wakeReceiver, android.content.IntentFilter(Intent.ACTION_SCREEN_ON).apply {
             addAction(Intent.ACTION_SCREEN_OFF)
         })
@@ -129,6 +130,7 @@ class HomeButtonService : AccessibilityService() {
         guardHandler.removeCallbacks(guardTick)
         pcLink.stop()
         pointer.off(false)
+        PhoneRemote.stop()
         if (running === this) {
             running = null
         }
@@ -236,7 +238,7 @@ class HomeButtonService : AccessibilityService() {
     override fun onInterrupt() {
     }
 
-    private fun showHome() {
+    internal fun showHome() {
         try {
             startActivity(
                 Intent(this, HomeActivity::class.java)

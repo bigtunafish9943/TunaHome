@@ -38,6 +38,7 @@ To make the Home button open TunaHome, see [Making the Home button open TunaHome
 - **Screen saver:** TunaHome can be the TV's screen saver, showing your background (Aerial Views too) with the time, the weather and what's playing, moving corner to corner every few minutes. Choose it in the TV's screen saver settings (TunaHome settings, Background, Screen saver, takes you there).
 - **Your week on the TV** (TunaHome settings): how long each app was on screen this week, day by day, with the apps used most. Timed through the Home button setting while the screen is on, kept on the TV for two weeks and never sent anywhere; *Clear* forgets it.
 - **Messages from your PC** (TunaHome settings): link [TunaStream](https://github.com/bigtunafish9943/TunaStream) (TunaHome finds the PC, you select *Allow* on TunaStream's home page) and messages it sends to everyone pop up at the top of the TV with a chime, over whatever is on, streaming or not. TunaStream's *Goodnight* puts the TV to sleep. The link can only read messages; it works while the Home button setting is on, and stops when the TV sleeps.
+- **Phone remote** (TunaHome settings, off until you turn it on): lost the remote in the sofa? Scan the code on the TV with a phone on your home network and it becomes a remote: Back, Home, Open apps, play and pause, volume, any app, sleep and Find my remote, plus a touchpad that moves TunaHome's pointer and taps where it points (arrow keys too, on Android 13 and later). A phone joins once with the code; *Forget phones* signs them all out. It answers on the home network only and works while the Home button setting is on.
 - **Picture test** (TunaHome settings): test patterns for setting up the TV's picture (black and white level, colour bars, gradients for banding, edges for overscan and sharpness, and a moving bar for smooth motion that counts frames the TV box skips), with the screen mode the box is sending, the other refresh rates the TV offers and its HDR formats. Left and Right change pattern.
 
 ## Sections
@@ -165,6 +166,7 @@ Nothing about you or your TV is collected. TunaHome only connects to:
 - Web addresses you give it yourself, for pictures, videos and icons.
 
 **Set up from your phone** runs a small web page on the TV only while its screen is open, answering only on your home network and only after the code on the TV is typed.
+**Phone remote**, if you turn it on, works the same way but stays on while the Home button setting is on, so a phone can be the remote any time; turn it off or forget phones in TunaHome settings.
 
 For You, Recently opened, app use counts and everything else stay on the TV.
 

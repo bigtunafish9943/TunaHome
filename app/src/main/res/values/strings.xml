@@ -1240,6 +1240,17 @@
     <string name="set_watch_next_access">Watch Next from your apps</string>
     <string name="watch_next_access_on">Allowed: shows apps share with the TV appear in Watch Next</string>
     <string name="watch_next_access_off">Not allowed yet: select to let TunaHome read TV listings, which Watch Next needs</string>
+    <string name="remote_title">Phone remote</string>
+    <string name="remote_summary">Use a phone as the remote, for when the real one goes missing</string>
+    <string name="remote_summary_on">On: open it on a phone on your home network</string>
+    <string name="remote_off_body">A phone on your home network becomes a remote for this TV: Back, Home, Open apps, play and pause, volume, opening any app, sleep and Find my remote, and a touchpad that moves a pointer and taps where it points. A phone joins once with a code shown here.</string>
+    <string name="remote_turn_on">Turn on</string>
+    <string name="remote_turn_off">Turn off</string>
+    <string name="remote_forget">Forget phones</string>
+    <string name="remote_forgotten">Phones forgotten. They\'ll need the new code.</string>
+    <string name="remote_on_body">Scan this with the phone, or open %1$s in its browser and type the code %2$s.</string>
+    <string name="remote_needs_service">The phone remote needs the Home button service. Turn it on first (TunaHome settings, Home button).</string>
+    <string name="remote_no_network">The TV isn\'t on a home network right now.</string>
     <string name="link_title">Messages from your PC</string>
     <string name="link_summary">Link TunaStream, so messages from your PC pop up on this TV over whatever is on</string>
     <string name="link_linked_to">Linked to %1$s</string>

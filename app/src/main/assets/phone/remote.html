@@ -1,0 +1,300 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="theme-color" content="#12161d">
+<title>TV remote</title>
+<style>
+  :root {
+    --bg: #12161d; --panel: #1b212b; --panel2: #232b37; --text: #eef2f7; --soft: #9aa6b6;
+    --accent: #f5a23c; --good: #43c59e; --bad: #e86a5f; --line: #2c3542;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; background: var(--bg); color: var(--text); font: 16px/1.4 system-ui, -apple-system, Segoe UI, Roboto, sans-serif; }
+  body { padding: env(safe-area-inset-top) 16px calc(24px + env(safe-area-inset-bottom)); max-width: 520px; margin: 0 auto; }
+  h1 { font-size: 20px; margin: 14px 0 12px; display: flex; align-items: center; gap: 8px; }
+  h1 span { color: var(--accent); }
+  h1 small { margin-left: auto; color: var(--soft); font-size: 13px; font-weight: 400; }
+  button { font: inherit; color: var(--text); background: var(--panel2); border: 1px solid var(--line); border-radius: 14px; padding: 12px 6px; touch-action: manipulation; user-select: none; -webkit-user-select: none; }
+  button:active { background: var(--line); transform: scale(.97); }
+  button.primary { background: var(--accent); color: #1b1206; border-color: var(--accent); font-weight: 600; }
+  .grid { display: grid; gap: 8px; margin-bottom: 8px; }
+  .g3 { grid-template-columns: repeat(3, 1fr); }
+  .g2 { grid-template-columns: repeat(2, 1fr); }
+  .pad { position: relative; height: 46vh; min-height: 240px; max-height: 420px; background: var(--panel); border: 1px solid var(--line); border-radius: 22px; touch-action: none; margin-bottom: 10px; overflow: hidden; }
+  .pad p { position: absolute; inset: auto 0 12px; text-align: center; color: var(--soft); font-size: 13px; margin: 0; pointer-events: none; }
+  .pad .dot { position: absolute; width: 44px; height: 44px; margin: -22px 0 0 -22px; border-radius: 50%; background: rgba(245,162,60,.25); border: 2px solid var(--accent); display: none; pointer-events: none; }
+  .dpad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 8px; }
+  .dpad button { padding: 16px 0; font-size: 20px; }
+  .dpad .ok { border-radius: 50%; aspect-ratio: 1; padding: 0; font-size: 16px; font-weight: 600; }
+  .tabs { display: flex; gap: 6px; margin: 4px 0 10px; }
+  .tabs button { flex: 1; padding: 9px 6px; font-size: 14px; color: var(--soft); border-radius: 999px; }
+  .tabs button.on { background: var(--accent); color: #1b1206; border-color: var(--accent); font-weight: 600; }
+  input { width: 100%; background: var(--panel2); color: var(--text); border: 1px solid var(--line); border-radius: 12px; padding: 11px 12px; font: inherit; margin-bottom: 8px; }
+  .apps button { display: block; width: 100%; text-align: left; padding: 12px 14px; margin-bottom: 6px; }
+  .note { color: var(--soft); font-size: 13px; margin: 6px 2px 10px; }
+  .join { text-align: center; margin-top: 16vh; }
+  .join input { text-align: center; font-size: 28px; letter-spacing: 8px; margin: 18px 0 12px; }
+  .join button { width: 100%; padding: 14px; font-size: 17px; }
+  .toast { position: fixed; left: 50%; bottom: calc(22px + env(safe-area-inset-bottom)); transform: translateX(-50%); background: var(--good); color: #062018; padding: 10px 16px; border-radius: 999px; font-weight: 600; opacity: 0; transition: opacity .25s; pointer-events: none; max-width: 90vw; }
+  .toast.bad { background: var(--bad); color: #fff; }
+  .toast.show { opacity: 1; }
+  [hidden] { display: none !important; }
+  @media (prefers-reduced-motion: reduce) { button:active { transform: none; } .toast { transition: none; } }
+</style>
+</head>
+<body>
+
+<section id="join" class="join" hidden>
+  <h1 style="justify-content:center">Tuna<span>Home</span> remote</h1>
+  <p class="note">Type the code from the TV: TunaHome settings, then Phone remote.</p>
+  <input id="code" inputmode="numeric" maxlength="6" autocomplete="one-time-code" aria-label="Code from the TV">
+  <button class="primary" id="joinBtn">Join</button>
+</section>
+
+<section id="remote" hidden>
+  <h1>Tuna<span>Home</span> <small id="tvName"></small></h1>
+
+  <div class="tabs" role="tablist">
+    <button class="on" data-tab="touch" role="tab">Touchpad</button>
+    <button data-tab="keys" role="tab" id="dpadTab" hidden>Arrows</button>
+    <button data-tab="apps" role="tab">Apps</button>
+  </div>
+
+  <div data-panel="touch">
+    <div class="pad" id="pad" aria-label="Touchpad: slide to move the pointer, tap to select">
+      <div class="dot" id="dot"></div>
+      <p>Slide to move the pointer · tap to select · hold for a long press · two fingers to scroll</p>
+    </div>
+  </div>
+
+  <div data-panel="keys" hidden>
+    <div class="dpad">
+      <span></span><button data-key="up" aria-label="Up">▲</button><span></span>
+      <button data-key="left" aria-label="Left">◀</button><button data-key="ok" class="ok">OK</button><button data-key="right" aria-label="Right">▶</button>
+      <span></span><button data-key="down" aria-label="Down">▼</button><span></span>
+    </div>
+  </div>
+
+  <div data-panel="apps" hidden>
+    <input id="find" placeholder="Find an app" aria-label="Find an app">
+    <div class="apps" id="apps"></div>
+  </div>
+
+  <div class="grid g3">
+    <button data-key="back">Back</button>
+    <button data-key="home">Home</button>
+    <button data-key="apps">Open apps</button>
+  </div>
+  <div class="grid g3">
+    <button data-key="previous" aria-label="Previous">⏮</button>
+    <button data-key="play" aria-label="Play or pause">⏯</button>
+    <button data-key="next" aria-label="Next">⏭</button>
+  </div>
+  <div class="grid g3">
+    <button data-key="voldown" aria-label="Volume down">Vol −</button>
+    <button data-key="mute">Mute</button>
+    <button data-key="volup" aria-label="Volume up">Vol +</button>
+  </div>
+  <div class="grid g2">
+    <button data-key="find" id="findBtn">Find my remote</button>
+    <button data-key="sleep">Sleep TV</button>
+  </div>
+  <p class="note" id="dpadNote">This TV's Android can't take arrow presses from a phone, so the touchpad moves a pointer instead. Back turns the pointer off.</p>
+</section>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(function () {
+  const KEY = 'tunahome-remote-token';
+  let token = '';
+  try { token = localStorage.getItem(KEY) || ''; } catch (e) {}
+  const $ = (id) => document.getElementById(id);
+
+  function toast(text, bad) {
+    const t = $('toast');
+    t.textContent = text;
+    t.className = 'toast show' + (bad ? ' bad' : '');
+    clearTimeout(toast.timer);
+    toast.timer = setTimeout(() => { t.className = 'toast'; }, 2200);
+  }
+
+  async function api(path, body) {
+    const res = await fetch('/api/' + path, {
+      method: body ? 'POST' : 'GET',
+      headers: { 'Content-Type': 'application/json', 'X-Token': token },
+      body: body ? JSON.stringify(body) : undefined,
+    });
+    if (res.status === 403) { forget(); throw new Error('code'); }
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+    return data;
+  }
+
+  function forget() {
+    token = '';
+    try { localStorage.removeItem(KEY); } catch (e) {}
+    showJoin();
+  }
+
+  function showJoin() {
+    $('remote').hidden = true;
+    $('join').hidden = false;
+    $('code').focus();
+  }
+
+  async function join(code) {
+    try {
+      const res = await fetch('/api/join', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ code }) });
+      const data = await res.json();
+      if (!data.token) throw new Error();
+      token = data.token;
+      try { localStorage.setItem(KEY, token); } catch (e) {}
+      start();
+    } catch (e) {
+      toast("That code didn't match. Check TunaHome settings on the TV.", true);
+    }
+  }
+
+  async function start() {
+    try {
+      const info = await api('info');
+      $('join').hidden = true;
+      $('remote').hidden = false;
+      $('tvName').textContent = info.tv || '';
+      $('dpadTab').hidden = !info.dpad;
+      $('dpadNote').hidden = !!info.dpad;
+      $('findBtn').textContent = info.findRemote ? 'Find my remote' : 'Bluetooth settings';
+    } catch (e) {
+      if (e.message !== 'code') toast("The TV didn't answer. Is it on?", true);
+    }
+  }
+
+  $('joinBtn').onclick = () => join($('code').value.trim());
+  $('code').addEventListener('keydown', (e) => { if (e.key === 'Enter') join($('code').value.trim()); });
+
+  // Keys
+  document.querySelectorAll('[data-key]').forEach((b) => {
+    b.addEventListener('click', () => {
+      if (navigator.vibrate) navigator.vibrate(12);
+      api('key', { key: b.dataset.key }).catch(() => toast("The TV didn't answer.", true));
+    });
+  });
+
+  // Tabs
+  document.querySelectorAll('[data-tab]').forEach((b) => {
+    b.addEventListener('click', () => {
+      document.querySelectorAll('[data-tab]').forEach((x) => x.classList.toggle('on', x === b));
+      document.querySelectorAll('[data-panel]').forEach((p) => { p.hidden = p.dataset.panel !== b.dataset.tab; });
+      if (b.dataset.tab === 'apps' && !apps.length) loadApps();
+    });
+  });
+
+  // Apps
+  let apps = [];
+  async function loadApps() {
+    try {
+      apps = (await api('apps')).apps.sort((a, b) => a.name.localeCompare(b.name));
+      drawApps();
+    } catch (e) { toast("Couldn't get the TV's apps.", true); }
+  }
+  function drawApps() {
+    const q = $('find').value.trim().toLowerCase();
+    const box = $('apps');
+    box.textContent = '';
+    apps.filter((a) => !q || a.name.toLowerCase().includes(q)).forEach((a) => {
+      const b = document.createElement('button');
+      b.textContent = a.name;
+      b.onclick = () => api('open', { pkg: a.pkg }).then(() => toast('Opening ' + a.name)).catch((e) => toast(e.message, true));
+      box.appendChild(b);
+    });
+  }
+  $('find').addEventListener('input', drawApps);
+
+  // Touchpad: moves are added up and sent a few times a second, so a slow network doesn't pile up
+  const pad = $('pad'), dot = $('dot');
+  let lastX = 0, lastY = 0, startT = 0, moved = 0, fingers = 0, holdTimer = 0, held = false;
+  let sendX = 0, sendY = 0, scrollY = 0, sending = false;
+
+  function flush() {
+    if (sending) return;
+    if (Math.abs(sendX) < 0.5 && Math.abs(sendY) < 0.5) return;
+    const dx = Math.round(sendX), dy = Math.round(sendY);
+    sendX = 0; sendY = 0; sending = true;
+    api('move', { dx, dy }).catch(() => {}).finally(() => { sending = false; flush(); });
+  }
+
+  pad.addEventListener('touchstart', (e) => {
+    e.preventDefault();
+    fingers = e.touches.length;
+    const t = e.touches[0];
+    lastX = t.clientX; lastY = t.clientY;
+    if (fingers === 1) {
+      startT = Date.now(); moved = 0; held = false;
+      const r = pad.getBoundingClientRect();
+      dot.style.left = (t.clientX - r.left) + 'px';
+      dot.style.top = (t.clientY - r.top) + 'px';
+      dot.style.display = 'block';
+      clearTimeout(holdTimer);
+      holdTimer = setTimeout(() => {
+        if (moved < 10) {
+          held = true;
+          if (navigator.vibrate) navigator.vibrate(30);
+          api('tap', { long: true }).catch(() => {});
+        }
+      }, 600);
+    } else {
+      clearTimeout(holdTimer);
+      scrollY = 0;
+    }
+  }, { passive: false });
+
+  pad.addEventListener('touchmove', (e) => {
+    e.preventDefault();
+    const t = e.touches[0];
+    const dx = t.clientX - lastX, dy = t.clientY - lastY;
+    lastX = t.clientX; lastY = t.clientY;
+    moved += Math.abs(dx) + Math.abs(dy);
+    if (fingers >= 2) {
+      scrollY += dy;
+      return;
+    }
+    const r = pad.getBoundingClientRect();
+    dot.style.left = (t.clientX - r.left) + 'px';
+    dot.style.top = (t.clientY - r.top) + 'px';
+    // Quicker flicks go further, like a laptop's touchpad
+    const speed = Math.hypot(dx, dy);
+    const gain = 2.2 + Math.min(speed / 6, 3);
+    sendX += dx * gain; sendY += dy * gain;
+    flush();
+  }, { passive: false });
+
+  pad.addEventListener('touchend', (e) => {
+    e.preventDefault();
+    clearTimeout(holdTimer);
+    if (fingers >= 2) {
+      if (e.touches.length === 0) {
+        if (Math.abs(scrollY) > 12) api('scroll', { dy: Math.round(scrollY * 3) }).catch(() => {});
+        fingers = 0;
+      }
+      return;
+    }
+    dot.style.display = 'none';
+    if (!held && moved < 10 && Date.now() - startT < 350) {
+      if (navigator.vibrate) navigator.vibrate(12);
+      api('tap', { long: false }).catch(() => {});
+    }
+    fingers = 0;
+  }, { passive: false });
+
+  const fromLink = (location.hash.match(/code=(\d{6})/) || [])[1];
+  if (fromLink) history.replaceState(null, '', location.pathname);
+  if (token) start();
+  else if (fromLink) join(fromLink);
+  else showJoin();
+})();
+</script>
+</body>
+</html>

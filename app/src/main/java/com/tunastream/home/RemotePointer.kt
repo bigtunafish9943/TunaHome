@@ -45,7 +45,7 @@ class RemotePointer(private val service: AccessibilityService) {
 
     fun toggle() = if (isOn) off(true) else on()
 
-    fun on() {
+    fun on(quiet: Boolean = false) {
         if (isOn) return
         if (Build.VERSION.SDK_INT < 24) {
             Toast.makeText(service, R.string.pointer_needs_android_7, Toast.LENGTH_LONG).show()
@@ -73,7 +73,7 @@ class RemotePointer(private val service: AccessibilityService) {
         arrow = view
         params = lp
         place()
-        Toast.makeText(service, R.string.pointer_on, Toast.LENGTH_LONG).show()
+        if (!quiet) Toast.makeText(service, R.string.pointer_on, Toast.LENGTH_LONG).show()
     }
 
     fun off(say: Boolean) {
@@ -103,6 +103,30 @@ class RemotePointer(private val service: AccessibilityService) {
         } catch (e: Exception) {
             // The overlay went away (the service stopped)
         }
+    }
+
+    /** From the phone remote's touchpad: the pointer comes on and moves by (dx, dy) pixels. */
+    fun moveBy(dx: Float, dy: Float) {
+        if (!isOn) on(quiet = true)
+        if (!isOn) return
+        val m = service.resources.displayMetrics
+        x = (x + dx).coerceIn(0f, m.widthPixels - 1f)
+        y = (y + dy).coerceIn(0f, m.heightPixels - 1f)
+        place()
+    }
+
+    /** From the phone remote: a tap (or a long press) where the pointer is. */
+    fun tapHere(long: Boolean) {
+        if (!isOn) on(quiet = true)
+        if (isOn) gesture(x, y, x, y, if (long) 900 else 40)
+    }
+
+    /** From the phone remote: a swipe from the pointer, to scroll. */
+    fun swipeBy(dx: Float, dy: Float) {
+        if (!isOn) on(quiet = true)
+        if (!isOn) return
+        val m = service.resources.displayMetrics
+        gesture(x, y, (x + dx).coerceIn(0f, m.widthPixels - 1f), (y + dy).coerceIn(0f, m.heightPixels - 1f), 250)
     }
 
     /** True when the press was the pointer's. */
