@@ -15,7 +15,8 @@ object Launch {
 
     private fun start(activity: Activity, app: AppEntry, failed: () -> Unit, opened: () -> Unit) {
         try {
-            activity.startActivity(app.launch)
+            // Back full screen if Two at once had it in a window
+            if (app.isInsideApp || !TwoUp.takeBack(activity, app.pkg)) activity.startActivity(app.launch)
             opened()
             Sounds.play(activity, Sounds.OPEN)
             if (!app.isInsideApp) {

@@ -116,6 +116,7 @@ class HomeActivity : BaseActivity() {
             HotkeyActions.SLEEP_TIMER -> chooseSleep()
             // The automatic checks on each build: "first,second,layout", or "end"
             HotkeyActions.TWO_UP -> TwoUpActivity.open(this, arg)
+            HotkeyActions.OPEN_APP -> HotkeyActions.run(this, action, arg, this)
             HotkeyActions.QUICK -> quickCustomise()
             HotkeyActions.PHONE -> openPhoneSetup()
             HotkeyActions.WHO -> WhoActivity.start(this)

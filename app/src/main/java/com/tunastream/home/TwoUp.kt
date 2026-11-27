@@ -120,14 +120,49 @@ object TwoUp {
         return options.toBundle()
     }
 
-    /** How the checks on each build try each way of moving an app in and out of a window. */
-    var newTaskAlways = false
+    /** Apps TunaHome put in a window, until they're opened full screen again. */
+    private const val WINDOWED = "two_up_windowed"
 
-    private fun launch(context: Context, pkg: String, mode: Int, bounds: Rect?, always: Boolean = newTaskAlways): Boolean {
+    private fun windowed(context: Context): MutableSet<String> =
+        HashSet(Prefs.of(context).getStringSet(WINDOWED, emptySet()) ?: emptySet())
+
+    private fun setWindowed(context: Context, pkgs: Set<String>) {
+        Prefs.of(context).edit().putStringSet(WINDOWED, pkgs).apply()
+    }
+
+    /**
+     * An app keeps the window it was opened in for as long as Android keeps it, even when opened
+     * again normally. Opening one of Two at once's apps from TunaHome brings it back full screen.
+     * True when it was opened here.
+     */
+    fun takeBack(context: Context, pkg: String): Boolean {
+        val set = windowed(context)
+        if (pkg !in set || !ready(context)) return false
+        if (!launch(context, pkg, MODE_FULLSCREEN, null, newTask = true)) return false
+        set.remove(pkg)
+        setWindowed(context, set)
+        return true
+    }
+
+    /**
+     * Android moves an app that is already open in or out of a window only as a new copy of it.
+     * Apps that allow only one copy (launch mode singleTask or singleInstance) stay where they
+     * are until they're closed: the toast says so.
+     */
+    private fun onlyOneCopy(context: Context, pkg: String): Boolean = try {
+        val pm = context.packageManager
+        val intent = pm.getLeanbackLaunchIntentForPackage(pkg) ?: pm.getLaunchIntentForPackage(pkg)
+        val mode = intent?.let { pm.resolveActivity(it, 0)?.activityInfo?.launchMode } ?: 0
+        mode == android.content.pm.ActivityInfo.LAUNCH_SINGLE_TASK || mode == android.content.pm.ActivityInfo.LAUNCH_SINGLE_INSTANCE
+    } catch (e: Exception) {
+        false
+    }
+
+    private fun launch(context: Context, pkg: String, mode: Int, bounds: Rect?, newTask: Boolean): Boolean {
         val pm = context.packageManager
         val intent = (pm.getLeanbackLaunchIntentForPackage(pkg) ?: pm.getLaunchIntentForPackage(pkg)) ?: return false
         val bundle = options(mode, bounds) ?: return false
-        if (always) intent.addFlags(Intent.FLAG_ACTIVITY_MULTIPLE_TASK)
+        if (newTask) intent.addFlags(Intent.FLAG_ACTIVITY_MULTIPLE_TASK)
         return try {
             context.startActivity(intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK), bundle)
             true
@@ -141,14 +176,17 @@ object TwoUp {
     fun start(context: Context, first: String, second: String, layout: Int, done: () -> Unit = {}): Boolean {
         if (!ready(context)) return false
         val (big, small) = bounds(context, layout)
-        val always = newTaskAlways
-        if (!launch(context, second, MODE_FREEFORM, small, always)) {
+        setWindowed(context, windowed(context) + setOf(first, second))
+        if (!launch(context, second, MODE_FREEFORM, small, newTask = true)) {
             Toast.makeText(context, context.getString(R.string.open_failed, label(context, second)), Toast.LENGTH_LONG).show()
             return false
         }
         android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
-            if (!launch(context, first, MODE_FREEFORM, big, always)) {
+            if (!launch(context, first, MODE_FREEFORM, big, newTask = true)) {
                 Toast.makeText(context, context.getString(R.string.open_failed, label(context, first)), Toast.LENGTH_LONG).show()
+            }
+            listOf(first, second).firstOrNull { onlyOneCopy(context, it) }?.let {
+                Toast.makeText(context, context.getString(R.string.two_up_one_copy, label(context, it)), Toast.LENGTH_LONG).show()
             }
             done()
         }, 900)
@@ -160,20 +198,28 @@ object TwoUp {
         val first = first(context) ?: return
         val second = second(context) ?: return
         val (big, small) = bounds(context, layout(context))
-        if (which == 0) launch(context, first, MODE_FREEFORM, big) else launch(context, second, MODE_FREEFORM, small)
+        // The window that's already there comes to the front
+        if (which == 0) launch(context, first, MODE_FREEFORM, big, newTask = false)
+        else launch(context, second, MODE_FREEFORM, small, newTask = false)
     }
 
-    /** Back to one app, full screen. */
-    fun end(context: Context, keep: String) {
-        launch(context, keep, MODE_FULLSCREEN, null)
-    }
-
-    /** One of the ways tried by the checks: the app's window made as big as the screen. */
-    fun endBig(context: Context, keep: String) {
-        val size = Point()
-        @Suppress("DEPRECATION")
-        (context.getSystemService(Context.WINDOW_SERVICE) as WindowManager).defaultDisplay.getRealSize(size)
-        launch(context, keep, MODE_FREEFORM, Rect(0, 0, size.x, size.y))
+    /**
+     * Back to one app, full screen (as a new copy: see [onlyOneCopy]). The other one is stopped
+     * once it's out of sight, so its window doesn't keep playing behind.
+     */
+    fun end(context: Context) {
+        val keep = first(context) ?: return
+        val other = second(context)
+        if (!takeBack(context, keep)) launch(context, keep, MODE_FULLSCREEN, null, newTask = true)
+        if (other != null && other != keep) {
+            android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
+                try {
+                    (context.getSystemService(Context.ACTIVITY_SERVICE) as android.app.ActivityManager).killBackgroundProcesses(other)
+                } catch (e: Exception) {
+                    // Not allowed now: it stays paused behind
+                }
+            }, 3000)
+        }
     }
 }
 
@@ -190,18 +236,14 @@ class TwoUpActivity : Activity() {
         val second = intent.getStringExtra(EXTRA_SECOND)
         if (first != null && second != null) {
             TwoUp.save(this, first, second, intent.getIntExtra(EXTRA_LAYOUT, TwoUp.BIG_AND_SMALL))
-            TwoUp.newTaskAlways = intent.getBooleanExtra(EXTRA_NEW_TASK, false)
-            if (!TwoUp.start(this, first, second, TwoUp.layout(this)) { TwoUp.newTaskAlways = false; finish() }) {
-                TwoUp.newTaskAlways = false
+            if (!TwoUp.start(this, first, second, TwoUp.layout(this)) { finish() }) {
                 Toast.makeText(this, R.string.two_up_not_ready_short, Toast.LENGTH_LONG).show()
                 finish()
             }
             return
         }
-        intent.getStringExtra(EXTRA_END_HOW)?.let { how ->
-            TwoUp.newTaskAlways = how == "endm"
-            TwoUp.first(this)?.let { if (how == "endbig") TwoUp.endBig(this, it) else TwoUp.end(this, it) }
-            TwoUp.newTaskAlways = false
+        if (intent.getBooleanExtra(EXTRA_END, false)) {
+            TwoUp.end(this)
             finish()
             return
         }
@@ -245,7 +287,7 @@ class TwoUpActivity : Activity() {
             labels.add(getString(R.string.two_up_remote_to, b))
             actions.add { TwoUp.focus(this, 1) }
             labels.add(getString(R.string.two_up_end, a))
-            actions.add { TwoUp.end(this, first) }
+            actions.add { TwoUp.end(this) }
         }
         labels.add(getString(R.string.two_up_choose))
         actions.add {
@@ -311,8 +353,7 @@ class TwoUpActivity : Activity() {
         const val EXTRA_FIRST = "two_up_first"
         const val EXTRA_SECOND = "two_up_second"
         const val EXTRA_LAYOUT = "two_up_layout"
-        const val EXTRA_END_HOW = "two_up_end"
-        const val EXTRA_NEW_TASK = "two_up_new_task"
+        const val EXTRA_END = "two_up_end"
 
         fun open(context: Context, arg: String? = null) {
             val intent = Intent(context, TwoUpActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
@@ -320,9 +361,8 @@ class TwoUpActivity : Activity() {
             if (parts.size >= 2) {
                 intent.putExtra(EXTRA_FIRST, parts[0]).putExtra(EXTRA_SECOND, parts[1])
                     .putExtra(EXTRA_LAYOUT, parts.getOrNull(2)?.toIntOrNull() ?: TwoUp.BIG_AND_SMALL)
-                    .putExtra(EXTRA_NEW_TASK, parts.getOrNull(3) == "m")
-            } else if (arg != null && arg.startsWith("end")) {
-                intent.putExtra(EXTRA_END_HOW, arg)
+            } else if (arg == "end") {
+                intent.putExtra(EXTRA_END, true)
             }
             context.startActivity(intent)
         }

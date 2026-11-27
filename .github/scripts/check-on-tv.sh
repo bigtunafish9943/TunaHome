@@ -201,10 +201,13 @@ clear_tasks() {
 }
 print_shot() {
   # The screenshot in the log, small, for reading where the CI files can't be fetched
-  if command -v convert > /dev/null && [ -f "$OUT/$1.png" ]; then
-    convert "$OUT/$1.png" -resize 640x -quality 60 "$OUT/$1-small.jpg" && {
-      echo "BEGIN-SHOT $1"; base64 -w 0 "$OUT/$1-small.jpg"; echo; echo "END-SHOT $1"; }
+  [ -f "$OUT/$1.png" ] || return 0
+  if command -v ffmpeg > /dev/null && ffmpeg -loglevel error -y -i "$OUT/$1.png" -vf scale=800:-1 -q:v 6 "$OUT/$1-small.jpg"; then
+    small="$OUT/$1-small.jpg"
+  else
+    small="$OUT/$1.png"
   fi
+  echo "BEGIN-SHOT $1"; base64 -w 0 "$small"; echo; echo "END-SHOT $1"
 }
 adb shell settings put global enable_freeform_support 1
 adb shell settings put global force_resizable_activities 1
@@ -219,19 +222,17 @@ if [ "$(echo "$two_apps" | tr ',' '\n' | grep -c .)" -ge 2 ]; then
   pat="$app1|$app2"
   echo "== Two at once, fresh: "; home two_at_once "$two_apps,0"; shot 25-two-at-once 6; tasks; print_shot 25-two-at-once
   if tasks | grep -q "mode=freeform"; then two_up="opened in windows"; else two_up="did not open in windows"; fi
-  echo "== Back to one (full screen asked for):"; home two_at_once end; sleep 4; tasks
-  echo "== Back to one (a new full screen task):"; home two_at_once endm; sleep 4; tasks
-  echo "== Back to one (window as big as the screen):"; home two_at_once endbig; sleep 4; tasks
+  echo "== Back to one:"; home two_at_once end; sleep 5; tasks
   shot 26-two-at-once-end 2; print_shot 26-two-at-once-end
-  adb shell dumpsys activity activities | tr -d '\r' | grep -iE "bounds" | head -12
+  if tasks | head -3 | grep "$app1" | grep -q "mode=fullscreen"; then two_up="$two_up; back to one worked"; else two_up="$two_up; back to one did NOT work"; fi
+  echo "== The second app opened again from TunaHome:"; home open_app "$app2"; sleep 5; tasks
+  if tasks | head -3 | grep "$app2" | grep -q "mode=fullscreen"; then two_up="$two_up; reopening full screen worked"; else two_up="$two_up; reopening full screen did NOT work"; fi
   clear_tasks "$pat"; sleep 2
   echo "== Already open full screen, then Two at once:"
   adb shell monkey -p "$app1" -c android.intent.category.LEANBACK_LAUNCHER 1 > /dev/null 2>&1; sleep 4; tasks
   home two_at_once "$two_apps,0"; sleep 6; tasks
-  clear_tasks "$pat"; sleep 2
-  echo "== Already open full screen, then Two at once as new tasks:"
-  adb shell monkey -p "$app1" -c android.intent.category.LEANBACK_LAUNCHER 1 > /dev/null 2>&1; sleep 4
-  home two_at_once "$two_apps,0,m"; sleep 6; tasks
+  if tasks | head -3 | grep "$app1" | grep -q "mode=freeform"; then two_up="$two_up; an open app went into a window"; else two_up="$two_up; an open app did NOT go into a window"; fi
+  home two_at_once end; sleep 4
   clear_tasks "$pat"
 fi
 echo "Two at once: $two_up"

@@ -326,7 +326,7 @@ object PhoneRemote {
                 val intent = pm.getLeanbackLaunchIntentForPackage(pkg) ?: pm.getLaunchIntentForPackage(pkg)
                     ?: return JSONObject().put("error", "That app can't be opened")
                 // Kids mode and limits still apply: the Home button service checks as it comes up
-                onMain { service.startActivity(intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
+                onMain { if (!TwoUp.takeBack(service, pkg)) service.startActivity(intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
                 return ok
             }
             "/api/move" -> {

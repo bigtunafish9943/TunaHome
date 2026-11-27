@@ -162,7 +162,7 @@ object HotkeyActions {
                 if (launch == null) {
                     Toast.makeText(context, context.getString(R.string.open_failed, appName(context, arg)), Toast.LENGTH_LONG).show()
                 } else {
-                    context.startActivity(launch.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+                    if (!TwoUp.takeBack(context, arg ?: "")) context.startActivity(launch.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
                     arg?.let { Prefs.addRecent(context, it) }
                 }
             }
