@@ -1255,7 +1255,8 @@
     <string name="two_up_pick_layout">How they sit</string>
     <string name="two_up_big_small">One big, one small</string>
     <string name="two_up_halves">Side by side, the same size</string>
-    <string name="two_up_one_copy">If %1$s stays full screen, it was already open: close it (the TV\'s Settings, Apps, %1$s, Force stop) and try again.</string>
+    <string name="two_up_one_copy">%1$s allows only one copy of itself: if it was already open it stays full screen, and afterwards it keeps opening in its window until it\'s closed (the TV\'s Settings, Apps, %1$s, Force stop) or the TV restarts.</string>
+    <string name="two_up_stuck">%1$s is still in its window from Two at once. To put it back full screen: the TV\'s Settings, Apps, %1$s, Force stop (or restart the TV).</string>
     <string name="two_up_undo_title">Turn Two at once off</string>
     <string name="two_up_undo">In Developer options, turn off <b>Enable freeform windows</b> and <b>Force activities to be resizable</b>, then restart the TV. Every app opens full screen again.\n\nIf you set them from a PC:\nadb shell settings put global enable_freeform_support 0\nadb shell settings put global force_resizable_activities 0\nthen restart.</string>
     <string name="corner_title">PC in a corner</string>
