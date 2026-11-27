@@ -343,7 +343,8 @@ class HomeActivity : BaseActivity() {
     // Free storage and memory, every half minute while the home screen is up
     internal val infoTick: Runnable = object : Runnable {
         override fun run() {
-            if (showSystemInfo()) {
+            NightDim.apply(this@HomeActivity)
+            if (showSystemInfo() || NightDim.FROM.get(this@HomeActivity) != 0) {
                 weatherHandler.postDelayed(this, 30_000L)
             }
         }

@@ -1199,4 +1199,8 @@
     <string name="morning_hint">Press any button to go on</string>
     <string name="bg_slow_zoom">Slow zoom on pictures</string>
     <string name="bg_slow_zoom_on">On, like a photo frame</string>
+    <string name="set_night_dim">Dim at night</string>
+    <string name="night_dim_21">From 9 p.m.</string>
+    <string name="night_dim_22">From 10 p.m.</string>
+    <string name="night_dim_23">From 11 p.m.</string>
 </resources>

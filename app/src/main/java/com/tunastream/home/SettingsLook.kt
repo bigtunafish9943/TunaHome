@@ -267,6 +267,7 @@ internal fun SettingsActivity.topBarPage() {
     choice(R.string.set_clock_size, Look.CLOCK_SIZE)
     choice(R.string.set_date, Look.DATE)
     switch(R.string.set_morning, Look.MORNING, R.string.set_morning_on, R.string.off)
+    choice(R.string.set_night_dim, NightDim.FROM)
     choice(R.string.set_system_info, Look.SYSTEM_INFO)
     choice(R.string.set_batteries, Look.BATTERIES) {
         // Android 12 and later ask first before TunaHome may see Bluetooth devices
