@@ -79,13 +79,13 @@ object Guard {
 
     fun kidsBlocks(context: Context, pkg: String): Boolean {
         val person = Profiles.current(context) ?: return false
-        if (!person.kids || pkg == context.packageName || pkg in ALWAYS || pkg in person.allowed) return false
+        if (!person.kids || pkg == context.packageName || pkg in ALWAYS || pkg in person.allowed || isKeyboard(context, pkg)) return false
         return pkg in KIDS_BLOCKED || launchable(context, pkg)
     }
 
     /** The tightest limit on [pkg] right now, or null when none applies. */
     fun limitFor(context: Context, pkg: String): Limit? {
-        if (pkg == context.packageName || pkg in ALWAYS || !launchable(context, pkg)) return null
+        if (pkg == context.packageName || pkg in ALWAYS || isKeyboard(context, pkg) || !launchable(context, pkg)) return null
         var best: Limit? = null
         val app = appLimit(context, pkg)
         if (app > 0) {
@@ -142,6 +142,20 @@ object Guard {
             // Couldn't show it: the home screen at least
             context.startActivity(Intent(context, HomeActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
         }
+    }
+
+    /**
+     * The on-screen keyboard or the screen saver coming up isn't an app being opened, even if it
+     * has an icon of its own.
+     */
+    fun isKeyboard(context: Context, pkg: String): Boolean = try {
+        val keyboard = android.provider.Settings.Secure.getString(context.contentResolver, android.provider.Settings.Secure.DEFAULT_INPUT_METHOD)
+            ?.substringBefore('/') == pkg
+        // The screen saver (Aerial Views, TunaReceive's covers) isn't an app being opened either
+        keyboard || android.provider.Settings.Secure.getString(context.contentResolver, "screensaver_components")
+            ?.split(',')?.any { it.substringBefore('/') == pkg } == true
+    } catch (e: Exception) {
+        false
     }
 
     private val launchable = HashMap<String, Boolean>()

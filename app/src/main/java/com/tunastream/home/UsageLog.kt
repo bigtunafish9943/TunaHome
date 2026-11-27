@@ -73,6 +73,7 @@ object UsageLog {
 
     private fun isApp(context: Context, pkg: String): Boolean {
         if (pkg == context.packageName) return true
+        if (Guard.isKeyboard(context, pkg)) return false
         return synchronized(launchable) {
             launchable.getOrPut(pkg) {
                 val pm = context.packageManager
