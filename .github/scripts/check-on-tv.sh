@@ -227,6 +227,16 @@ if [ "$(echo "$two_apps" | tr ',' '\n' | grep -c .)" -ge 2 ]; then
   home open_app "$app2"; sleep 5; tasks
   if tasks | head -3 | grep "$app2" | grep -q "mode=fullscreen"; then two_up="$two_up; reopening full screen worked"; else two_up="$two_up; reopening full screen did NOT work"; fi
   clear_tasks "$pat"; sleep 2
+  echo "== Two at once, then the setting turned off and both opened again normally:"
+  home two_at_once "$app1,$app2,0"; sleep 6; tasks
+  adb shell settings put global enable_freeform_support 0
+  sleep 2
+  adb shell monkey -p "$app1" -c android.intent.category.LEANBACK_LAUNCHER 1 > /dev/null 2>&1; sleep 4; tasks
+  if tasks | head -3 | grep "$app1" | grep -q "mode=fullscreen"; then two_up="$two_up; setting off puts a one-copy app back full screen"; else two_up="$two_up; setting off does NOT put a one-copy app back"; fi
+  adb shell monkey -p "$app2" -c android.intent.category.LEANBACK_LAUNCHER 1 > /dev/null 2>&1; sleep 4; tasks
+  if tasks | head -3 | grep "$app2" | grep -q "mode=fullscreen"; then two_up="$two_up; setting off puts an app back full screen"; else two_up="$two_up; setting off does NOT put an app back"; fi
+  adb shell settings put global enable_freeform_support 1
+  clear_tasks "$pat"; sleep 2
   echo "== Already open full screen, then Two at once:"
   adb shell monkey -p "$app2" -c android.intent.category.LEANBACK_LAUNCHER 1 > /dev/null 2>&1; sleep 4; tasks
   home two_at_once "$app2,$app1,0"; sleep 6; tasks
