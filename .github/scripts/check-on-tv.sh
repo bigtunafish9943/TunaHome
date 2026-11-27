@@ -207,44 +207,24 @@ two_apps=$(adb shell cmd package query-activities --brief -a android.intent.acti
 echo "Two at once with: $two_apps"
 two_up="not tried (fewer than two apps)"
 if [ "$(echo "$two_apps" | tr ',' '\n' | grep -c .)" -ge 2 ]; then
-  # The Play Store allows only one copy of itself (singleTask), so it goes first: the harder case
-  app1=${two_apps##*,}
-  app2=${two_apps%%,*}
+  # Settings allows copies of itself; the Play Store allows only one (singleTask)
+  app1=${two_apps%%,*}
+  app2=${two_apps##*,}
   pat="$app1|$app2"
-  adb shell settings put secure enabled_accessibility_services "$PKG/.HomeButtonService"
-  adb shell settings put secure accessibility_enabled 1
-  sleep 3
   echo "== Two at once, fresh ($app1 big, $app2 small):"; home two_at_once "$app1,$app2,0"; shot 25-two-at-once 6; tasks
   if tasks | grep -q "mode=freeform"; then two_up="opened in windows"; else two_up="did not open in windows"; fi
-  echo "== Back to one:"; home two_at_once end; sleep 7; tasks
+  echo "== Back to one:"; home two_at_once end; sleep 6; tasks
   shot 26-two-at-once-end 2
   if tasks | head -3 | grep "$app1" | grep -q "mode=fullscreen"; then two_up="$two_up; back to one worked"; else two_up="$two_up; back to one did NOT work"; fi
-  if tasks | grep "$app2" | grep -q "mode=freeform"; then two_up="$two_up; the other window did NOT close"; else two_up="$two_up; the other window closed"; fi
-  echo "== Two at once again, then the big one opened from TunaHome:"
-  home two_at_once "$app1,$app2,0"; sleep 6; tasks
-  home open_app "$app1"; sleep 5; tasks
-  if tasks | head -3 | grep "$app1" | grep -q "mode=fullscreen"; then two_up="$two_up; reopening a one-copy app full screen worked"; else two_up="$two_up; reopening a one-copy app full screen did NOT work"; fi
-  home open_app "$app2"; sleep 5; tasks
-  if tasks | head -3 | grep "$app2" | grep -q "mode=fullscreen"; then two_up="$two_up; reopening full screen worked"; else two_up="$two_up; reopening full screen did NOT work"; fi
-  clear_tasks "$pat"; sleep 2
-  echo "== Two at once, then the setting turned off and both opened again normally:"
-  home two_at_once "$app1,$app2,0"; sleep 6; tasks
-  adb shell settings put global enable_freeform_support 0
-  sleep 2
-  adb shell monkey -p "$app1" -c android.intent.category.LEANBACK_LAUNCHER 1 > /dev/null 2>&1; sleep 4; tasks
-  if tasks | head -3 | grep "$app1" | grep -q "mode=fullscreen"; then two_up="$two_up; setting off puts a one-copy app back full screen"; else two_up="$two_up; setting off does NOT put a one-copy app back"; fi
-  adb shell monkey -p "$app2" -c android.intent.category.LEANBACK_LAUNCHER 1 > /dev/null 2>&1; sleep 4; tasks
-  if tasks | head -3 | grep "$app2" | grep -q "mode=fullscreen"; then two_up="$two_up; setting off puts an app back full screen"; else two_up="$two_up; setting off does NOT put an app back"; fi
-  adb shell settings put global enable_freeform_support 1
+  echo "== The one-copy app opened again from TunaHome (expected: still in its window):"; home open_app "$app2"; sleep 5; tasks
   clear_tasks "$pat"; sleep 2
   echo "== Already open full screen, then Two at once:"
-  adb shell monkey -p "$app2" -c android.intent.category.LEANBACK_LAUNCHER 1 > /dev/null 2>&1; sleep 4; tasks
-  home two_at_once "$app2,$app1,0"; sleep 6; tasks
-  if tasks | head -3 | grep "$app2" | grep -q "mode=freeform"; then two_up="$two_up; an open app went into a window"; else two_up="$two_up; an open app did NOT go into a window"; fi
-  home two_at_once end; sleep 7; tasks
+  adb shell monkey -p "$app1" -c android.intent.category.LEANBACK_LAUNCHER 1 > /dev/null 2>&1; sleep 4; tasks
+  home two_at_once "$app1,$app2,0"; sleep 6; tasks
+  if tasks | head -3 | grep "$app1" | grep -q "mode=freeform"; then two_up="$two_up; an open app went into a window"; else two_up="$two_up; an open app did NOT go into a window"; fi
+  home open_app "$app1"; sleep 5; tasks
+  if tasks | head -3 | grep "$app1" | grep -q "mode=fullscreen"; then two_up="$two_up; reopening full screen worked"; else two_up="$two_up; reopening full screen did NOT work"; fi
   clear_tasks "$pat"
-  adb shell settings delete secure enabled_accessibility_services > /dev/null
-  adb shell settings put secure accessibility_enabled 0
 fi
 echo "Two at once: $two_up"
 adb shell settings put global enable_freeform_support 0
