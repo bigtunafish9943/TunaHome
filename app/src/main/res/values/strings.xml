@@ -1240,4 +1240,20 @@
     <string name="set_watch_next_access">Watch Next from your apps</string>
     <string name="watch_next_access_on">Allowed: shows apps share with the TV appear in Watch Next</string>
     <string name="watch_next_access_off">Not allowed yet: select to let TunaHome read TV listings, which Watch Next needs</string>
+    <string name="link_title">Messages from your PC</string>
+    <string name="link_summary">Link TunaStream, so messages from your PC pop up on this TV over whatever is on</string>
+    <string name="link_linked_to">Linked to %1$s</string>
+    <string name="link_linked_body">Messages sent to everyone from TunaStream\'s home or phone page pop up here, whether or not anyone\'s streaming, and Goodnight puts this TV to sleep. It works while the Home button setting is on.</string>
+    <string name="link_unlink">Unlink</string>
+    <string name="link_looking">Looking for PCs with TunaStream…</string>
+    <string name="link_pick">Which PC?</string>
+    <string name="link_by_address">Type its address instead</string>
+    <string name="link_address">The PC\'s address (from TunaStream\'s home page)</string>
+    <string name="link_allow_title">Allow it on the PC</string>
+    <string name="link_allow_body">On the PC, open TunaStream\'s home page and select Allow beside "TunaHome on %1$s". This waits for up to ten minutes.</string>
+    <string name="link_done">Linked to %1$s: its messages will pop up here.</string>
+    <string name="link_failed">Couldn\'t reach TunaStream on %1$s. Check it\'s on and updated.</string>
+    <string name="link_timed_out">Not allowed in time. Try again and select Allow on the PC.</string>
+    <string name="link_turned_down">The PC said no, or the request ran out.</string>
+    <string name="link_goodnight">Goodnight 🌙</string>
 </resources>

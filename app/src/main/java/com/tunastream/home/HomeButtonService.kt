@@ -5,6 +5,7 @@ import android.accessibilityservice.AccessibilityServiceInfo
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import android.os.Build
 import android.os.SystemClock
 import android.provider.Settings
 import android.util.Log
@@ -35,6 +36,21 @@ class HomeButtonService : AccessibilityService() {
         override fun run() {
             UsageLog.current?.let { if (it != packageName) Guard.check(this@HomeButtonService, it) }
             guardHandler.postDelayed(this, GUARD_TICK_MS)
+        }
+    }
+
+    /** Messages from your PC (TunaStream), when linked. */
+    private val pcLink by lazy { PcLink.Poller(this) }
+
+    fun startPcLink() = pcLink.start()
+
+    /** A TunaReceive stream is on screen (it shows the PC's messages itself). */
+    fun streamingNow(): Boolean = !filteringKeys
+
+    /** Goodnight from the PC: the TV goes to sleep. */
+    fun sleepTv() {
+        if (Build.VERSION.SDK_INT >= 28) {
+            performGlobalAction(GLOBAL_ACTION_LOCK_SCREEN)
         }
     }
 
@@ -79,10 +95,12 @@ class HomeButtonService : AccessibilityService() {
                 UsageLog.screen(context, false)
                 // Guest mode ends when the TV sleeps
                 Guest.end(context)
+                pcLink.stop()
                 return
             }
             if (intent.action == Intent.ACTION_SCREEN_ON) {
                 UsageLog.screen(context, true)
+                pcLink.start()
                 // Give the TV a moment to finish waking, so its own home screen doesn't land on top
                 android.os.Handler(mainLooper).postDelayed({
                     // Who's watching first, if asked for; otherwise the app chosen for waking up
@@ -97,6 +115,7 @@ class HomeButtonService : AccessibilityService() {
         running = this
         OpenApps.addDefaultShortcut(this)
         guardHandler.postDelayed(guardTick, GUARD_TICK_MS)
+        pcLink.start()
         registerReceiver(wakeReceiver, android.content.IntentFilter(Intent.ACTION_SCREEN_ON).apply {
             addAction(Intent.ACTION_SCREEN_OFF)
         })
@@ -108,6 +127,7 @@ class HomeButtonService : AccessibilityService() {
 
     override fun onDestroy() {
         guardHandler.removeCallbacks(guardTick)
+        pcLink.stop()
         pointer.off(false)
         if (running === this) {
             running = null
