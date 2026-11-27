@@ -1240,6 +1240,16 @@
     <string name="set_watch_next_access">Watch Next from your apps</string>
     <string name="watch_next_access_on">Allowed: shows apps share with the TV appear in Watch Next</string>
     <string name="watch_next_access_off">Not allowed yet: select to let TunaHome read TV listings, which Watch Next needs</string>
+    <string name="corner_title">PC in a corner</string>
+    <string name="corner_sound">Corner sound on or off</string>
+    <string name="corner_full">Corner to full screen</string>
+    <string name="corner_close">Close the corner</string>
+    <string name="corner_start">Show %1$s in the corner</string>
+    <string name="corner_play">Play in a corner</string>
+    <string name="corner_starting">Starting in a corner, muted. Open your show now; it keeps the sound.</string>
+    <string name="corner_needs_receiver">PC in a corner needs TunaReceive on this TV.</string>
+    <string name="corner_no_games">No PC apps yet</string>
+    <string name="corner_no_games_long">Open TunaReceive and pick your PC once, so its apps are listed here. Add a show as a website in TunaStream (Apps, Add a website).</string>
     <string name="remote_title">Phone remote</string>
     <string name="remote_summary">Use a phone as the remote, for when the real one goes missing</string>
     <string name="remote_summary_on">On: open it on a phone on your home network</string>

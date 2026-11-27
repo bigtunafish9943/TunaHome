@@ -346,6 +346,11 @@ internal fun HomeActivity.watchNextMenu(item: AppEntry) {
             startOrExplain(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:" + item.appPkg)))
         },
     )
+    // A PC app can play in a corner, over a show on the TV
+    if (item.isPcGame) {
+        labels.add(1, getString(R.string.corner_play))
+        actions.add(1) { Corner.start(this, item) }
+    }
     // Watch Next without an app's shows (one you don't want there, like a news app)
     if (!item.isPcGame && item.appPkg.isNotEmpty()) {
         labels.add(getString(R.string.watch_next_leave_out, appName))

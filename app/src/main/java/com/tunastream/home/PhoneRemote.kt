@@ -363,6 +363,10 @@ object PhoneRemote {
                         "sleep" -> service.sleepTv()
                         "find" -> FindRemote.find(service)
                         "pointer_off" -> service.pointer.off(false)
+                        "corner" -> CornerActivity.open(service)
+                        "corner_sound" -> Corner.send(service, Corner.SOUND)
+                        "corner_full" -> Corner.send(service, Corner.FULL)
+                        "corner_close" -> Corner.send(service, Corner.CLOSE)
                         "up", "down", "left", "right", "ok" -> if (Build.VERSION.SDK_INT >= 33) {
                             service.performGlobalAction(when (key) {
                                 "up" -> AccessibilityService.GLOBAL_ACTION_DPAD_UP

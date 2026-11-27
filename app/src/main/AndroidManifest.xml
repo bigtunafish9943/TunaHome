@@ -215,6 +215,15 @@
             android:launchMode="singleTask"
             android:screenOrientation="landscape"
             android:taskAffinity="com.tunastream.home.openapps" />
+        <!-- The corner menu (PC in a corner): see-through, over the show, its own task -->
+        <activity
+            android:name=".CornerActivity"
+            android:configChanges="keyboard|keyboardHidden|navigation|orientation|screenSize|screenLayout|uiMode"
+            android:excludeFromRecents="true"
+            android:exported="false"
+            android:noHistory="true"
+            android:taskAffinity="com.tunastream.home.corner"
+            android:theme="@style/TunaHome.Clear" />
         <activity
             android:name=".WelcomeActivity"
             android:configChanges="keyboard|keyboardHidden|navigation|orientation|screenSize|screenLayout|uiMode"

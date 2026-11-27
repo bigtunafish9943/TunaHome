@@ -19,6 +19,14 @@
         <item name="android:soundEffectsEnabled">false</item>
     </style>
 
+    <!-- A screen that only shows a menu over whatever is playing -->
+    <style name="TunaHome.Clear">
+        <item name="android:windowIsTranslucent">true</item>
+        <item name="android:windowBackground">@android:color/transparent</item>
+        <item name="android:backgroundDimEnabled">false</item>
+        <item name="android:windowAnimationStyle">@null</item>
+    </style>
+
     <style name="TunaDialog" parent="@android:style/Theme.Material.Dialog.Alert">
         <item name="android:colorAccent">?attr/tsAccent</item>
         <item name="android:windowBackground">@drawable/dialog_bg</item>
