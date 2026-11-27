@@ -82,7 +82,7 @@ object HotkeyActions {
     private val NEEDS_SERVICE = setOf(RECENTS, NOTIFICATIONS, SLEEP, SCREENSHOT, BACK, POINTER)
 
     /** Actions about the home screen itself: from elsewhere, TunaHome opens first. */
-    private val ON_HOME_SCREEN = setOf(HOME_TOP, SIDE_MENU, SECTION, NEXT_BACKGROUND, IDLE, SLEEP_TIMER, QUICK, PHONE, WHO)
+    private val ON_HOME_SCREEN = setOf(HOME_TOP, SIDE_MENU, SECTION, NEXT_BACKGROUND, IDLE, SLEEP_TIMER, QUICK, PHONE, WHO, GUEST)
 
     const val EXTRA_ACTION = "hotkey_action"
     const val EXTRA_ARG = "hotkey_arg"
@@ -148,13 +148,6 @@ object HotkeyActions {
                 .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
             TV_SETTINGS -> HomeActivity.openTvSettings(context)
             FIND_REMOTE -> FindRemote.find(context)
-            GUEST -> if (Guest.on(context)) {
-                // Leaving can need the PIN: from the side menu or the Guest chip
-                if (home != null) Guest.leave(home)
-                else Toast.makeText(context, R.string.guest_leave_how, Toast.LENGTH_LONG).show()
-            } else {
-                Guest.start(context)
-            }
             OPEN_APPS -> context.startActivity(Intent(context, OpenAppsActivity::class.java)
                 .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
             OPEN_APP -> {

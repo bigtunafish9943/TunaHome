@@ -1232,7 +1232,6 @@
     <string name="guest_started">Guest mode: what you\'ve watched and played is out of sight until the TV sleeps.</string>
     <string name="guest_ended">Guest mode is over</string>
     <string name="guest_chip">Guest</string>
-    <string name="guest_leave_how">Leave guest mode from TunaHome\'s side menu, or select Guest at the top.</string>
     <string name="set_mic_everywhere">The voice button in other apps</string>
     <string name="mic_everywhere_on">TunaHome voice commands there too (needs the Home button setting)</string>
     <string name="mic_everywhere_off">The app\'s own (usually the TV\'s assistant)</string>

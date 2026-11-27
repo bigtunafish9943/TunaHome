@@ -181,6 +181,12 @@ sleep 10
 adb shell am start -n "$PKG/.HomeActivity" > /dev/null
 shot 22-as-kids 6
 
+# Guest mode on (private rows hidden, a Guest chip at the top) and off again
+home guest
+shot 23-guest 5
+home guest
+shot 24-guest-off 4
+
 # How quickly TunaHome starts from nothing, before and after the start-up profile is used
 start_time() {
   adb shell am force-stop $PKG

@@ -117,6 +117,8 @@ class HomeActivity : BaseActivity() {
             HotkeyActions.QUICK -> quickCustomise()
             HotkeyActions.PHONE -> openPhoneSetup()
             HotkeyActions.WHO -> WhoActivity.start(this)
+            // On and off; leaving asks the settings PIN if there is one
+            HotkeyActions.GUEST -> if (Guest.on(this)) Guest.leave(this) else Guest.start(this)
             HotkeyActions.SETTINGS_PAGE -> openTunaHomeSettings(arg)
         }
     }
