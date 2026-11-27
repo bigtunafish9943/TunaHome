@@ -120,10 +120,14 @@ object TwoUp {
         return options.toBundle()
     }
 
-    private fun launch(context: Context, pkg: String, mode: Int, bounds: Rect?): Boolean {
+    /** How the checks on each build try each way of moving an app in and out of a window. */
+    var newTaskAlways = false
+
+    private fun launch(context: Context, pkg: String, mode: Int, bounds: Rect?, always: Boolean = newTaskAlways): Boolean {
         val pm = context.packageManager
         val intent = (pm.getLeanbackLaunchIntentForPackage(pkg) ?: pm.getLaunchIntentForPackage(pkg)) ?: return false
         val bundle = options(mode, bounds) ?: return false
+        if (always) intent.addFlags(Intent.FLAG_ACTIVITY_MULTIPLE_TASK)
         return try {
             context.startActivity(intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK), bundle)
             true
@@ -137,12 +141,13 @@ object TwoUp {
     fun start(context: Context, first: String, second: String, layout: Int, done: () -> Unit = {}): Boolean {
         if (!ready(context)) return false
         val (big, small) = bounds(context, layout)
-        if (!launch(context, second, MODE_FREEFORM, small)) {
+        val always = newTaskAlways
+        if (!launch(context, second, MODE_FREEFORM, small, always)) {
             Toast.makeText(context, context.getString(R.string.open_failed, label(context, second)), Toast.LENGTH_LONG).show()
             return false
         }
         android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
-            if (!launch(context, first, MODE_FREEFORM, big)) {
+            if (!launch(context, first, MODE_FREEFORM, big, always)) {
                 Toast.makeText(context, context.getString(R.string.open_failed, label(context, first)), Toast.LENGTH_LONG).show()
             }
             done()
@@ -162,6 +167,14 @@ object TwoUp {
     fun end(context: Context, keep: String) {
         launch(context, keep, MODE_FULLSCREEN, null)
     }
+
+    /** One of the ways tried by the checks: the app's window made as big as the screen. */
+    fun endBig(context: Context, keep: String) {
+        val size = Point()
+        @Suppress("DEPRECATION")
+        (context.getSystemService(Context.WINDOW_SERVICE) as WindowManager).defaultDisplay.getRealSize(size)
+        launch(context, keep, MODE_FREEFORM, Rect(0, 0, size.x, size.y))
+    }
 }
 
 /**
@@ -177,14 +190,18 @@ class TwoUpActivity : Activity() {
         val second = intent.getStringExtra(EXTRA_SECOND)
         if (first != null && second != null) {
             TwoUp.save(this, first, second, intent.getIntExtra(EXTRA_LAYOUT, TwoUp.BIG_AND_SMALL))
-            if (!TwoUp.start(this, first, second, TwoUp.layout(this)) { finish() }) {
+            TwoUp.newTaskAlways = intent.getBooleanExtra(EXTRA_NEW_TASK, false)
+            if (!TwoUp.start(this, first, second, TwoUp.layout(this)) { TwoUp.newTaskAlways = false; finish() }) {
+                TwoUp.newTaskAlways = false
                 Toast.makeText(this, R.string.two_up_not_ready_short, Toast.LENGTH_LONG).show()
                 finish()
             }
             return
         }
-        if (intent.getBooleanExtra(EXTRA_END, false)) {
-            TwoUp.first(this)?.let { TwoUp.end(this, it) }
+        intent.getStringExtra(EXTRA_END_HOW)?.let { how ->
+            TwoUp.newTaskAlways = how == "endm"
+            TwoUp.first(this)?.let { if (how == "endbig") TwoUp.endBig(this, it) else TwoUp.end(this, it) }
+            TwoUp.newTaskAlways = false
             finish()
             return
         }
@@ -294,7 +311,8 @@ class TwoUpActivity : Activity() {
         const val EXTRA_FIRST = "two_up_first"
         const val EXTRA_SECOND = "two_up_second"
         const val EXTRA_LAYOUT = "two_up_layout"
-        const val EXTRA_END = "two_up_end"
+        const val EXTRA_END_HOW = "two_up_end"
+        const val EXTRA_NEW_TASK = "two_up_new_task"
 
         fun open(context: Context, arg: String? = null) {
             val intent = Intent(context, TwoUpActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
@@ -302,8 +320,9 @@ class TwoUpActivity : Activity() {
             if (parts.size >= 2) {
                 intent.putExtra(EXTRA_FIRST, parts[0]).putExtra(EXTRA_SECOND, parts[1])
                     .putExtra(EXTRA_LAYOUT, parts.getOrNull(2)?.toIntOrNull() ?: TwoUp.BIG_AND_SMALL)
-            } else if (arg == "end") {
-                intent.putExtra(EXTRA_END, true)
+                    .putExtra(EXTRA_NEW_TASK, parts.getOrNull(3) == "m")
+            } else if (arg != null && arg.startsWith("end")) {
+                intent.putExtra(EXTRA_END_HOW, arg)
             }
             context.startActivity(intent)
         }

@@ -188,7 +188,24 @@ home guest
 shot 24-guest-off 4
 
 # Two at once: two of the TV's apps in windows, with the two developer settings on for this
-# check only. Reported, not failed: the settings are the viewer's to turn on.
+# check only. Reported, not failed: the settings are the viewer's to turn on. Each way of moving
+# an app in and out of a window is tried, and where each app ended up is printed.
+tasks() {
+  adb shell dumpsys activity activities | tr -d '\r' | grep -E '^    \* Task\{' | sed 's/^ *\* //' | head -8
+}
+clear_tasks() {
+  for id in $(adb shell dumpsys activity activities | tr -d '\r' | grep -E '^    \* Task\{' \
+      | grep -E "$1" | grep -oE 'StackId=[0-9]+' | cut -d= -f2 | sort -u); do
+    adb shell am stack remove "$id" > /dev/null 2>&1 || true
+  done
+}
+print_shot() {
+  # The screenshot in the log, small, for reading where the CI files can't be fetched
+  if command -v convert > /dev/null && [ -f "$OUT/$1.png" ]; then
+    convert "$OUT/$1.png" -resize 640x -quality 60 "$OUT/$1-small.jpg" && {
+      echo "BEGIN-SHOT $1"; base64 -w 0 "$OUT/$1-small.jpg"; echo; echo "END-SHOT $1"; }
+  fi
+}
 adb shell settings put global enable_freeform_support 1
 adb shell settings put global force_resizable_activities 1
 sleep 2
@@ -197,18 +214,25 @@ two_apps=$(adb shell cmd package query-activities --brief -a android.intent.acti
 echo "Two at once with: $two_apps"
 two_up="not tried (fewer than two apps)"
 if [ "$(echo "$two_apps" | tr ',' '\n' | grep -c .)" -ge 2 ]; then
-  home two_at_once "$two_apps,0"
-  shot 25-two-at-once 6
-  adb shell dumpsys activity activities | tr -d '\r' | grep -E "Task\{|mode=" | head -20
-  if adb shell dumpsys activity activities | tr -d '\r' | grep -q "mode=freeform"; then
-    two_up="opened in windows"
-  else
-    two_up="did not open in windows"
-  fi
-  home two_at_once end
-  shot 26-two-at-once-end 4
-  echo "After going back to one app:"
-  adb shell dumpsys activity activities | tr -d '\r' | grep -E "Task\{|mode=" | head -10
+  app1=${two_apps%%,*}
+  app2=${two_apps##*,}
+  pat="$app1|$app2"
+  echo "== Two at once, fresh: "; home two_at_once "$two_apps,0"; shot 25-two-at-once 6; tasks; print_shot 25-two-at-once
+  if tasks | grep -q "mode=freeform"; then two_up="opened in windows"; else two_up="did not open in windows"; fi
+  echo "== Back to one (full screen asked for):"; home two_at_once end; sleep 4; tasks
+  echo "== Back to one (a new full screen task):"; home two_at_once endm; sleep 4; tasks
+  echo "== Back to one (window as big as the screen):"; home two_at_once endbig; sleep 4; tasks
+  shot 26-two-at-once-end 2; print_shot 26-two-at-once-end
+  adb shell dumpsys activity activities | tr -d '\r' | grep -iE "bounds" | head -12
+  clear_tasks "$pat"; sleep 2
+  echo "== Already open full screen, then Two at once:"
+  adb shell monkey -p "$app1" -c android.intent.category.LEANBACK_LAUNCHER 1 > /dev/null 2>&1; sleep 4; tasks
+  home two_at_once "$two_apps,0"; sleep 6; tasks
+  clear_tasks "$pat"; sleep 2
+  echo "== Already open full screen, then Two at once as new tasks:"
+  adb shell monkey -p "$app1" -c android.intent.category.LEANBACK_LAUNCHER 1 > /dev/null 2>&1; sleep 4
+  home two_at_once "$two_apps,0,m"; sleep 6; tasks
+  clear_tasks "$pat"
 fi
 echo "Two at once: $two_up"
 adb shell settings put global enable_freeform_support 0
