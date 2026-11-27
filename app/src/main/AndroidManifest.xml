@@ -1,5 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <!-- Used only on Android 9 and later (Two at once) -->
+    <uses-sdk tools:overrideLibrary="org.lsposed.hiddenapibypass" />
 
     <!-- Checking for and downloading updates from GitHub -->
     <uses-permission android:name="android.permission.INTERNET" />
@@ -223,6 +227,15 @@
             android:exported="false"
             android:noHistory="true"
             android:taskAffinity="com.tunastream.home.corner"
+            android:theme="@style/TunaHome.Clear" />
+        <!-- The Two at once menu: see-through, over the windows, its own task -->
+        <activity
+            android:name=".TwoUpActivity"
+            android:configChanges="keyboard|keyboardHidden|navigation|orientation|screenSize|screenLayout|uiMode"
+            android:excludeFromRecents="true"
+            android:exported="false"
+            android:noHistory="true"
+            android:taskAffinity="com.tunastream.home.twoup"
             android:theme="@style/TunaHome.Clear" />
         <activity
             android:name=".WelcomeActivity"

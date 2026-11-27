@@ -25,6 +25,8 @@ Libraries: AndroidX RecyclerView, AndroidX Media3, AndroidX
 ProfileInstaller and the Kotlin standard library (all Apache License
 2.0). ZXing core (https://github.com/zxing/zxing, Apache License 2.0)
 draws the QR code on the phone setup screen.
+AndroidHiddenApiBypass (https://github.com/LSPosed/AndroidHiddenApiBypass,
+Apache License 2.0) lets Two at once open apps in windows.
 
 Icons: the small symbols (settings, TV, download, apps, folder, history,
 search, mic, play, pause, skip, music, star, lock, VPN key, Wi-Fi,

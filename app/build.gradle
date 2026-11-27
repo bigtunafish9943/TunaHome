@@ -77,4 +77,6 @@ dependencies {
     // Installs the start-up profile on the TV, so TunaHome's code is compiled ahead of time
     implementation 'androidx.profileinstaller:profileinstaller:1.4.1'
     implementation 'androidx.media3:media3-ui:1.8.0'
+    // Two at once: opening TV apps in windows uses a part of Android not open to apps
+    implementation 'org.lsposed.hiddenapibypass:hiddenapibypass:6.1'
 }

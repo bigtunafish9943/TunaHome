@@ -255,6 +255,7 @@ class SettingsActivity : BaseActivity() {
             else getString(R.string.link_summary)) {
             PcLink.manage(this) { build() }
         }
+        row(R.string.two_up_title, getString(R.string.two_up_summary)) { TwoUpActivity.open(this) }
         row(R.string.remote_title, getString(if (PhoneRemote.ON.get(this)) R.string.remote_summary_on else R.string.remote_summary)) {
             PhoneRemote.manage(this) { build() }
         }

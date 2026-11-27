@@ -187,6 +187,35 @@ shot 23-guest 5
 home guest
 shot 24-guest-off 4
 
+# Two at once: two of the TV's apps in windows, with the two developer settings on for this
+# check only. Reported, not failed: the settings are the viewer's to turn on.
+adb shell settings put global enable_freeform_support 1
+adb shell settings put global force_resizable_activities 1
+sleep 2
+two_apps=$(adb shell cmd package query-activities --brief -a android.intent.action.MAIN -c android.intent.category.LEANBACK_LAUNCHER \
+  | tr -d '\r' | grep -oE '[a-zA-Z0-9_.]+/[a-zA-Z0-9_.$]+' | cut -d/ -f1 | grep -v "^$PKG\$" | sort -u | head -2 | paste -sd, -)
+echo "Two at once with: $two_apps"
+two_up="not tried (fewer than two apps)"
+if [ "$(echo "$two_apps" | tr ',' '\n' | grep -c .)" -ge 2 ]; then
+  home two_at_once "$two_apps,0"
+  shot 25-two-at-once 6
+  adb shell dumpsys activity activities | tr -d '\r' | grep -E "Task\{|mode=" | head -20
+  if adb shell dumpsys activity activities | tr -d '\r' | grep -q "mode=freeform"; then
+    two_up="opened in windows"
+  else
+    two_up="did not open in windows"
+  fi
+  home two_at_once end
+  shot 26-two-at-once-end 4
+  echo "After going back to one app:"
+  adb shell dumpsys activity activities | tr -d '\r' | grep -E "Task\{|mode=" | head -10
+fi
+echo "Two at once: $two_up"
+adb shell settings put global enable_freeform_support 0
+adb shell settings put global force_resizable_activities 0
+adb shell am start -n "$PKG/.HomeActivity" > /dev/null
+sleep 2
+
 # How quickly TunaHome starts from nothing, before and after the start-up profile is used
 start_time() {
   adb shell am force-stop $PKG
@@ -236,6 +265,8 @@ fi
 if [ -n "${GITHUB_STEP_SUMMARY:-}" ]; then
   if [ "$problems" = 0 ]; then
     echo "TunaHome ran on an Android TV emulator through every main screen without a problem." >> "$GITHUB_STEP_SUMMARY"
+    echo "" >> "$GITHUB_STEP_SUMMARY"
+    echo "Two at once on the emulator: $two_up." >> "$GITHUB_STEP_SUMMARY"
     echo "" >> "$GITHUB_STEP_SUMMARY"
     echo "Start from nothing: ${before}ms and ${before2}ms before the start-up profile, ${after}ms and ${after2}ms after." >> "$GITHUB_STEP_SUMMARY"
   else

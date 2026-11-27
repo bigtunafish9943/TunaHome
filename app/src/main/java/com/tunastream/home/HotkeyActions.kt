@@ -40,6 +40,7 @@ object HotkeyActions {
     const val FIND_REMOTE = "find_remote"
     const val GUEST = "guest"
     const val CORNER = "pc_corner"
+    const val TWO_UP = "two_at_once"
 
     /**
      * Opens one page of TunaHome settings (the argument names it). Not offered as a shortcut:
@@ -64,6 +65,7 @@ object HotkeyActions {
         OPEN_APPS to R.string.act_open_apps,
         POINTER to R.string.act_pointer,
         CORNER to R.string.corner_title,
+        TWO_UP to R.string.two_up_title,
         FIND_REMOTE to R.string.find_remote,
         GUEST to R.string.guest_mode,
         RECENTS to R.string.act_recents,
@@ -151,6 +153,7 @@ object HotkeyActions {
             TV_SETTINGS -> HomeActivity.openTvSettings(context)
             FIND_REMOTE -> FindRemote.find(context)
             CORNER -> CornerActivity.open(context)
+            TWO_UP -> TwoUpActivity.open(context)
             OPEN_APPS -> context.startActivity(Intent(context, OpenAppsActivity::class.java)
                 .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
             OPEN_APP -> {
