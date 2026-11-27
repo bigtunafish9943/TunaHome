@@ -199,16 +199,6 @@ clear_tasks() {
     adb shell am stack remove "$id" > /dev/null 2>&1 || true
   done
 }
-print_shot() {
-  # The screenshot in the log, small, for reading where the CI files can't be fetched
-  [ -f "$OUT/$1.png" ] || return 0
-  if command -v ffmpeg > /dev/null && ffmpeg -loglevel error -y -i "$OUT/$1.png" -vf scale=800:-1 -q:v 6 "$OUT/$1-small.jpg"; then
-    small="$OUT/$1-small.jpg"
-  else
-    small="$OUT/$1.png"
-  fi
-  echo "BEGIN-SHOT $1"; base64 -w 0 "$small"; echo; echo "END-SHOT $1"
-}
 adb shell settings put global enable_freeform_support 1
 adb shell settings put global force_resizable_activities 1
 sleep 2
@@ -220,10 +210,10 @@ if [ "$(echo "$two_apps" | tr ',' '\n' | grep -c .)" -ge 2 ]; then
   app1=${two_apps%%,*}
   app2=${two_apps##*,}
   pat="$app1|$app2"
-  echo "== Two at once, fresh: "; home two_at_once "$two_apps,0"; shot 25-two-at-once 6; tasks; print_shot 25-two-at-once
+  echo "== Two at once, fresh: "; home two_at_once "$two_apps,0"; shot 25-two-at-once 6; tasks
   if tasks | grep -q "mode=freeform"; then two_up="opened in windows"; else two_up="did not open in windows"; fi
   echo "== Back to one:"; home two_at_once end; sleep 5; tasks
-  shot 26-two-at-once-end 2; print_shot 26-two-at-once-end
+  shot 26-two-at-once-end 2
   if tasks | head -3 | grep "$app1" | grep -q "mode=fullscreen"; then two_up="$two_up; back to one worked"; else two_up="$two_up; back to one did NOT work"; fi
   echo "== The second app opened again from TunaHome:"; home open_app "$app2"; sleep 5; tasks
   if tasks | head -3 | grep "$app2" | grep -q "mode=fullscreen"; then two_up="$two_up; reopening full screen worked"; else two_up="$two_up; reopening full screen did NOT work"; fi
