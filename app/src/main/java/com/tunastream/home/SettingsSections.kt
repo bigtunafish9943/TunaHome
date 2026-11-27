@@ -71,6 +71,7 @@ internal fun SettingsActivity.sectionsPage() {
         switch(R.string.set_mic_everywhere, Look.MIC_EVERYWHERE, R.string.mic_everywhere_on, R.string.mic_everywhere_off)
     }
     switch(R.string.set_previews, Previews.SHOW, R.string.previews_on, R.string.off)
+    switch(R.string.set_up_next, Look.UP_NEXT, R.string.up_next_on, R.string.off)
     switch(R.string.set_remember_place, Look.REMEMBER_PLACE, R.string.remember_place_on, R.string.remember_place_off)
     heading(R.string.heading_side_menu)
     choice(R.string.set_side_menu, Look.SIDE_MENU)

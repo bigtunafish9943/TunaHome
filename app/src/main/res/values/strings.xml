@@ -1236,4 +1236,6 @@
     <string name="set_mic_everywhere">The voice button in other apps</string>
     <string name="mic_everywhere_on">TunaHome voice commands there too (needs the Home button setting)</string>
     <string name="mic_everywhere_off">The app\'s own (usually the TV\'s assistant)</string>
+    <string name="set_up_next">Up next</string>
+    <string name="up_next_on">Your PC game in progress joins Watch Next</string>
 </resources>
