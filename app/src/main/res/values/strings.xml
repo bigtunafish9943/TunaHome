@@ -1259,7 +1259,7 @@
     <string name="link_looking">Looking for PCs with TunaStream…</string>
     <string name="link_pick">Which PC?</string>
     <string name="link_by_address">Type its address instead</string>
-    <string name="link_address">The PC\'s address (from TunaStream\'s home page)</string>
+    <string name="link_pc_address">The PC\'s address (from TunaStream\'s home page)</string>
     <string name="link_allow_title">Allow it on the PC</string>
     <string name="link_allow_body">On the PC, open TunaStream\'s home page and select Allow beside "TunaHome on %1$s". This waits for up to ten minutes.</string>
     <string name="link_done">Linked to %1$s: its messages will pop up here.</string>

@@ -183,7 +183,7 @@ object PcLink {
         val frame = FrameLayout(activity).apply { setPadding(pad, pad / 2, pad, 0) }
         frame.addView(box)
         QuietDialog.Builder(activity)
-            .setTitle(R.string.link_address)
+            .setTitle(R.string.link_pc_address)
             .setView(frame)
             .setPositiveButton(android.R.string.ok) { _, _ ->
                 val host = box.text.toString().trim().removePrefix("https://").removePrefix("http://").substringBefore('/')
