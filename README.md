@@ -93,7 +93,7 @@ Icon packs made for phone launchers work, including those already on the TV. Tun
 
 With [TunaReceive](https://github.com/bigtunafish9943/TunaReceive) on the TV:
 
-- **PC games** shows your PC's games with box art, most recently played first; select one to start it. Games hidden in TunaReceive stay hidden, and locking TunaReceive in TunaHome's app lock locks its games too. Open TunaReceive once so it lists a PC's games. Needs a TunaReceive that shares its games list; without TunaReceive the section simply doesn't show.
+- **PC games** shows your PC's games with box art, most recently played first; select one to start it. Games hidden in TunaReceive stay hidden, and locking TunaReceive in TunaHome's app lock locks its games too. Every game TunaReceive lists is there, however many. Open TunaReceive once so it lists a PC's games; games you add later show up after TunaReceive has opened that PC's list again. Needs a TunaReceive that shares its games list; without TunaReceive the section simply doesn't show.
 - **While a game streams**, TunaHome stops looking at button presses, so controller input goes straight to the game with no added delay (see below).
 - TunaReceive can be the app that **opens when the TV wakes up**.
 

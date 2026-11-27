@@ -757,7 +757,9 @@ class HomeActivity : BaseActivity() {
                 }
                 // Box art can arrive after the list (TunaReceive fetches it later): show it then too
                 var gamesChanged = false
-                if (games.map { it.pkg to (it.banner != null) } != pcGames.map { it.pkg to (it.banner != null) }) {
+                // A game added, removed or renamed, or its box art arriving
+                fun key(list: List<AppEntry>) = list.map { Triple(it.pkg, it.label, it.banner != null) }
+                if (key(games) != key(pcGames)) {
                     pcGames = games
                     gamesChanged = true
                     sections.filter { it.row.kind == Rows.PC_GAMES }.forEach { it.show(games) }

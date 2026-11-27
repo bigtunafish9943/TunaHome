@@ -17,10 +17,11 @@ object PcGames {
     const val RECEIVER = "com.tunastream.receive"
     const val PREFIX = "pcgame:"
     private val LIST = Uri.parse("content://games.$RECEIVER/games")
-    private const val MAX = 40
+    /** Every game TunaReceive lists, up to a limit no real library reaches (it used to stop at 40). */
+    private const val MAX = 1000
 
     /** Box art already loaded, by address: the list is read again every few minutes. */
-    private val posters = android.util.LruCache<String, Drawable>(MAX + 10)
+    private val posters = android.util.LruCache<String, Drawable>(1200)
 
     /** Slow: call from a background thread. */
     fun load(context: Context): List<AppEntry> {
@@ -77,11 +78,16 @@ object PcGames {
         val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
         context.contentResolver.openInputStream(uri)?.use { BitmapFactory.decodeStream(it, null, bounds) }
         var sample = 1
-        while (bounds.outHeight / (sample * 2) >= 480) {
+        // Card-sized (a few hundred pixels tall) and without transparency, so a big library's box
+        // art stays small in memory
+        while (bounds.outHeight / (sample * 2) >= 300) {
             sample *= 2
         }
         context.contentResolver.openInputStream(uri)?.use {
-            BitmapFactory.decodeStream(it, null, BitmapFactory.Options().apply { inSampleSize = sample })
+            BitmapFactory.decodeStream(it, null, BitmapFactory.Options().apply {
+                inSampleSize = sample
+                inPreferredConfig = android.graphics.Bitmap.Config.RGB_565
+            })
         }?.let { BitmapDrawable(context.resources, it) }
     } catch (e: Exception) {
         null
