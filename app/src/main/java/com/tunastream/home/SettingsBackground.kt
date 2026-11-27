@@ -148,6 +148,14 @@ internal fun SettingsActivity.backgroundPage() {
         switch(R.string.fx_on_saver, Effects.ON_SAVER, R.string.on, R.string.off)
     }
 
+    heading(R.string.heading_occasions)
+    switch(R.string.set_occasions, Occasions.ON, R.string.occ_on, R.string.off)
+    if (Occasions.ON.get(this)) {
+        row(R.string.occ_yours_title, resources.getQuantityString(R.plurals.occ_yours_count, Occasions.mine(this).size, Occasions.mine(this).size)) {
+            Occasions.manage(this)
+        }
+    }
+
     heading(R.string.heading_screensaver)
     row(
         R.string.set_screensaver,

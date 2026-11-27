@@ -59,6 +59,8 @@ object PcGames {
                         appPkg = RECEIVER,
                         group = Apps.GAME,
                         colour = IconShape.mainColour(poster),
+                        // When it was last played, for Up next's order
+                        updated = number("last_played"),
                     )
                 )
             }

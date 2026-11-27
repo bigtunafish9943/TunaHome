@@ -532,6 +532,7 @@ class HomeActivity : BaseActivity() {
         Updater.resumeIfWaiting(this)
         ChangeLog.showIfUpdated(this)
         MorningActivity.showIfDue(this)
+        Occasions.greetIfDue(this)
         if (Prefs.autoUpdateCheck(this)) {
             Updater.check(this, false)
         }
@@ -578,7 +579,7 @@ class HomeActivity : BaseActivity() {
         val rowGap = Math.round(Look.dp(this, Look.rowGapDp(this)))
 
         for (row in Rows.load(this)) {
-            if (!row.visible) {
+            if (!row.visible || Guest.hides(this, row.kind)) {
                 continue
             }
             if (row.kind == Rows.NOW_PLAYING) {
@@ -707,7 +708,8 @@ class HomeActivity : BaseActivity() {
 
     internal fun reloadWatchNext() {
         val wantShows = sections.any { it.row.kind == Rows.WATCH_NEXT }
-        val wantGames = sections.any { it.row.kind == Rows.PC_GAMES }
+        // Up next mixes the PC game you were playing in with Watch Next
+        val wantGames = sections.any { it.row.kind == Rows.PC_GAMES } || (wantShows && Look.UP_NEXT.get(this))
         if (!wantShows && !wantGames) {
             return
         }
@@ -738,8 +740,10 @@ class HomeActivity : BaseActivity() {
                     weatherHandler.post { reloadWatchNext() }
                 }
                 // Box art can arrive after the list (TunaReceive fetches it later): show it then too
+                var gamesChanged = false
                 if (games.map { it.pkg to (it.banner != null) } != pcGames.map { it.pkg to (it.banner != null) }) {
                     pcGames = games
+                    gamesChanged = true
                     sections.filter { it.row.kind == Rows.PC_GAMES }.forEach { it.show(games) }
                     applyGaps()
                 }
@@ -752,19 +756,31 @@ class HomeActivity : BaseActivity() {
                     a.pkg == b.pkg && a.progress == b.progress && a.label == b.label &&
                         a.preview == b.preview && picture(a) === picture(b)
                 }
-                if (same && found.isNotEmpty()) {
+                if (same && found.isNotEmpty() && !(gamesChanged && Look.UP_NEXT.get(this))) {
                     return@runOnUiThread
                 }
                 watchNext = found
                 val current = Rows.load(this).associateBy { it.id }
                 sections.filter { it.row.kind == Rows.WATCH_NEXT }
-                    .forEach { it.show(withoutLeftOut(found, current[it.row.id] ?: it.row)) }
+                    .forEach { it.show(upNext(withoutLeftOut(found, current[it.row.id] ?: it.row))) }
                 applyGaps()
                 if (!sideMenu.isOpen) {
                     refreshMenu()
                 }
             }
         }
+    }
+
+    /**
+     * Up next (when it's on): the PC games played in the last two weeks join Watch Next, all in
+     * the order you left them, so the game you were in the middle of sits beside your shows.
+     */
+    internal fun upNext(shows: List<AppEntry>): List<AppEntry> {
+        if (!Look.UP_NEXT.get(this) || Guest.on(this)) return shows
+        val since = System.currentTimeMillis() - 14L * 24 * 3600 * 1000
+        val games = pcGames.filter { it.updated > since }.take(3)
+        if (games.isEmpty()) return shows
+        return (shows + games).sortedByDescending { it.updated }
     }
 
     // ------------------------------------------------------------------ the list of apps
@@ -845,7 +861,7 @@ class HomeActivity : BaseActivity() {
                 Rows.MUSIC -> ordered(loose.filter { it.group == Apps.MUSIC }, Prefs.order(this, section.row.id))
                 Rows.RECENT -> Prefs.recent(this).mapNotNull { everyApp[it] }
                 Rows.FOR_YOU -> forYou(everyApp)
-                Rows.WATCH_NEXT -> withoutLeftOut(watchNext, rows[section.row.id] ?: section.row)
+                Rows.WATCH_NEXT -> upNext(withoutLeftOut(watchNext, rows[section.row.id] ?: section.row))
                 Rows.PC_GAMES -> pcGames
                 else -> (rows[section.row.id]?.apps ?: section.row.apps).mapNotNull { byPackage[it] }
             }

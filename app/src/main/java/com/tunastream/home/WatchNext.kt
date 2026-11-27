@@ -109,6 +109,8 @@ object WatchNext {
                         appPkg = pkg,
                         progress = progress,
                         preview = text("preview_video_uri"),
+                        // When it was last watched, for Up next's order
+                        updated = engaged,
                     )
                 )
                 if (found.size >= MAX * 2) {

@@ -26,7 +26,9 @@ object OpenApps {
     private var cache: List<String>? = null
     private val launchable = HashMap<String, Boolean>()
 
-    fun list(context: Context): List<String> = cache ?: (Prefs.of(context).getString(KEY, "") ?: "")
+    fun list(context: Context): List<String> = if (Guest.on(context)) emptyList() else stored(context)
+
+    private fun stored(context: Context): List<String> = cache ?: (Prefs.of(context).getString(KEY, "") ?: "")
         .split('\n').filter { it.isNotEmpty() }.also { cache = it }
 
     private fun save(context: Context, list: List<String>) {
@@ -36,7 +38,9 @@ object OpenApps {
 
     /** [pkg] came to the front. */
     fun note(context: Context, pkg: String) {
-        val now = list(context)
+        // Guests' apps aren't remembered
+        if (Guest.on(context)) return
+        val now = stored(context)
         if (now.firstOrNull() == pkg || pkg == context.packageName || pkg in SKIP || pkg in HomeButtonService.STOCK_HOME_SCREENS) {
             return
         }
@@ -46,7 +50,7 @@ object OpenApps {
         save(context, (listOf(pkg) + now.filter { it != pkg }).take(MAX))
     }
 
-    fun remove(context: Context, pkg: String) = save(context, list(context).filter { it != pkg })
+    fun remove(context: Context, pkg: String) = save(context, stored(context).filter { it != pkg })
 
     fun clear(context: Context) = save(context, emptyList())
 

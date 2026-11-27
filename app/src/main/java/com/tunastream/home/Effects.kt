@@ -19,7 +19,7 @@ import kotlin.random.Random
  * stars or fog. They can follow the theme's season, the weather outside, or stay as chosen.
  */
 object Effects {
-    enum class Kind { NONE, SNOW, RAIN, STORM, LEAVES, BATS, FIREFLIES, STARS, FOG }
+    enum class Kind { NONE, SNOW, RAIN, STORM, LEAVES, BATS, FIREFLIES, STARS, FOG, CONFETTI, HEARTS }
 
     const val OFF = 0
     const val FOLLOW_WEATHER = 1
@@ -45,6 +45,8 @@ object Effects {
 
     /** What to show now, from the choice, the weather and the season. */
     fun kind(context: Context): Kind {
+        // A holiday or one of your own dates has its own effect, all that day
+        Occasions.today(context)?.let { if (it.effect != Kind.NONE) return it.effect }
         val choice = CHOICE.get(context)
         return when {
             choice == OFF -> Kind.NONE
@@ -151,6 +153,8 @@ class EffectsView @JvmOverloads constructor(
             Effects.Kind.FIREFLIES -> 34
             Effects.Kind.STARS -> 110
             Effects.Kind.FOG -> 7
+            Effects.Kind.CONFETTI -> 60
+            Effects.Kind.HEARTS -> 18
             Effects.Kind.NONE -> 0
         }
         return maxOf(if (base > 0) 1 else 0, Math.round(base * amount))
@@ -185,6 +189,13 @@ class EffectsView @JvmOverloads constructor(
                 Color.WHITE)
             Effects.Kind.FOG -> Bit(if (anywhere) r(0f, w) else -300 * dp, r(0.35f * h, 1.05f * h), r(10f, 24f) * dp, 0f,
                 r(180f, 340f) * dp, 0f, 0f, 0f, Color.WHITE)
+            Effects.Kind.CONFETTI -> Bit(r(0f, w), if (anywhere) r(0f, h) else -12 * dp, r(-20f, 20f) * dp, r(60f, 130f) * dp,
+                r(4f, 7f) * dp, r(0f, 6.28f), r(0f, 360f), r(-260f, 260f),
+                listOf(0xFFFF5A5F.toInt(), 0xFFFFC145.toInt(), 0xFF3EC1D3.toInt(), 0xFF8DD35F.toInt(), 0xFFB07CFF.toInt(),
+                    0xFFFF8FC7.toInt()).random(random))
+            Effects.Kind.HEARTS -> Bit(r(0f, w), if (anywhere) r(0f, h) else h + 20 * dp, r(-10f, 10f) * dp, -r(30f, 60f) * dp,
+                r(8f, 16f) * dp, r(0f, 6.28f), 0f, 0f,
+                Color.argb(r(120f, 200f).toInt(), 255, listOf(70, 105, 140).random(random), listOf(110, 140, 170).random(random)))
             Effects.Kind.NONE -> Bit(0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f, 0)
         }
     }
@@ -276,6 +287,29 @@ class EffectsView @JvmOverloads constructor(
                     paint.shader = null
                     if (b.x - b.size > w) bits[i] = make(false)
                 }
+                Effects.Kind.CONFETTI -> {
+                    b.x += (b.vx + sin(time * 2f + b.phase) * 18 * dp) * dt
+                    b.y += b.vy * dt
+                    b.turn += b.spin * dt
+                    paint.style = Paint.Style.FILL
+                    paint.color = b.colour
+                    canvas.save()
+                    canvas.translate(b.x, b.y)
+                    canvas.rotate(b.turn)
+                    // A paper square flipping as it falls
+                    val flip = 0.25f + 0.75f * Math.abs(cos(time * 3f + b.phase))
+                    canvas.drawRect(-b.size, -b.size * 0.6f * flip, b.size, b.size * 0.6f * flip, paint)
+                    canvas.restore()
+                    if (b.y > h + 12 * dp) bits[i] = make(false)
+                }
+                Effects.Kind.HEARTS -> {
+                    b.x += (b.vx + sin(time * 0.9f + b.phase) * 16 * dp) * dt
+                    b.y += b.vy * dt
+                    paint.style = Paint.Style.FILL
+                    paint.color = b.colour
+                    drawHeart(canvas, b.x, b.y, b.size)
+                    if (b.y < -20 * dp) bits[i] = make(false)
+                }
                 Effects.Kind.NONE -> {}
             }
         }
@@ -284,6 +318,18 @@ class EffectsView @JvmOverloads constructor(
         if (running) {
             postInvalidateOnAnimation()
         }
+    }
+
+    private val heart = Path()
+
+    /** A heart of [size] around (x, y), rising gently. */
+    private fun drawHeart(canvas: Canvas, x: Float, y: Float, size: Float) {
+        heart.reset()
+        heart.moveTo(x, y + size * 0.9f)
+        heart.cubicTo(x - size * 1.4f, y - size * 0.1f, x - size * 0.7f, y - size * 1.1f, x, y - size * 0.35f)
+        heart.cubicTo(x + size * 0.7f, y - size * 1.1f, x + size * 1.4f, y - size * 0.1f, x, y + size * 0.9f)
+        heart.close()
+        canvas.drawPath(heart, paint)
     }
 
     /** Now and then the whole screen flickers white, twice. */

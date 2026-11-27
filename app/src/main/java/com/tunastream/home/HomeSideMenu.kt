@@ -64,6 +64,11 @@ internal fun HomeActivity.refreshMenu() {
                 WhoActivity.start(this)
             })
         }
+        if (Guest.on(this)) {
+            entries.add(SideMenu.Entry(R.drawable.ic_person, getString(R.string.guest_leave), null) { Guest.leave(this) })
+        } else {
+            entries.add(SideMenu.Entry(R.drawable.ic_person, getString(R.string.guest_mode), null) { Guest.start(this) })
+        }
         entries.add(SideMenu.Entry(R.drawable.ic_phone, getString(R.string.phone_title), null) { openPhoneSetup() })
         entries.add(SideMenu.Entry(R.drawable.ic_tune, getString(R.string.quick_title), null) {
             quickCustomise()

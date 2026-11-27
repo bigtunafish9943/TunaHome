@@ -106,6 +106,23 @@ internal fun HomeActivity.setUpTopBar() {
 /** Who's in now: their circle and name, when more than one person uses this TV. */
 internal fun HomeActivity.showWho() {
     val chip = findViewById<View>(R.id.whoChip) ?: return
+    if (Guest.on(this)) {
+        // Guest mode says so, instead of whose TunaHome it is
+        chip.visibility = View.VISIBLE
+        chip.contentDescription = getString(R.string.guest_mode)
+        findViewById<TextView>(R.id.whoName).text = getString(R.string.guest_chip)
+        val initial = findViewById<TextView>(R.id.whoInitial)
+        initial.text = "G"
+        initial.background = android.graphics.drawable.GradientDrawable().apply {
+            shape = android.graphics.drawable.GradientDrawable.OVAL
+            setColor(themeColor(R.attr.tsAccent))
+        }
+        findViewById<ImageView>(R.id.whoPhoto)?.visibility = View.GONE
+        initial.visibility = View.VISIBLE
+        chip.setOnClickListener { Guest.leave(this) }
+        return
+    }
+    chip.setOnClickListener { WhoActivity.start(this) }
     val person = if (Look.SHOW_WHO.get(this) && Profiles.all(this).size > 1) Profiles.current(this) else null
     if (person == null) {
         chip.visibility = View.GONE

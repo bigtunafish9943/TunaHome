@@ -77,6 +77,8 @@ class HomeButtonService : AccessibilityService() {
         override fun onReceive(context: Context, intent: Intent) {
             if (intent.action == Intent.ACTION_SCREEN_OFF) {
                 UsageLog.screen(context, false)
+                // Guest mode ends when the TV sleeps
+                Guest.end(context)
                 return
             }
             if (intent.action == Intent.ACTION_SCREEN_ON) {
@@ -137,6 +139,22 @@ class HomeButtonService : AccessibilityService() {
         }
         if (pointer.onKey(event)) {
             return true
+        }
+        // Voice commands from any app ("open Netflix", "play Halo"), when chosen
+        if (event.keyCode == KeyEvent.KEYCODE_SEARCH || event.keyCode == KeyEvent.KEYCODE_VOICE_ASSIST ||
+            event.keyCode == KeyEvent.KEYCODE_ASSIST) {
+            if (Look.MIC_TUNAHOME.get(this) && Look.MIC_EVERYWHERE.get(this)) {
+                if (event.action == KeyEvent.ACTION_UP) {
+                    try {
+                        startActivity(Intent(this, SearchActivity::class.java)
+                            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                            .putExtra(SearchActivity.EXTRA_VOICE, true))
+                    } catch (e: Exception) {
+                        Log.w(TAG, "Couldn't open voice commands", e)
+                    }
+                }
+                return true
+            }
         }
         if (event.keyCode == KeyEvent.KEYCODE_HOME || event.keyCode == KeyEvent.KEYCODE_BACK) {
             if (hotkeys.onKey(event)) {

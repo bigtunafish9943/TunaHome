@@ -254,7 +254,7 @@ object Profiles {
             if (startChecked) return false
             startChecked = true
         }
-        if (!inUse(context) || ask(context) != moment || justSwitched(context) || !claimAsk(context)) return false
+        if (Guest.on(context) || !inUse(context) || ask(context) != moment || justSwitched(context) || !claimAsk(context)) return false
         WhoActivity.start(context)
         return true
     }

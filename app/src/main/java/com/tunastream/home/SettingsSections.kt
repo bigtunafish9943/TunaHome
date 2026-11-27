@@ -67,6 +67,9 @@ internal fun SettingsActivity.sectionsPage() {
     switch(R.string.set_double_press, Look.DOUBLE_PRESS, R.string.double_press_on, R.string.off)
     switch(R.string.set_controller_jumps, Look.CONTROLLER_JUMPS, R.string.controller_jumps_on, R.string.off)
     switch(R.string.set_mic, Look.MIC_TUNAHOME, R.string.mic_tunahome, R.string.mic_google)
+    if (Look.MIC_TUNAHOME.get(this)) {
+        switch(R.string.set_mic_everywhere, Look.MIC_EVERYWHERE, R.string.mic_everywhere_on, R.string.mic_everywhere_off)
+    }
     switch(R.string.set_previews, Previews.SHOW, R.string.previews_on, R.string.off)
     switch(R.string.set_remember_place, Look.REMEMBER_PLACE, R.string.remember_place_on, R.string.remember_place_off)
     heading(R.string.heading_side_menu)

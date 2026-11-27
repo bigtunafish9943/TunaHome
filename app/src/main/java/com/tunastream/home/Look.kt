@@ -383,6 +383,9 @@ object Look {
     /** The remote's voice button on the home screen: Google's assistant, or TunaHome's own commands. */
     val MIC_TUNAHOME = Switch("look_mic_tunahome", false)
 
+    /** TunaHome's voice commands from the voice button in any app, not only on the home screen. */
+    val MIC_EVERYWHERE = Switch("look_mic_everywhere", false)
+
     /** Moving up or down into a section goes back to the app you were on there last. */
     val REMEMBER_PLACE = Switch("look_remember_place", true)
 
@@ -466,6 +469,9 @@ object Look {
     /** Who's in, on the top bar, when more than one person uses the TV. */
     val SHOW_WHO = Switch("look_show_who", true)
     val SHOW_SEARCH_BUTTON = Switch("look_show_search", true)
+    /** Up next: the PC game you were playing joins Watch Next, in the order you left things. */
+    val UP_NEXT = Switch("look_up_next", false)
+
     /** The morning screen: a big clock, the weather and what you were watching, once each morning. */
     val MORNING = Switch("look_morning", true)
 

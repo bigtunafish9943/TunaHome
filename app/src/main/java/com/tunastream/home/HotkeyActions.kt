@@ -38,6 +38,7 @@ object HotkeyActions {
     const val OPEN_APPS = "open_apps"
     const val POINTER = "pointer"
     const val FIND_REMOTE = "find_remote"
+    const val GUEST = "guest"
 
     /**
      * Opens one page of TunaHome settings (the argument names it). Not offered as a shortcut:
@@ -62,6 +63,7 @@ object HotkeyActions {
         OPEN_APPS to R.string.act_open_apps,
         POINTER to R.string.act_pointer,
         FIND_REMOTE to R.string.find_remote,
+        GUEST to R.string.guest_mode,
         RECENTS to R.string.act_recents,
         NOTIFICATIONS to R.string.act_notifications,
         SCREENSHOT to R.string.act_screenshot,
@@ -146,6 +148,13 @@ object HotkeyActions {
                 .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
             TV_SETTINGS -> HomeActivity.openTvSettings(context)
             FIND_REMOTE -> FindRemote.find(context)
+            GUEST -> if (Guest.on(context)) {
+                // Leaving can need the PIN: from the side menu or the Guest chip
+                if (home != null) Guest.leave(home)
+                else Toast.makeText(context, R.string.guest_leave_how, Toast.LENGTH_LONG).show()
+            } else {
+                Guest.start(context)
+            }
             OPEN_APPS -> context.startActivity(Intent(context, OpenAppsActivity::class.java)
                 .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
             OPEN_APP -> {

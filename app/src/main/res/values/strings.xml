@@ -1203,4 +1203,37 @@
     <string name="night_dim_21">From 9 p.m.</string>
     <string name="night_dim_22">From 10 p.m.</string>
     <string name="night_dim_23">From 11 p.m.</string>
+    <string name="heading_occasions">Holidays and your dates</string>
+    <string name="set_occasions">Holidays and your dates</string>
+    <string name="occ_on">A greeting and an effect on the day</string>
+    <string name="occ_yours_title">Your dates</string>
+    <plurals name="occ_yours_count">
+        <item quantity="one">%d date: birthdays and anything else to mark</item>
+        <item quantity="other">%d dates: birthdays and anything else to mark</item>
+    </plurals>
+    <string name="occ_add">Add a date</string>
+    <string name="occ_remove">Remove</string>
+    <string name="occ_name">Whose birthday, or what\'s the day?</string>
+    <string name="occ_month">Month</string>
+    <string name="occ_day">Day</string>
+    <string name="occ_kind_birthday">A birthday</string>
+    <string name="occ_kind_other">Something else</string>
+    <string name="occ_added">Added</string>
+    <string name="occ_birthday">Happy birthday, %1$s! 🎂</string>
+    <string name="occ_yours">Today: %1$s 🎉</string>
+    <string name="occ_new_year">Happy New Year! 🎆</string>
+    <string name="occ_new_year_eve">Happy New Year\'s Eve! 🥂</string>
+    <string name="occ_valentine">Happy Valentine\'s Day ❤️</string>
+    <string name="occ_halloween">Happy Halloween! 🎃</string>
+    <string name="occ_thanksgiving">Happy Thanksgiving! 🦃</string>
+    <string name="occ_christmas">Merry Christmas! 🎄</string>
+    <string name="guest_mode">Guest mode</string>
+    <string name="guest_leave">Leave guest mode</string>
+    <string name="guest_started">Guest mode: what you\'ve watched and played is out of sight until the TV sleeps.</string>
+    <string name="guest_ended">Guest mode is over</string>
+    <string name="guest_chip">Guest</string>
+    <string name="guest_leave_how">Leave guest mode from TunaHome\'s side menu, or select Guest at the top.</string>
+    <string name="set_mic_everywhere">The voice button in other apps</string>
+    <string name="mic_everywhere_on">TunaHome voice commands there too (needs the Home button setting)</string>
+    <string name="mic_everywhere_off">The app\'s own (usually the TV\'s assistant)</string>
 </resources>
