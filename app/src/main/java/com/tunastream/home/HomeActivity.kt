@@ -123,6 +123,16 @@ class HomeActivity : BaseActivity() {
         }
     }
 
+    @Deprecated("Deprecated in Java")
+    @Suppress("OVERRIDE_DEPRECATION")
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (requestCode == LISTINGS_REQUEST && WatchNext.allowed(this)) {
+            // Now other apps' shows can be read
+            reloadWatchNext()
+        }
+    }
+
     /** A shortcut pressed elsewhere that needs the home screen: do it once it shows. */
     internal fun hotkeyFromIntent(intent: Intent?) {
         val action = intent?.getStringExtra(HotkeyActions.EXTRA_ACTION) ?: return
@@ -505,6 +515,10 @@ class HomeActivity : BaseActivity() {
 
     override fun onResume() {
         super.onResume()
+        // Watch Next needs "TV listings" to see other apps' shows: asked once, when the row is there
+        if (sections.any { it.row.kind == Rows.WATCH_NEXT }) {
+            WatchNext.askOnce(this, LISTINGS_REQUEST)
+        }
         // A rename or a new photo in settings shows straight away
         showWho()
         // Back from watching something: its place in Watch Next has changed
@@ -960,6 +974,7 @@ class HomeActivity : BaseActivity() {
     }
 
     companion object {
+        internal const val LISTINGS_REQUEST = 47
         internal const val STATE_PICTURE_FOR = "picture_for"
         internal const val STATE_QUICK = "quick"
         internal const val FOR_YOU_MAX = 12

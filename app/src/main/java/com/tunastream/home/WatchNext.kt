@@ -29,12 +29,50 @@ object WatchNext {
     @Volatile
     var problem: String? = null
 
+    const val LISTINGS = "android.permission.READ_TV_LISTINGS"
+    private const val ASKED = "watch_next_listings_asked"
+
+    /**
+     * Whether the TV lets TunaHome see other apps' shows. Without "TV listings" it only gives a
+     * launcher its own rows, so Watch Next would stay empty.
+     */
+    fun allowed(context: Context): Boolean =
+        Build.VERSION.SDK_INT < 23 || context.checkSelfPermission(LISTINGS) == android.content.pm.PackageManager.PERMISSION_GRANTED
+
+    /** Asks for "TV listings" once, when a Watch Next row (or Up next) wants it. */
+    fun askOnce(activity: android.app.Activity, code: Int) {
+        if (allowed(activity) || Build.VERSION.SDK_INT < 23) return
+        val prefs = Prefs.of(activity)
+        if (prefs.getBoolean(ASKED, false)) return
+        prefs.edit().putBoolean(ASKED, true).apply()
+        try {
+            activity.requestPermissions(arrayOf(LISTINGS), code)
+        } catch (e: Exception) {
+            Log.w(TAG, "Couldn't ask for TV listings: $e")
+        }
+    }
+
+    /** Asks again, or opens TunaHome's permissions when Android won't ask any more. */
+    fun askAgain(activity: android.app.Activity, code: Int) {
+        if (allowed(activity)) return
+        if (Build.VERSION.SDK_INT >= 23 && activity.shouldShowRequestPermissionRationale(LISTINGS)) {
+            activity.requestPermissions(arrayOf(LISTINGS), code)
+        } else {
+            try {
+                activity.startActivity(android.content.Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                    android.net.Uri.parse("package:" + activity.packageName)))
+            } catch (e: Exception) {
+                activity.requestPermissions(arrayOf(LISTINGS), code)
+            }
+        }
+    }
+
     /** Newest first. Slow (it loads pictures): call from a background thread. */
     fun load(context: Context): List<AppEntry> {
         if (Build.VERSION.SDK_INT < 26) {
             return emptyList()
         }
-        problem = null
+        problem = if (allowed(context)) null else "TV listings not allowed (only TunaHome's own rows are visible)"
         val pm = context.packageManager
         val hidden = Prefs.hidden(context)
         val found = ArrayList<Pair<Long, AppEntry>>()

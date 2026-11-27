@@ -71,6 +71,14 @@ internal fun SettingsActivity.sectionsPage() {
         switch(R.string.set_mic_everywhere, Look.MIC_EVERYWHERE, R.string.mic_everywhere_on, R.string.mic_everywhere_off)
     }
     switch(R.string.set_previews, Previews.SHOW, R.string.previews_on, R.string.off)
+    // Other apps' shows: the TV only shares them once TunaHome may read TV listings
+    row(R.string.set_watch_next_access, getString(if (WatchNext.allowed(this)) R.string.watch_next_access_on else R.string.watch_next_access_off)) {
+        if (WatchNext.allowed(this)) {
+            Toast.makeText(this, R.string.watch_next_access_on, Toast.LENGTH_LONG).show()
+        } else {
+            WatchNext.askAgain(this, HomeActivity.LISTINGS_REQUEST)
+        }
+    }
     switch(R.string.set_up_next, Look.UP_NEXT, R.string.up_next_on, R.string.off)
     switch(R.string.set_remember_place, Look.REMEMBER_PLACE, R.string.remember_place_on, R.string.remember_place_off)
     heading(R.string.heading_side_menu)

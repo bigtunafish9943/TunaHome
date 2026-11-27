@@ -1237,4 +1237,7 @@
     <string name="mic_everywhere_off">The app\'s own (usually the TV\'s assistant)</string>
     <string name="set_up_next">Up next</string>
     <string name="up_next_on">Your PC game in progress joins Watch Next</string>
+    <string name="set_watch_next_access">Watch Next from your apps</string>
+    <string name="watch_next_access_on">Allowed: shows apps share with the TV appear in Watch Next</string>
+    <string name="watch_next_access_off">Not allowed yet: select to let TunaHome read TV listings, which Watch Next needs</string>
 </resources>

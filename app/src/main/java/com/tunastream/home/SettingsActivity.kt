@@ -418,6 +418,14 @@ class SettingsActivity : BaseActivity() {
         }
     }
 
+    @Deprecated("Deprecated in Java")
+    @Suppress("OVERRIDE_DEPRECATION")
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        // TV listings (Watch Next) or Bluetooth just allowed: show it on the page
+        build()
+    }
+
     companion object {
         const val EXTRA_PAGE = "page"
         const val EXTRA_SECTION = "section"
